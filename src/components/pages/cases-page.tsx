@@ -382,7 +382,7 @@ export function CasesPage() {
 
           <ResizablePanel defaultSize="76%">
             <Card className="h-full rounded-none border-none shadow-none">
-              <CardHeader className="border-b">
+              <CardHeader >
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <span>项目</span>
                   <span>/</span>
@@ -392,7 +392,7 @@ export function CasesPage() {
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-4 pt-4">
+              <CardContent className="space-y-4 pt-1">
                 <div className="grid gap-3 md:grid-cols-[1.5fr_1fr_auto_auto]">
                   <Input
                     placeholder="输入用例名称"

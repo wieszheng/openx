@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useState, useCallback, useRef } from "react"
 import {
   Activity,
   Bot,
@@ -33,17 +33,18 @@ import {
   ReactFlowProvider,
   useEdgesState,
   useNodesState,
+  useReactFlow,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { Card } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { Switch } from "@/components/ui/switch"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+
+import { CustomNode } from "./automation/nodes/custom-node"
+import { ConfigPanel } from "./automation/nodes/config-panel"
 
 type NodeData = {
   label: string
@@ -115,17 +116,20 @@ const nodeGroups: NodeGroup[] = [
 const initialNodes: Node<NodeData>[] = [
   {
     id: "n1",
+    type: "customNode",
     position: { x: 100, y: 200 },
     data: { label: "接收任务事件", category: "触发器", status: "已配置", icon: Webhook },
   },
   {
     id: "n2",
-    position: { x: 400, y: 200 },
-    data: { label: "点击「立即处理」按钮", category: "APP UI 操作", status: "运行中", icon: Webhook },
+    type: "customNode",
+    position: { x: 450, y: 200 },
+    data: { label: "点击「立即处理」按钮", category: "APP UI 操作", status: "运行中", icon: MousePointer2 },
   },
   {
     id: "n3",
-    position: { x: 700, y: 200 },
+    type: "customNode",
+    position: { x: 800, y: 200 },
     data: { label: "输入工单处理备注", category: "APP UI 操作", status: "待配置", icon: Type },
   },
 ]
@@ -135,25 +139,39 @@ const initialEdges: Edge[] = [
   { id: "e2-3", source: "n2", target: "n3", markerEnd: { type: MarkerType.ArrowClosed } },
 ]
 
+const nodeTypes = {
+  customNode: CustomNode,
+}
+
 function AutomationWorkbench() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [nodeConfigOpen, setNodeConfigOpen] = useState(false)
-  const operationLogs = [
-    "22:16:31 点击按钮: #submit-ticket",
-    "22:16:33 输入文本: 处理完成",
-  ]
+  const reactFlowWrapper = useRef<HTMLDivElement>(null)
+  const { screenToFlowPosition } = useReactFlow()
 
   const selectedNode = useMemo(
     () => nodes.find((item) => item.id === selectedNodeId) ?? null,
     [nodes, selectedNodeId]
   )
 
+  const updateNodeData = (id: string, data: Partial<NodeData>) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === id) {
+          node.data = { ...node.data, ...data }
+        }
+        return node
+      })
+    )
+  }
+
   const addTemplateNode = (templateName: string, templateType: string, icon: React.ComponentType<{ className?: string }>) => {
     const newId = `n${Date.now()}`
     const newNode: Node<NodeData> = {
       id: newId,
+      type: "customNode",
       position: { x: 100 + nodes.length * 50, y: 200 + (nodes.length % 2) * 100 },
       data: { label: templateName, category: templateType, status: "待配置", icon },
     }
@@ -182,17 +200,86 @@ function AutomationWorkbench() {
     }
   }
 
+  const onDragStart = (event: React.DragEvent, nodeData: any) => {
+    event.dataTransfer.setData('application/reactflow', JSON.stringify(nodeData))
+    event.dataTransfer.effectAllowed = 'move'
+  }
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'move'
+  }, [])
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault()
+
+      const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect()
+      const dataStr = event.dataTransfer.getData('application/reactflow')
+      
+      if (!dataStr || !reactFlowBounds) return
+
+      try {
+        const nodeData = JSON.parse(dataStr)
+        const position = screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        })
+
+        // find icon component dynamically based on node type, since we can't stringify components
+        // For drag and drop, we need a lookup table. But since we just stringified nodeData, icon is missing.
+        // Let's look it up from nodeGroups
+        let foundIcon: React.ComponentType<{ className?: string }> = Webhook
+        for (const group of nodeGroups) {
+          const item = group.items.find(i => i.name === nodeData.label && i.type === nodeData.category)
+          if (item) {
+            foundIcon = item.icon
+            break
+          }
+        }
+
+        const newId = `n${Date.now()}`
+        const newNode: Node<NodeData> = {
+          id: newId,
+          type: 'customNode',
+          position,
+          data: { 
+            label: nodeData.label, 
+            category: nodeData.category, 
+            status: "待配置", 
+            icon: foundIcon 
+          },
+        }
+
+        setNodes((nds) => nds.concat(newNode))
+        setSelectedNodeId(newId)
+        setNodeConfigOpen(true)
+      } catch (e) {
+        console.error("Drop error", e)
+      }
+    },
+    [screenToFlowPosition, setNodes]
+  )
+
   return (
     <div className="relative h-full w-full overflow-hidden rounded-xl border bg-muted/20">
       {/* 全屏画布 */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0" ref={reactFlowWrapper}>
         <ReactFlow<Node<NodeData>, Edge>
           nodes={nodes}
           edges={edges}
+          nodeTypes={nodeTypes}
+          defaultEdgeOptions={{ type: 'smoothstep' }}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           onNodeClick={handleNodeClick}
+          onPaneClick={() => {
+            setNodeConfigOpen(false)
+            setSelectedNodeId(null)
+          }}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
           fitView
           className="bg-gradient-to-br from-muted/10 to-background"
         >
@@ -228,10 +315,9 @@ function AutomationWorkbench() {
           </div>
 
           {/* 展开面板 */}
-          <div className="mt-2 w-53 rounded-xl border bg-background shadow-xl transition-all duration-300 opacity-0 -translate-y-2 group-hover:opacity-120 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto">
-
+          <div className="mt-2 w-53 rounded-xl border bg-background shadow-xl transition-all duration-300 opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto">
             <div className="p-3">
-              <p className="text-xs font-medium text-muted-foreground mb-3 px-1">选择节点类型</p>
+              <p className="text-xs font-medium text-muted-foreground mb-3 px-1">拖拽或点击添加节点</p>
               <ScrollArea className="h-100">
                 <div className="space-y-3 mr-1">
                   {nodeGroups.map((group) => (
@@ -247,12 +333,14 @@ function AutomationWorkbench() {
                             key={template.name}
                             type="button"
                             onClick={() => addTemplateNode(template.name, template.type, template.icon)}
+                            onDragStart={(e) => onDragStart(e, { label: template.name, category: template.type })}
+                            draggable
                             className="flex flex-col items-center gap-1.5 p-1 rounded-lg hover:bg-accent cursor-grab active:cursor-grabbing transition-colors"
                           >
-                            <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
+                            <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 pointer-events-none">
                               <template.icon className="size-5 text-primary" />
                             </div>
-                            <span className="text-xs text-center leading-tight">{template.name}</span>
+                            <span className="text-xs text-center leading-tight pointer-events-none">{template.name}</span>
                           </button>
                         ))}
                       </div>
@@ -261,7 +349,6 @@ function AutomationWorkbench() {
                 </div>
               </ScrollArea>
             </div>
-
           </div>
         </div>
       </div>
@@ -297,106 +384,13 @@ function AutomationWorkbench() {
       </div>
 
       {/* 右侧悬浮 - 节点配置面板 */}
-      <div
-        className={`
-          absolute right-4 top-1/2 -translate-y-1/2 z-20 w-72 transition-all duration-300
-          ${nodeConfigOpen && selectedNode ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none"}
-        `}
-      >
-        <Card className="shadow-xl border-2 backdrop-blur-sm bg-background/95">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">节点配置</CardTitle>
-              <div className="flex items-center gap-1">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon-xs"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={deleteSelectedNode}
-                    >
-                      <Trash2 className="size-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>删除节点</TooltipContent>
-                </Tooltip>
-                <Button
-                  size="icon-xs"
-                  variant="ghost"
-                  onClick={() => {
-                    setNodeConfigOpen(false)
-                    setSelectedNodeId(null)
-                  }}
-                >
-                  <X className="size-3.5" />
-                </Button>
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {selectedNode?.data.label ?? "未选择节点"}
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <p className="text-xs text-muted-foreground">节点类型</p>
-              <Input
-                value={selectedNode?.data.category ?? ""}
-                readOnly
-                className="h-8 text-sm"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <p className="text-xs text-muted-foreground">执行模型</p>
-              <Select defaultValue="appium-operator">
-                <SelectTrigger className="w-full h-8 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="appium-operator">appium-operator</SelectItem>
-                  <SelectItem value="uiautomator2">uiautomator2</SelectItem>
-                  <SelectItem value="xctest">xctest</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between rounded-lg border p-2.5">
-                <span className="text-sm">失败重试</span>
-                <Switch defaultChecked />
-              </div>
-              <div className="flex items-center justify-between rounded-lg border p-2.5">
-                <span className="text-sm">截图留存</span>
-                <Switch defaultChecked />
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-2">
-              <p className="text-xs font-medium">执行日志</p>
-              <ScrollArea className="h-28 rounded-md border p-2">
-                <div className="space-y-1">
-                  {operationLogs.map((log, i) => (
-                    <p key={i} className="text-xs text-muted-foreground">
-                      {log}
-                    </p>
-                  ))}
-                </div>
-              </ScrollArea>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="inline-flex items-center gap-1">
-                  <CheckCircle2 className="size-3.5 text-emerald-500" />
-                  98.7%
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <Clock3 className="size-3.5 text-amber-500" />
-                  1.8s
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <ConfigPanel
+        node={selectedNode}
+        isOpen={nodeConfigOpen}
+        onClose={() => setNodeConfigOpen(false)}
+        onDelete={deleteSelectedNode}
+        onUpdate={updateNodeData}
+      />
     </div>
   )
 }

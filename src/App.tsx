@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/mode-toggle"
 import { AboutPage } from "@/components/pages/about-page"
 import { AutomationPage } from "@/components/pages/automation-page"
+import { BuildHistoryPage } from "@/components/pages/build-history-page"
 import { CasesPage } from "@/components/pages/cases-page"
 import { DocsPage } from "@/components/pages/docs-page"
+import { ExecutionReportPage } from "@/components/pages/execution-report-page"
 import { HomePage } from "@/components/pages/home-page"
+import { TestPlanPage } from "@/components/pages/test-plan-page"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,11 +19,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-const navItems = ["首页", "用例", "自动化", "文档", "关于我们"]
+const navItems = ["首页", "用例", "测试计划", "自动化", "构建历史"]
 
 function App() {
   const [activeIndex, setActiveIndex] = useState(0)
-  const activePage = navItems[activeIndex]
+  const [targetPage, setTargetPage] = useState<string | null>(null)
+  const activePage = targetPage || navItems[activeIndex]
+
+  const handleNavigate = (page: string) => {
+    setTargetPage(page)
+  }
+
+  const handleBack = () => {
+    setTargetPage(null)
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -85,9 +97,12 @@ function App() {
       <main className="mx-auto w-full max-w-7xl px-4 pt-20 pb-10 md:px-6">
         {activePage === "首页" && <HomePage />}
         {activePage === "用例" && <CasesPage />}
+        {activePage === "测试计划" && <TestPlanPage />}
         {activePage === "自动化" && <AutomationPage />}
         {activePage === "文档" && <DocsPage />}
-        {activePage === "关于我们" && <AboutPage />}
+        {activePage === "构建历史" && <BuildHistoryPage onView={handleNavigate} />}
+        {activePage === "执行报告" && <ExecutionReportPage onBack={handleBack} />}
+        {activePage === "关于" && <AboutPage />}
       </main>
     </div>
   )
