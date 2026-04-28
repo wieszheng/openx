@@ -94,7 +94,7 @@ function App() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl px-4 pt-20 pb-10 md:px-6">
+      <main className="mx-auto w-full max-w-7xl px-4 pt-20 pb-4 md:px-6">
         {activePage === "首页" && <HomePage />}
         {activePage === "用例" && <CasesPage />}
         {activePage === "测试计划" && <TestPlanPage />}

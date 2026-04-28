@@ -19,15 +19,14 @@ export function AppLaunchPanel({ node, onUpdate }: Props) {
         <Input placeholder="如 com.example.app" value={node.data.packageName} onChange={(e) => onUpdate(node.id, { packageName: e.target.value })} className="h-8 text-sm" />
       </div>
       <div className="space-y-1.5">
-        <p className="text-xs text-muted-foreground">执行引擎</p>
-        <Select defaultValue="appium-operator">
+        <p className="text-xs text-muted-foreground">启动类型</p>
+        <Select value={node.data.launchType} onValueChange={(v) => onUpdate(node.id, { launchType: v as AppLaunchData["launchType"] })}>
           <SelectTrigger className="h-8 text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="appium-operator">Appium Operator</SelectItem>
-            <SelectItem value="uiautomator2">UIAutomator2</SelectItem>
-            <SelectItem value="xctest">XCTest</SelectItem>
+            <SelectItem value="warm">热启动</SelectItem>
+            <SelectItem value="cold">冷启动</SelectItem>
           </SelectContent>
         </Select>
       </div>

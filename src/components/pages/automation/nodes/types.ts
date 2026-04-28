@@ -38,11 +38,14 @@ export type WebhookTriggerData = {
 }
 
 // ─── APP UI 操作 ──────────────────────────────────────────
+export type LaunchType = "warm" | "cold"  // 热启动 | 冷启动
+
 export type AppLaunchData = {
   kind: "appLaunch"
   label: string
   status: NodeStatus
   packageName: string
+  launchType: LaunchType
 }
 
 export type AppCloseData = {
@@ -165,12 +168,13 @@ export const CATEGORY_STYLES: Record<NodeCategory, {
   handle: string
   border: string
   badge: string
+  labelText: string
 }> = {
-  trigger: { iconBg: "bg-violet-500/10", iconText: "text-violet-500", handle: "!bg-violet-500", border: "border-violet-500", badge: "bg-violet-500/10 text-violet-500" },
-  appUi:   { iconBg: "bg-blue-500/10",   iconText: "text-blue-500",   handle: "!bg-blue-500",   border: "border-blue-500",   badge: "bg-blue-500/10 text-blue-500" },
-  api:     { iconBg: "bg-cyan-500/10",   iconText: "text-cyan-500",   handle: "!bg-cyan-500",   border: "border-cyan-500",   badge: "bg-cyan-500/10 text-cyan-500" },
-  data:    { iconBg: "bg-amber-500/10",  iconText: "text-amber-500",  handle: "!bg-amber-500",  border: "border-amber-500",  badge: "bg-amber-500/10 text-amber-500" },
-  assert:  { iconBg: "bg-emerald-500/10",iconText: "text-emerald-500",handle: "!bg-emerald-500",border: "border-emerald-500",badge: "bg-emerald-500/10 text-emerald-500" },
+  trigger: { iconBg: "bg-violet-500/10",  iconText: "text-violet-500",  handle: "!bg-violet-500",  border: "border-violet-500",  badge: "bg-violet-500/10 text-violet-500",  labelText: "text-violet-600" },
+  appUi:   { iconBg: "bg-blue-500/10",    iconText: "text-blue-500",   handle: "!bg-blue-500",   border: "border-blue-500",   badge: "bg-blue-500/10 text-blue-500",   labelText: "text-blue-600" },
+  api:     { iconBg: "bg-cyan-500/10",    iconText: "text-cyan-500",   handle: "!bg-cyan-500",   border: "border-cyan-500",   badge: "bg-cyan-500/10 text-cyan-500",   labelText: "text-cyan-600" },
+  data:    { iconBg: "bg-amber-500/10",   iconText: "text-amber-500",  handle: "!bg-amber-500",  border: "border-amber-500",  badge: "bg-amber-500/10 text-amber-500",  labelText: "text-amber-600" },
+  assert:  { iconBg: "bg-emerald-500/10", iconText: "text-emerald-500",handle: "!bg-emerald-500",border: "border-emerald-500",badge: "bg-emerald-500/10 text-emerald-500", labelText: "text-emerald-600" },
 }
 
 // ─── 分类标签 ─────────────────────────────────────────────

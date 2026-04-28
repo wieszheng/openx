@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useRef } from "react"
+import { useMemo, useState, useCallback } from "react"
 import {
   Activity,
   Bot,
@@ -52,8 +52,24 @@ import {
   CATEGORY_STYLES,
   NODE_KIND_TO_CATEGORY,
   type AnyNodeData,
+  type NodeCategory,
   type NodeKind,
 } from "./automation/nodes/types"
+
+// ─── 分类颜色映射（用于边）───────────────────────────────────────────────────
+const CATEGORY_EDGE_COLORS: Record<NodeCategory, string> = {
+  trigger: "#8b5cf6", // violet
+  appUi:   "#3b82f6", // blue
+  api:     "#06b6d4", // cyan
+  data:    "#f59e0b", // amber
+  assert:  "#10b981", // emerald
+}
+
+// ─── 辅助函数：根据节点类型获取边颜色 ────────────────────────────────────────
+function getEdgeColorByNodeKind(kind: string): string {
+  const category = NODE_KIND_TO_CATEGORY[kind as NodeKind]
+  return CATEGORY_EDGE_COLORS[category]
+}
 
 // ─── 模板类型 ─────────────────────────────────────────────────────────────────
 
@@ -80,7 +96,7 @@ const nodeGroups: NodeGroup[] = [
     ],
   },
   {
-    name: "APP UI 操作",
+    name: "APP操作",
     groupKind: "uiClick",
     items: [
       { name: "启动应用", nodeKind: "appLaunch",     icon: Play },
@@ -127,7 +143,7 @@ function buildNodeData(template: NodeTemplate): AnyNodeData {
     case "webhookTrigger":
       return { ...base, kind: "webhookTrigger", webhookUrl: "" }
     case "appLaunch":
-      return { ...base, kind: "appLaunch", packageName: "" }
+      return { ...base, kind: "appLaunch", packageName: "", launchType: "warm" }
     case "appClose":
       return { ...base, kind: "appClose", packageName: "" }
     case "uiClick":
@@ -178,8 +194,24 @@ const initialNodes: Node<AnyNodeData>[] = [
 ]
 
 const initialEdges: Edge[] = [
-  { id: "e1-2", source: "n1", target: "n2", markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: "e2-3", source: "n2", target: "n3", markerEnd: { type: MarkerType.ArrowClosed } },
+  {
+    id: "e1-2",
+    source: "n1",
+    target: "n2",
+    type: "bezier",
+    markerEnd: { type: MarkerType.ArrowClosed },
+    style: { stroke: getEdgeColorByNodeKind("webhookTrigger"), strokeWidth: 2, strokeDasharray: "5,5" },
+    animated: true,
+  },
+  {
+    id: "e2-3",
+    source: "n2",
+    target: "n3",
+    type: "bezier",
+    markerEnd: { type: MarkerType.ArrowClosed },
+    style: { stroke: getEdgeColorByNodeKind("uiClick"), strokeWidth: 2, strokeDasharray: "5,5" },
+    animated: true,
+  },
 ]
 
 // ─── 节点库面板 ───────────────────────────────────────────────────────────────
@@ -206,10 +238,10 @@ function NodeLibraryPanel({
     setCollapsed((prev) => ({ ...prev, [name]: !prev[name] }))
 
   return (
-    <div className="flex h-full w-56 shrink-0 flex-col border-r bg-background">
+    <div className="flex h-full w-56 shrink-0 flex-col border-r">
       {/* 头部 */}
       <div className="flex items-center justify-between px-4 py-3 border-b">
-        <span className="text-sm font-semibold">节点库</span>
+        <span className="text-sm font-semibold">节点操作</span>
         <span className="text-xs text-muted-foreground">
           {nodeGroups.reduce((s, g) => s + g.items.length, 0)} 个节点
         </span>
@@ -308,7 +340,6 @@ function AutomationWorkbench() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [nodeConfigOpen, setNodeConfigOpen] = useState(false)
-  const reactFlowWrapper = useRef<HTMLDivElement>(null)
   const { screenToFlowPosition } = useReactFlow()
   const { theme } = useTheme()
 
@@ -339,10 +370,20 @@ function AutomationWorkbench() {
   }, [nodes.length, setNodes])
 
   const onConnect = useCallback((connection: Connection) => {
+    // 根据源节点类型获取边颜色
+    const sourceNode = nodes.find((n) => n.id === connection.source)
+    const edgeColor = sourceNode ? getEdgeColorByNodeKind(sourceNode.type ?? "") : "#6366f1"
+
     setEdges((prev) =>
-      addEdge({ ...connection, markerEnd: { type: MarkerType.ArrowClosed } }, prev)
+      addEdge({
+        ...connection,
+        type: "bezier",
+        markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: edgeColor, strokeWidth: 2, strokeDasharray: "5,5" },
+        animated: true,
+      }, prev)
     )
-  }, [setEdges])
+  }, [nodes, setEdges])
 
   const handleNodeClick = useCallback((_: React.MouseEvent, node: Node<AnyNodeData>) => {
     setSelectedNodeId(node.id)
@@ -358,10 +399,8 @@ function AutomationWorkbench() {
   }, [selectedNodeId, setNodes, setEdges])
 
   const onDragStart = useCallback((event: React.DragEvent, template: NodeTemplate) => {
-    event.dataTransfer.setData("application/reactflow", JSON.stringify({
-      nodeKind: template.nodeKind,
-      name: template.name,
-    }))
+    event.dataTransfer.setData("application/reactflow-type", template.nodeKind)
+    event.dataTransfer.setData("application/reactflow-data", JSON.stringify(buildNodeData(template)))
     event.dataTransfer.effectAllowed = "move"
   }, [])
 
@@ -372,26 +411,21 @@ function AutomationWorkbench() {
 
   const onDrop = useCallback((event: React.DragEvent) => {
     event.preventDefault()
-    const dataStr = event.dataTransfer.getData("application/reactflow")
-    if (!dataStr) return
+    const type = event.dataTransfer.getData("application/reactflow-type")
+    const dataStr = event.dataTransfer.getData("application/reactflow-data")
+    if (!type) return
 
-    try {
-      const { nodeKind, name } = JSON.parse(dataStr) as { nodeKind: NodeKind; name: string }
-      // find icon from nodeGroups
-      const allItems = nodeGroups.flatMap((g) => g.items)
-      const found = allItems.find((i) => i.nodeKind === nodeKind)
-      const template: NodeTemplate = { name, nodeKind, icon: found?.icon ?? Webhook }
-      const position = screenToFlowPosition({ x: event.clientX, y: event.clientY })
-      const newId = `n${Date.now()}`
-      const newNode: Node<AnyNodeData> = {
-        id: newId, type: nodeKind, position, data: buildNodeData(template),
-      }
-      setNodes((nds) => nds.concat(newNode))
-      setSelectedNodeId(newId)
-      setNodeConfigOpen(true)
-    } catch (e) {
-      console.error("Drop error", e)
+    const position = screenToFlowPosition({ x: event.clientX - 80, y: event.clientY })
+    const newId = `n${Date.now()}`
+    const newNode: Node<AnyNodeData> = {
+      id: newId,
+      type,
+      position,
+      data: JSON.parse(dataStr || "{}"),
     }
+    setNodes((nds) => nds.concat(newNode))
+    setSelectedNodeId(newId)
+    setNodeConfigOpen(true)
   }, [screenToFlowPosition, setNodes])
 
   return (
@@ -426,12 +460,16 @@ function AutomationWorkbench() {
         </div>
 
         {/* ReactFlow */}
-        <div className="absolute inset-0" ref={reactFlowWrapper}>
+        <div className="absolute inset-0" >
           <ReactFlow<Node<AnyNodeData>, Edge>
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}
-            defaultEdgeOptions={{ type: "smoothstep" }}
+            defaultEdgeOptions={{
+              type: "bezier",
+              style: { strokeWidth: 2, strokeDasharray: "5,5" },
+              animated: true,
+            }}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
@@ -444,6 +482,9 @@ function AutomationWorkbench() {
             onDragOver={onDragOver}
             onDrop={onDrop}
             fitView
+            snapToGrid
+            snapGrid={[16, 16]}
+            deleteKeyCode={["Backspace", "Delete"]}
           >
             <Background gap={12} />
             {nodes.length === 0 && (
@@ -458,9 +499,11 @@ function AutomationWorkbench() {
               </Panel>
             )}
             <MiniMap
-              className="!bottom-4 !left-4 !right-auto !top-auto"
               pannable
               zoomable
+              position="bottom-left"
+              nodeBorderRadius={20}
+              nodeColor={(node) => getEdgeColorByNodeKind(node.type ?? "")}
             />
           </ReactFlow>
         </div>
@@ -480,7 +523,7 @@ function AutomationWorkbench() {
 
 export function AutomationPage() {
   return (
-    <section className="h-[calc(100vh-8rem)]">
+    <section className="h-[calc(100vh-6rem)]">
       <TooltipProvider>
         <ReactFlowProvider>
           <AutomationWorkbench />

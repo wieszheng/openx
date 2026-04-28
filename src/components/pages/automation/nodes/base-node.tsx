@@ -25,11 +25,15 @@ export function NodeField({
   value,
   mono = false,
   empty = "未配置",
+  icon: Icon,
+  badge,
 }: {
   label: string
   value?: string | number
   mono?: boolean
   empty?: string
+  icon?: React.ComponentType<{ className?: string }>
+  badge?: string
 }) {
   const isEmpty = value === undefined || value === "" || value === 0
   return (
@@ -37,11 +41,16 @@ export function NodeField({
       <span className="shrink-0 rounded px-1 py-0.5 text-[9px] font-medium leading-none bg-muted text-muted-foreground/70">
         {label}
       </span>
+      {Icon && (
+        <span className={cn("shrink-0", badge ?? "text-muted-foreground/70")}>
+          <Icon className="size-3" />
+        </span>
+      )}
       <span
         className={cn(
           "truncate text-[11px] leading-none",
           mono && "font-mono",
-          isEmpty ? "text-muted-foreground/40 italic" : "text-foreground/75"
+          badge ?? (isEmpty ? "text-muted-foreground/40 italic" : "text-foreground/75")
         )}
       >
         {isEmpty ? empty : String(value)}
@@ -70,7 +79,7 @@ export function BaseNode({ label, status, nodeKind, icon: Icon, selected, childr
 
         <div className="flex-1 overflow-hidden">
           <h4 className="truncate text-sm font-medium leading-none">{label}</h4>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">{categoryLabel}</p>
+          <p className={cn("mt-0.5 truncate text-xs", style.labelText)}>{categoryLabel}</p>
         </div>
 
         <div className="shrink-0">

@@ -257,7 +257,7 @@ export function CasesPage() {
   }
 
   return (
-    <section className="h-[calc(100vh-8rem)]">
+    <section className="h-[calc(100vh-6rem)]">
       <div className="h-full overflow-hidden rounded-xl border bg-card/50">
         <ResizablePanelGroup orientation="horizontal">
           <ResizablePanel defaultSize="24%" minSize="18%" maxSize="35%">
