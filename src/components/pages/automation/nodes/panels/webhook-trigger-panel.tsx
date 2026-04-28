@@ -1,17 +1,17 @@
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import type { TriggerNodeData } from "../types"
+import type { WebhookTriggerData } from "../types"
 
 type Props = {
-  node: { id: string; data: TriggerNodeData }
-  onUpdate: (id: string, data: Partial<TriggerNodeData>) => void
+  node: { id: string; data: WebhookTriggerData }
+  onUpdate: (id: string, data: Partial<WebhookTriggerData>) => void
 }
 
-export function TriggerPanel({ node, onUpdate }: Props) {
+export function WebhookTriggerPanel({ node, onUpdate }: Props) {
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <p className="text-xs text-muted-foreground">触发器名称</p>
+        <p className="text-xs text-muted-foreground">节点名称</p>
         <Input
           value={node.data.label}
           onChange={(e) => onUpdate(node.id, { label: e.target.value })}

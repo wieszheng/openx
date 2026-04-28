@@ -1,21 +1,33 @@
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import type { AppUINodeData } from "../types"
 
-export function AppUIPanel({ node, onUpdate }: { node: any; onUpdate: (id: string, data: any) => void }) {
+type Props = {
+  node: { id: string; data: AppUINodeData }
+  onUpdate: (id: string, data: Partial<AppUINodeData>) => void
+}
+
+export function AppUIPanel({ node, onUpdate }: Props) {
+  const needsInput = node.data.action === "input"
+
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
         <p className="text-xs text-muted-foreground">节点名称</p>
         <Input
-          value={node.data.label ?? ""}
+          value={node.data.label}
           onChange={(e) => onUpdate(node.id, { label: e.target.value })}
           className="h-8 text-sm"
         />
       </div>
+
       <div className="space-y-1.5">
         <p className="text-xs text-muted-foreground">执行模型</p>
-        <Select defaultValue="appium-operator">
+        <Select
+          value={node.data.engine}
+          onValueChange={(v) => onUpdate(node.id, { engine: v as AppUINodeData["engine"] })}
+        >
           <SelectTrigger className="w-full h-8 text-sm">
             <SelectValue />
           </SelectTrigger>
@@ -26,30 +38,43 @@ export function AppUIPanel({ node, onUpdate }: { node: any; onUpdate: (id: strin
           </SelectContent>
         </Select>
       </div>
+
       <div className="space-y-1.5">
-        <p className="text-xs text-muted-foreground">元素选择器 (XPath/ID)</p>
+        <p className="text-xs text-muted-foreground">元素选择器（XPath / ID）</p>
         <Input
+          value={node.data.selector}
+          onChange={(e) => onUpdate(node.id, { selector: e.target.value })}
           placeholder="//android.widget.Button[@text='提交']"
           className="h-8 text-sm"
         />
       </div>
-      {node.data.label?.includes("输入") && (
+
+      {needsInput && (
         <div className="space-y-1.5">
           <p className="text-xs text-muted-foreground">输入文本</p>
           <Input
+            value={node.data.inputText ?? ""}
+            onChange={(e) => onUpdate(node.id, { inputText: e.target.value })}
             placeholder="请输入需要填写的文本"
             className="h-8 text-sm"
           />
         </div>
       )}
-      <div className="space-y-2 mt-4">
+
+      <div className="space-y-2">
         <div className="flex items-center justify-between rounded-lg border p-2.5">
           <span className="text-sm">失败重试</span>
-          <Switch defaultChecked />
+          <Switch
+            checked={node.data.retry}
+            onCheckedChange={(v) => onUpdate(node.id, { retry: v })}
+          />
         </div>
         <div className="flex items-center justify-between rounded-lg border p-2.5">
           <span className="text-sm">截图留存</span>
-          <Switch defaultChecked />
+          <Switch
+            checked={node.data.screenshot}
+            onCheckedChange={(v) => onUpdate(node.id, { screenshot: v })}
+          />
         </div>
       </div>
     </div>

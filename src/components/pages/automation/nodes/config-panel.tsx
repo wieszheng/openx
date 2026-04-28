@@ -5,40 +5,26 @@ import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
-import { TriggerPanel } from "./panels/trigger-panel"
-import { AppUIPanel } from "./panels/app-ui-panel"
-import { DefaultPanel } from "./panels/default-panel"
+import { configPanelRegistry } from "./node-registry"
+import type { NodeKind, AnyNodeData } from "./types"
 
-export function ConfigPanel({ 
-  node, 
-  isOpen, 
-  onClose, 
-  onDelete, 
-  onUpdate 
-}: { 
-  node: any | null, 
-  isOpen: boolean, 
-  onClose: () => void, 
-  onDelete: () => void,
-  onUpdate: (id: string, data: any) => void
-}) {
-  const operationLogs = [
-    "22:16:31 节点执行成功: 状态 200",
-    "22:16:33 数据验证通过: 响应耗时 1.2s",
-  ]
+const MOCK_LOGS = [
+  "22:16:31 节点执行成功: 状态 200",
+  "22:16:33 数据验证通过: 响应耗时 1.2s",
+]
 
-  const renderSpecificPanel = () => {
-    if (!node) return null;
-    
-    switch (node.data.category) {
-      case "触发器":
-        return <TriggerPanel node={node} onUpdate={onUpdate} />;
-      case "APP UI 操作":
-        return <AppUIPanel node={node} onUpdate={onUpdate} />;
-      default:
-        return <DefaultPanel node={node} onUpdate={onUpdate} />;
-    }
-  }
+type ConfigPanelProps = {
+  node: { id: string; type: string; data: AnyNodeData } | null
+  isOpen: boolean
+  onClose: () => void
+  onDelete: () => void
+  onUpdate: (id: string, data: Partial<AnyNodeData>) => void
+}
+
+export function ConfigPanel({ node, isOpen, onClose, onDelete, onUpdate }: ConfigPanelProps) {
+  const PanelContent = node?.type
+    ? configPanelRegistry[node.type as NodeKind]
+    : null
 
   return (
     <div
@@ -65,11 +51,7 @@ export function ConfigPanel({
                 </TooltipTrigger>
                 <TooltipContent>删除节点</TooltipContent>
               </Tooltip>
-              <Button
-                size="icon-xs"
-                variant="ghost"
-                onClick={onClose}
-              >
+              <Button size="icon-xs" variant="ghost" onClick={onClose}>
                 <X className="size-3.5" />
               </Button>
             </div>
@@ -78,9 +60,11 @@ export function ConfigPanel({
             {node?.data?.label ?? "未选择节点"}
           </p>
         </CardHeader>
+
         <CardContent className="space-y-4">
-          
-          {renderSpecificPanel()}
+          {PanelContent && node && (
+            <PanelContent node={node} onUpdate={onUpdate} />
+          )}
 
           <Separator />
 
@@ -88,10 +72,8 @@ export function ConfigPanel({
             <p className="text-xs font-medium">执行日志</p>
             <ScrollArea className="h-28 rounded-md border p-2">
               <div className="space-y-1">
-                {operationLogs.map((log, i) => (
-                  <p key={i} className="text-xs text-muted-foreground">
-                    {log}
-                  </p>
+                {MOCK_LOGS.map((log, i) => (
+                  <p key={i} className="text-xs text-muted-foreground">{log}</p>
                 ))}
               </div>
             </ScrollArea>
