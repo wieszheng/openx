@@ -1,6 +1,6 @@
 import type { NodeProps, Node } from "@xyflow/react"
 import { Activity } from "lucide-react"
-import { BaseNode, NodeField } from "../base-node"
+import { BaseNode } from "../base-node"
 import { cn } from "@/lib/utils"
 import type { ApiHttpData, HttpMethod } from "../types"
 
@@ -12,9 +12,9 @@ const METHOD_COLORS: Record<HttpMethod, string> = {
   PATCH:  "text-violet-500",
 }
 
-export function ApiHttpNode({ data, selected }: NodeProps<Node<ApiHttpData>>) {
+export function ApiHttpNode({ id, data, selected }: NodeProps<Node<ApiHttpData>>) {
   return (
-    <BaseNode label={data.label} status={data.status} nodeKind="apiHttp" icon={Activity} selected={selected}>
+    <BaseNode id={id} label={data.label} status={data.status} nodeKind="apiHttp" icon={Activity} selected={selected}>
       <div className="flex items-center gap-1.5 min-w-0">
         <span className="shrink-0 rounded px-1 py-0.5 text-[9px] font-medium leading-none bg-muted text-muted-foreground/70">
           方法

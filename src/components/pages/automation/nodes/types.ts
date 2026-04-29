@@ -167,14 +167,23 @@ export const CATEGORY_STYLES: Record<NodeCategory, {
   iconText: string
   handle: string
   border: string
+  solidBg: string
+  /** conic-gradient 光束两色，格式 "color1, color2" */
+  beamColor: string
+  /** 已选中/已配置 外发光 box-shadow class */
+  glow: string
+  /** 已配置状态 inline shadow（稍弱，用于静态边框）*/
+  configuredShadow: string
   badge: string
   labelText: string
+  /** 状态图标颜色（已配置时跟随分类）*/
+  statusText: string
 }> = {
-  trigger: { iconBg: "bg-violet-500/10",  iconText: "text-violet-500",  handle: "!bg-violet-500",  border: "border-violet-500",  badge: "bg-violet-500/10 text-violet-500",  labelText: "text-violet-600" },
-  appUi:   { iconBg: "bg-blue-500/10",    iconText: "text-blue-500",   handle: "!bg-blue-500",   border: "border-blue-500",   badge: "bg-blue-500/10 text-blue-500",   labelText: "text-blue-600" },
-  api:     { iconBg: "bg-cyan-500/10",    iconText: "text-cyan-500",   handle: "!bg-cyan-500",   border: "border-cyan-500",   badge: "bg-cyan-500/10 text-cyan-500",   labelText: "text-cyan-600" },
-  data:    { iconBg: "bg-amber-500/10",   iconText: "text-amber-500",  handle: "!bg-amber-500",  border: "border-amber-500",  badge: "bg-amber-500/10 text-amber-500",  labelText: "text-amber-600" },
-  assert:  { iconBg: "bg-emerald-500/10", iconText: "text-emerald-500",handle: "!bg-emerald-500",border: "border-emerald-500",badge: "bg-emerald-500/10 text-emerald-500", labelText: "text-emerald-600" },
+  trigger: { iconBg: "bg-violet-500/10",  iconText: "text-violet-500",  handle: "!bg-violet-500",  border: "border-violet-500",  solidBg: "bg-violet-500",  beamColor: "#8b5cf6, #c4b5fd",  glow: "shadow-[0_0_20px_#8b5cf650]",  configuredShadow: "shadow-[0_0_14px_#8b5cf635]",  badge: "bg-violet-500/10 text-violet-500",  labelText: "text-violet-500",  statusText: "text-violet-500" },
+  appUi:   { iconBg: "bg-blue-500/10",    iconText: "text-blue-500",   handle: "!bg-blue-500",   border: "border-blue-500",   solidBg: "bg-blue-500",   beamColor: "#3b82f6, #93c5fd",  glow: "shadow-[0_0_20px_#3b82f650]",  configuredShadow: "shadow-[0_0_14px_#3b82f635]",  badge: "bg-blue-500/10 text-blue-500",   labelText: "text-blue-500",  statusText: "text-blue-500" },
+  api:     { iconBg: "bg-cyan-500/10",    iconText: "text-cyan-500",   handle: "!bg-cyan-500",   border: "border-cyan-500",   solidBg: "bg-cyan-500",   beamColor: "#06b6d4, #67e8f9",  glow: "shadow-[0_0_20px_#06b6d450]",  configuredShadow: "shadow-[0_0_14px_#06b6d435]",  badge: "bg-cyan-500/10 text-cyan-500",   labelText: "text-cyan-500",  statusText: "text-cyan-500" },
+  data:    { iconBg: "bg-amber-500/10",   iconText: "text-amber-500",  handle: "!bg-amber-500",  border: "border-amber-500",  solidBg: "bg-amber-500",  beamColor: "#f59e0b, #fde68a",  glow: "shadow-[0_0_20px_#f59e0b50]",  configuredShadow: "shadow-[0_0_14px_#f59e0b35]",  badge: "bg-amber-500/10 text-amber-500",  labelText: "text-amber-500",  statusText: "text-amber-500" },
+  assert:  { iconBg: "bg-emerald-500/10", iconText: "text-emerald-500",handle: "!bg-emerald-500",border: "border-emerald-500",solidBg: "bg-emerald-500",beamColor: "#10b981, #6ee7b7",  glow: "shadow-[0_0_20px_#10b98150]",  configuredShadow: "shadow-[0_0_14px_#10b98135]",  badge: "bg-emerald-500/10 text-emerald-500", labelText: "text-emerald-500",  statusText: "text-emerald-500" },
 }
 
 // ─── 分类标签 ─────────────────────────────────────────────
