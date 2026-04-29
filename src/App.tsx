@@ -5,6 +5,7 @@ import { ModeToggle } from "@/components/mode-toggle"
 import { AboutPage } from "@/components/pages/about-page"
 import { AutomationPage } from "@/components/pages/automation-page"
 import { BuildHistoryPage } from "@/components/pages/build-history-page"
+import { CaseDetailPage } from "@/components/pages/case-detail-page"
 import { CasesPage } from "@/components/pages/cases-page"
 import { DocsPage } from "@/components/pages/docs-page"
 import { ExecutionReportPage } from "@/components/pages/execution-report-page"
@@ -24,6 +25,7 @@ const navItems = ["首页", "用例", "测试计划", "自动化", "构建历史
 function App() {
   const [activeIndex, setActiveIndex] = useState(0)
   const [targetPage, setTargetPage] = useState<string | null>(null)
+  const [caseDetailId, setCaseDetailId] = useState<string | null>(null)
   const activePage = targetPage || navItems[activeIndex]
 
   const handleNavigate = (page: string) => {
@@ -32,6 +34,14 @@ function App() {
 
   const handleBack = () => {
     setTargetPage(null)
+  }
+
+  const handleViewCase = (caseId: string) => {
+    setCaseDetailId(caseId)
+  }
+
+  const handleBackToCases = () => {
+    setCaseDetailId(null)
   }
 
   return (
@@ -96,7 +106,17 @@ function App() {
 
       <main className="mx-auto w-full max-w-7xl px-4 pt-20 pb-4 md:px-6">
         {activePage === "首页" && <HomePage />}
-        {activePage === "用例" && <CasesPage />}
+        {activePage === "用例" && !caseDetailId && (
+          <CasesPage onViewCase={handleViewCase} />
+        )}
+        {activePage === "用例" && caseDetailId && (
+          <CaseDetailPage
+            caseId={caseDetailId}
+            onBack={handleBackToCases}
+            onEdit={(id) => console.log("编辑用例:", id)}
+            onExecute={(id) => console.log("执行用例:", id)}
+          />
+        )}
         {activePage === "测试计划" && <TestPlanPage />}
         {activePage === "自动化" && <AutomationPage />}
         {activePage === "文档" && <DocsPage />}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { Folder, FolderOpen, FolderTree, Pencil, Plus, RotateCcw, Search, Trash2 } from "lucide-react"
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
@@ -24,237 +24,232 @@ import {
 } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
-type CaseItem = {
-  id: string
-  name: string
-  method: "Http" | "MQ" | "RPC"
-  priority: "P0" | "P1" | "P2"
-  status: "正常运行" | "调试中" | "已停用"
-  owner: string
-  updatedAt: string
+import { casesApi, directoriesApi, groupsApi } from "@/lib/api"
+import type { Directory, Group, TestCase } from "@/lib/api"
+
+function formatDate(iso: string) {
+  return iso.replace("T", " ").slice(0, 19)
 }
 
-type CaseFolder = {
-  id: string
-  name: string
-  groupId: string
-  cases: CaseItem[]
+// 优先级样式配置 - 粉色玫瑰色边框标签
+const PRIORITY_STYLES: Record<string, string> = {
+  P0: "bg-red-100 text-red-700 border-red-200",
+  P1: "bg-orange-100 text-orange-700 border-orange-200",
+  P2: "bg-blue-100 text-blue-700 border-blue-200",
+  P3: "bg-gray-100 text-gray-700 border-gray-200",
 }
 
-type CaseGroup = {
-  id: string
-  name: string
+// 状态样式配置
+const STATUS_STYLES: Record<string, { dot: string; text: string }> = {
+  "正常运行": { dot: "bg-green-500", text: "text-slate-600" },
+  "调试中": { dot: "bg-blue-500", text: "text-slate-600" },
+  "已停用": { dot: "bg-slate-400", text: "text-slate-500" },
+  "异常": { dot: "bg-red-500", text: "text-slate-600" },
 }
 
-const initialCaseGroups: CaseGroup[] = [
-  { id: "test", name: "test" },
-  { id: "support", name: "客服服务" },
-  { id: "ops", name: "运营增长" },
-]
+interface CasesPageProps {
+  onViewCase?: (caseId: string) => void
+}
 
-const caseFolders: CaseFolder[] = [
-  {
-    id: "new-dev",
-    name: "new发",
-    groupId: "test",
-    cases: [
-      {
-        id: "28",
-        name: "查询不存在的用户",
-        method: "Http",
-        priority: "P0",
-        status: "正常运行",
-        owner: "有故哥",
-        updatedAt: "2021-08-07 23:34:16",
-      },
-      {
-        id: "29",
-        name: "查询存在的用户",
-        method: "Http",
-        priority: "P0",
-        status: "正常运行",
-        owner: "有故哥",
-        updatedAt: "2021-08-07 23:34:16",
-      },
-      {
-        id: "27",
-        name: "查询所有用户列表",
-        method: "Http",
-        priority: "P0",
-        status: "正常运行",
-        owner: "有故哥",
-        updatedAt: "2021-08-16 23:27:44",
-      },
-      {
-        id: "26",
-        name: "正常用户登录",
-        method: "Http",
-        priority: "P0",
-        status: "调试中",
-        owner: "有故哥",
-        updatedAt: "2021-08-01 17:33:26",
-      },
-    ],
-  },
-  {
-    id: "day-report",
-    name: "发个日文联报",
-    groupId: "test",
-    cases: [],
-  },
-  {
-    id: "good-story",
-    name: "好的无故事",
-    groupId: "test",
-    cases: [],
-  },
-  {
-    id: "customer-routing",
-    name: "智能分流",
-    groupId: "support",
-    cases: [
-      {
-        id: "41",
-        name: "高优先级客户直达专席",
-        method: "RPC",
-        priority: "P1",
-        status: "正常运行",
-        owner: "客服中心",
-        updatedAt: "2026-04-27 21:10:03",
-      },
-    ],
-  },
-  {
-    id: "vip-line",
-    name: "VIP 专线",
-    groupId: "support",
-    cases: [],
-  },
-  {
-    id: "recall-touch",
-    name: "召回触达",
-    groupId: "ops",
-    cases: [],
-  },
-  {
-    id: "ad-feedback",
-    name: "投放回传",
-    groupId: "ops",
-    cases: [],
-  },
-]
+export function CasesPage({ onViewCase }: CasesPageProps) {
+  // ── 数据状态 ────────────────────────────────────────────────
+  const [groups, setGroups] = useState<Group[]>([])
+  const [directories, setDirectories] = useState<Directory[]>([])
+  const [cases, setCases] = useState<TestCase[]>([])
 
-export function CasesPage() {
-  const [groups, setGroups] = useState(initialCaseGroups)
-  const [activeGroupId, setActiveGroupId] = useState(initialCaseGroups[0].id)
-  const [folders, setFolders] = useState(caseFolders)
-  const [activeFolderId, setActiveFolderId] = useState(caseFolders[0].id)
+  // ── 分页状态 ────────────────────────────────────────────────
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalRecords, setTotalRecords] = useState(0)
+  const pageSize = 10
+
+  // ── 加载状态 ────────────────────────────────────────────────
+  const [loadingGroups, setLoadingGroups] = useState(true)
+  const [loadingCases, setLoadingCases] = useState(false)
+
+  // ── 选中状态 ────────────────────────────────────────────────
+  const [activeGroupId, setActiveGroupId] = useState<number | null>(null)
+  const [activeDirId, setActiveDirId] = useState<string | null>(null)
+
+  // ── 筛选状态 ────────────────────────────────────────────────
   const [keyword, setKeyword] = useState("")
   const [ownerFilter, setOwnerFilter] = useState("all")
+
+  // ── 弹窗状态 ────────────────────────────────────────────────
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
   const [isRenameOpen, setIsRenameOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [newGroupName, setNewGroupName] = useState("")
   const [newFolderName, setNewFolderName] = useState("")
-  const [createFolderGroupId, setCreateFolderGroupId] = useState<string | null>(null)
+  const [createFolderGroupId, setCreateFolderGroupId] = useState<number | null>(null)
   const [renameFolderName, setRenameFolderName] = useState("")
   const [targetFolderId, setTargetFolderId] = useState<string | null>(null)
 
-  const activeFolder = useMemo(
-    () => folders.find((item) => item.id === activeFolderId) ?? folders[0],
-    [activeFolderId, folders]
-  )
+  // ── 挂载：一次性加载所有 Groups + Directories ───────────────
+  useEffect(() => {
+    setLoadingGroups(true)
+    Promise.all([groupsApi.list(), directoriesApi.list()])
+      .then(([groupData, dirData]) => {
+        setGroups(groupData)
+        setDirectories(dirData)
+        if (groupData.length > 0) setActiveGroupId(groupData[0].id)
+        if (dirData.length > 0) setActiveDirId(dirData[0].id)
+      })
+      .catch(console.error)
+      .finally(() => setLoadingGroups(false))
+  }, [])
 
-  const activeGroup = groups.find((item) => item.id === activeGroupId) ?? groups[0]
-  const ownerOptions = Array.from(
-    new Set(folders.flatMap((folder) => folder.cases.map((item) => item.owner)))
-  )
+  // ── Directory 切换：加载 Cases ──────────────────────────────
+  useEffect(() => {
+    if (!activeDirId) {
+      setCases([])
+      return
+    }
+    setCurrentPage(1)
+    setLoadingCases(true)
+    setKeyword("")
+    setOwnerFilter("all")
+    casesApi
+      .list(activeDirId, { page: 1, page_size: pageSize })
+      .then((data) => {
+        setCases(data.items)
+        setTotalRecords(data.total)
+      })
+      .catch(console.error)
+      .finally(() => setLoadingCases(false))
+  }, [activeDirId])
 
-  const visibleCases = useMemo(() => {
-    return activeFolder.cases.filter((item) => {
-      const matchKeyword = keyword.trim() === "" || item.name.includes(keyword.trim())
-      const matchOwner = ownerFilter === "all" || item.owner === ownerFilter
-      return matchKeyword && matchOwner
-    })
-  }, [activeFolder.cases, keyword, ownerFilter])
+  // ── 查询 ────────────────────────────────────────────────────
+  const handleSearch = () => {
+    if (!activeDirId) return
+    setCurrentPage(1)
+    setLoadingCases(true)
+    casesApi
+      .list(activeDirId, {
+        keyword: keyword.trim() || undefined,
+        owner: ownerFilter !== "all" ? ownerFilter : undefined,
+        page: 1,
+        page_size: pageSize,
+      })
+      .then((data) => {
+        setCases(data.items)
+        setTotalRecords(data.total)
+      })
+      .catch(console.error)
+      .finally(() => setLoadingCases(false))
+  }
 
   const handleReset = () => {
     setKeyword("")
     setOwnerFilter("all")
+    setCurrentPage(1)
+    if (!activeDirId) return
+    setLoadingCases(true)
+    casesApi
+      .list(activeDirId, { page: 1, page_size: pageSize })
+      .then((data) => {
+        setCases(data.items)
+        setTotalRecords(data.total)
+      })
+      .catch(console.error)
+      .finally(() => setLoadingCases(false))
   }
 
-  const handleCreateGroup = () => {
-    const trimmedName = newGroupName.trim()
-    if (!trimmedName) return
+  // ── 分页切换 ────────────────────────────────────────────────
+  const handlePageChange = (page: number) => {
+    if (!activeDirId) return
+    setCurrentPage(page)
+    setLoadingCases(true)
+    casesApi
+      .list(activeDirId, {
+        keyword: keyword.trim() || undefined,
+        owner: ownerFilter !== "all" ? ownerFilter : undefined,
+        page,
+        page_size: pageSize,
+      })
+      .then((data) => {
+        setCases(data.items)
+        setTotalRecords(data.total)
+      })
+      .catch(console.error)
+      .finally(() => setLoadingCases(false))
+  }
 
-    const newGroup: CaseGroup = {
-      id: `group-${Date.now()}`,
-      name: trimmedName,
+  // ── 新增根目录 ──────────────────────────────────────────────
+  const handleCreateGroup = async () => {
+    const name = newGroupName.trim()
+    if (!name) return
+    try {
+      const group = await groupsApi.create(name)
+      setGroups((prev) => [...prev, group])
+      setActiveGroupId(group.id)
+    } catch (e) {
+      console.error(e)
     }
-
-    setGroups((prev) => [...prev, newGroup])
-    setActiveGroupId(newGroup.id)
     setNewGroupName("")
     setIsCreateOpen(false)
   }
 
-  const handleCreateFolder = () => {
-    const trimmedName = newFolderName.trim()
-    if (!trimmedName || !createFolderGroupId) return
-
-    const newFolder: CaseFolder = {
-      id: `folder-${Date.now()}`,
-      name: trimmedName,
-      groupId: createFolderGroupId,
-      cases: [],
+  // ── 新增子目录 ──────────────────────────────────────────────
+  const handleCreateFolder = async () => {
+    const name = newFolderName.trim()
+    if (!name || createFolderGroupId === null) return
+    try {
+      const dir = await directoriesApi.create({ name, group_id: createFolderGroupId })
+      setDirectories((prev) => [...prev, dir])
+      setActiveGroupId(createFolderGroupId)
+      setActiveDirId(dir.id)
+    } catch (e) {
+      console.error(e)
     }
-
-    setFolders((prev) => [...prev, newFolder])
-    setActiveGroupId(createFolderGroupId)
-    setActiveFolderId(newFolder.id)
     setNewFolderName("")
     setCreateFolderGroupId(null)
     setIsCreateFolderOpen(false)
   }
 
-  const handleRenameFolder = () => {
+  // ── 重命名目录 ──────────────────────────────────────────────
+  const handleRenameFolder = async () => {
     if (!targetFolderId) return
-    const trimmedName = renameFolderName.trim()
-    if (!trimmedName) return
-
-    setFolders((prev) =>
-      prev.map((folder) =>
-        folder.id === targetFolderId ? { ...folder, name: trimmedName } : folder
-      )
-    )
+    const name = renameFolderName.trim()
+    if (!name) return
+    try {
+      const updated = await directoriesApi.rename(targetFolderId, name)
+      setDirectories((prev) => prev.map((d) => (d.id === targetFolderId ? updated : d)))
+    } catch (e) {
+      console.error(e)
+    }
     setTargetFolderId(null)
     setIsRenameOpen(false)
   }
 
-  const handleDeleteFolder = () => {
-    if (!targetFolderId || folders.length <= 1) return
-
-    const deletingFolder = folders.find((folder) => folder.id === targetFolderId)
-    if (!deletingFolder) return
-
-    const nextFolders = folders.filter((folder) => folder.id !== targetFolderId)
-    setFolders(nextFolders)
-
-    const sameGroupFallback = nextFolders.find(
-      (folder) => folder.groupId === deletingFolder.groupId
-    )
-    const globalFallback = nextFolders[0]
-    const nextActive = sameGroupFallback ?? globalFallback
-
-    if (nextActive) {
-      setActiveGroupId(nextActive.groupId)
-      setActiveFolderId(nextActive.id)
+  // ── 删除目录 ────────────────────────────────────────────────
+  const handleDeleteFolder = async () => {
+    if (!targetFolderId || directories.length <= 1) return
+    const deletingDir = directories.find((d) => d.id === targetFolderId)
+    if (!deletingDir) return
+    try {
+      await directoriesApi.delete(targetFolderId)
+      const nextDirs = directories.filter((d) => d.id !== targetFolderId)
+      setDirectories(nextDirs)
+      const sameGroupFallback = nextDirs.find((d) => d.group_id === deletingDir.group_id)
+      const nextActive = sameGroupFallback ?? nextDirs[0]
+      if (nextActive) {
+        setActiveGroupId(nextActive.group_id)
+        setActiveDirId(nextActive.id)
+      }
+    } catch (e) {
+      console.error(e)
     }
-
     setTargetFolderId(null)
     setIsDeleteOpen(false)
   }
+
+  // ── 派生状态 ────────────────────────────────────────────────
+  const activeGroup = groups.find((g) => g.id === activeGroupId)
+  const activeDir = directories.find((d) => d.id === activeDirId)
+  const ownerOptions = Array.from(
+    new Set(cases.map((c) => c.created_by).filter(Boolean) as string[])
+  )
 
   return (
     <section className="h-[calc(100vh-6rem)]">
@@ -277,104 +272,102 @@ export function CasesPage() {
                 </div>
               </div>
 
-              <Accordion
-                type="single"
-                collapsible
-                value={activeGroupId}
-                onValueChange={(value) => {
-                  if (!value) return
-                  setActiveGroupId(value)
-                }}
-                className="gap-1"
-              >
-                {groups.map((group) => {
-                  const groupFolders = folders.filter((folder) => folder.groupId === group.id)
-                  return (
-                    <AccordionItem key={group.id} value={group.id} className="border-none">
-                      <AccordionTrigger className="rounded-md px-2 py-2 hover:no-underline">
-                        <span className="flex w-full items-center gap-2 pr-1">
-                          <FolderOpen className="size-4 text-muted-foreground" />
-                          <span>{group.name}</span>
-                          <Button
-                            type="button"
-                            size="icon-xs"
-                            variant="ghost"
-                            className="ml-auto"
-                            aria-label="新增子目录"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              setCreateFolderGroupId(group.id)
-                              setNewFolderName("")
-                              setIsCreateFolderOpen(true)
-                            }}
-                          >
-                            <Plus className="size-3.5 mb-1.5" />
-                          </Button>
-                        </span>
-                      </AccordionTrigger>
-                      <AccordionContent className="pb-1">
-                        <div className="space-y-1 pl-6">
-                          {groupFolders.map((folder) => (
-                            <button
-                              key={folder.id}
+              {loadingGroups ? (
+                <div className="px-2 py-4 text-xs text-muted-foreground">加载中…</div>
+              ) : (
+                <Accordion
+                  type="single"
+                  collapsible
+                  value={activeGroupId !== null ? String(activeGroupId) : ""}
+                  onValueChange={(value) => {
+                    setActiveGroupId(value ? Number(value) : null)
+                  }}
+                  className="gap-1"
+                >
+                  {groups.map((group) => {
+                    const groupDirs = directories.filter((d) => d.group_id === group.id)
+                    return (
+                      <AccordionItem key={group.id} value={String(group.id)} className="border-none">
+                        <AccordionTrigger className="rounded-md px-2 py-2 hover:no-underline">
+                          <span className="flex w-full items-center gap-2 pr-1">
+                            <FolderOpen className="size-4 text-muted-foreground" />
+                            <span>{group.name}</span>
+                            <Button
                               type="button"
-                              onClick={() => {
-                                setActiveGroupId(group.id)
-                                setActiveFolderId(folder.id)
+                              size="icon-xs"
+                              variant="ghost"
+                              className="ml-auto"
+                              aria-label="新增子目录"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                setCreateFolderGroupId(group.id)
+                                setNewFolderName("")
+                                setIsCreateFolderOpen(true)
                               }}
-                              className={`group/folder relative flex w-full items-center rounded-md px-2 py-1.5 text-left text-sm ${
-                                activeFolderId === folder.id
+                            >
+                              <Plus className="size-3.5 mb-1.5" />
+                            </Button>
+                          </span>
+                        </AccordionTrigger>
+                        <AccordionContent className="pb-1">
+                          <div className="space-y-1 pl-6">
+                            {groupDirs.map((dir) => (
+                              <button
+                                key={dir.id}
+                                type="button"
+                                onClick={() => {
+                                  setActiveGroupId(group.id)
+                                  setActiveDirId(dir.id)
+                                }}
+                                className={`group/folder relative flex w-full items-center rounded-md px-2 py-1.5 text-left text-sm ${activeDirId === dir.id
                                   ? "bg-primary/10 text-primary"
                                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                              }`}
-                            >
-                              <span className="flex items-center gap-2">
-                                <Folder className="size-3.5" />
-                                {folder.name}
-                              </span>
+                                  }`}
+                              >
+                                <span className="flex items-center gap-2">
+                                  <Folder className="size-3.5" />
+                                  {dir.name}
+                                </span>
 
-                              <span className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-xs transition-transform duration-200 group-hover/folder:-translate-x-13">
-                                {folder.cases.length}
-                              </span>
-
-                              <span className="absolute top-1/2 right-1 flex -translate-y-1/2 items-center gap-0.5 opacity-0 transition-opacity duration-200 group-hover/folder:opacity-100">
-                                <Button
-                                  type="button"
-                                  size="icon-xs"
-                                  variant="ghost"
-                                  aria-label="重命名目录"
-                                  onClick={(event) => {
-                                    event.stopPropagation()
-                                    setTargetFolderId(folder.id)
-                                    setRenameFolderName(folder.name)
-                                    setIsRenameOpen(true)
-                                  }}
-                                >
-                                  <Pencil className="size-3.5" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  size="icon-xs"
-                                  variant="ghost"
-                                  aria-label="删除目录"
-                                  disabled={folders.length <= 1}
-                                  onClick={(event) => {
-                                    event.stopPropagation()
-                                    setTargetFolderId(folder.id)
-                                    setIsDeleteOpen(true)
-                                  }}
-                                >
-                                  <Trash2 className="size-3.5" />
-                                </Button>
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  )
-                })}
-              </Accordion>
+                                <span className="absolute top-1/2 right-1 flex -translate-y-1/2 items-center gap-0.5 opacity-0 transition-opacity duration-200 group-hover/folder:opacity-100">
+                                  <Button
+                                    type="button"
+                                    size="icon-xs"
+                                    variant="ghost"
+                                    aria-label="重命名目录"
+                                    onClick={(event) => {
+                                      event.stopPropagation()
+                                      setTargetFolderId(dir.id)
+                                      setRenameFolderName(dir.name)
+                                      setIsRenameOpen(true)
+                                    }}
+                                  >
+                                    <Pencil className="size-3.5" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="icon-xs"
+                                    variant="ghost"
+                                    aria-label="删除目录"
+                                    disabled={directories.length <= 1}
+                                    onClick={(event) => {
+                                      event.stopPropagation()
+                                      setTargetFolderId(dir.id)
+                                      setIsDeleteOpen(true)
+                                    }}
+                                  >
+                                    <Trash2 className="size-3.5" />
+                                  </Button>
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    )
+                  })}
+                </Accordion>
+              )}
             </aside>
           </ResizablePanel>
 
@@ -382,13 +375,13 @@ export function CasesPage() {
 
           <ResizablePanel defaultSize="76%">
             <Card className="h-full rounded-none border-none shadow-none">
-              <CardHeader >
+              <CardHeader>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <span>项目</span>
                   <span>/</span>
-                  <span>{activeGroup.name}</span>
+                  <span>{activeGroup?.name ?? "…"}</span>
                   <span>/</span>
-                  <span className="text-foreground">{activeFolder.name}</span>
+                  <span className="text-foreground">{activeDir?.name ?? "…"}</span>
                 </div>
               </CardHeader>
 
@@ -398,6 +391,7 @@ export function CasesPage() {
                     placeholder="输入用例名称"
                     value={keyword}
                     onChange={(event) => setKeyword(event.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                   />
                   <Select value={ownerFilter} onValueChange={setOwnerFilter}>
                     <SelectTrigger className="w-full">
@@ -412,7 +406,7 @@ export function CasesPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button className="gap-2">
+                  <Button className="gap-2" onClick={handleSearch}>
                     <Search className="size-4" />
                     查询
                   </Button>
@@ -425,9 +419,8 @@ export function CasesPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-16">#</TableHead>
+                      <TableHead className="w-10">#</TableHead>
                       <TableHead>用例名称</TableHead>
-                      <TableHead>请求类型</TableHead>
                       <TableHead>优先级</TableHead>
                       <TableHead>用例状态</TableHead>
                       <TableHead>创建人</TableHead>
@@ -436,42 +429,118 @@ export function CasesPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {visibleCases.length === 0 ? (
+                    {loadingCases ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                        <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                          加载中…
+                        </TableCell>
+                      </TableRow>
+                    ) : cases.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                           当前筛选条件下暂无用例
                         </TableCell>
                       </TableRow>
                     ) : (
-                      visibleCases.map((item) => (
+                      cases.map((item, index) => (
                         <TableRow key={item.id}>
-                          <TableCell>{item.id}</TableCell>
+                          <TableCell className="text-muted-foreground">{index + 1}</TableCell>
                           <TableCell className="font-medium">{item.name}</TableCell>
-                          <TableCell>{item.method}</TableCell>
                           <TableCell>
-                            <Badge variant="secondary">{item.priority}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={item.status === "正常运行" ? "default" : "outline"}>
-                              {item.status}
+                            <Badge
+                              variant="outline"
+                              className={`font-mono ${PRIORITY_STYLES[item.priority] || "bg-gray-100"}`}
+                            >
+                              {item.priority}
                             </Badge>
                           </TableCell>
-                          <TableCell>{item.owner}</TableCell>
-                          <TableCell>{item.updatedAt}</TableCell>
-                          <TableCell className="text-right text-sm text-primary">
-                            编辑 · 执行
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className={`size-2 rounded-full ${STATUS_STYLES[item.status]?.dot || "bg-gray-400"}`} />
+                              <span className="text-sm">{item.status}</span>
+                            </div>
+
+                          </TableCell>
+                          <TableCell>{item.created_by ?? "—"}</TableCell>
+                          <TableCell>{formatDate(item.updated_at)}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2 text-primary"
+                              onClick={() => onViewCase?.(item.id)}
+                            >
+                              查看
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))
                     )}
                   </TableBody>
                 </Table>
+
+                {/* 分页 */}
+                {totalRecords > 0 && (
+                  <div className="flex items-center justify-between border-t px-4 py-3">
+                    <p className="text-sm text-muted-foreground">
+                      共 <span className="font-medium text-foreground">{totalRecords}</span> 条记录
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                      >
+                        上一页
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(5, Math.ceil(totalRecords / pageSize)) }, (_, i) => {
+                          const page = i + 1
+                          return (
+                            <Button
+                              key={page}
+                              variant={currentPage === page ? "default" : "outline"}
+                              size="sm"
+                              className="size-8"
+                              onClick={() => handlePageChange(page)}
+                            >
+                              {page}
+                            </Button>
+                          )
+                        })}
+                        {Math.ceil(totalRecords / pageSize) > 5 && (
+                          <>
+                            <span className="px-1 text-muted-foreground">...</span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="size-8"
+                              onClick={() => handlePageChange(Math.ceil(totalRecords / pageSize))}
+                            >
+                              {Math.ceil(totalRecords / pageSize)}
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage >= Math.ceil(totalRecords / pageSize)}
+                      >
+                        下一页
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
 
+      {/* 新增根目录 */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent>
           <DialogHeader>
@@ -482,6 +551,7 @@ export function CasesPage() {
             placeholder="请输入根目录名称"
             value={newGroupName}
             onChange={(event) => setNewGroupName(event.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleCreateGroup()}
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
@@ -492,6 +562,7 @@ export function CasesPage() {
         </DialogContent>
       </Dialog>
 
+      {/* 重命名目录 */}
       <Dialog open={isRenameOpen} onOpenChange={setIsRenameOpen}>
         <DialogContent>
           <DialogHeader>
@@ -502,6 +573,7 @@ export function CasesPage() {
             placeholder="请输入新目录名称"
             value={renameFolderName}
             onChange={(event) => setRenameFolderName(event.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleRenameFolder()}
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsRenameOpen(false)}>
@@ -512,6 +584,7 @@ export function CasesPage() {
         </DialogContent>
       </Dialog>
 
+      {/* 新增子目录 */}
       <Dialog
         open={isCreateFolderOpen}
         onOpenChange={(open) => {
@@ -523,13 +596,14 @@ export function CasesPage() {
           <DialogHeader>
             <DialogTitle>新增子目录</DialogTitle>
             <DialogDescription>
-              在分组「{groups.find((item) => item.id === createFolderGroupId)?.name ?? "--"}」下创建目录。
+              在分组「{groups.find((g) => g.id === createFolderGroupId)?.name ?? "—"}」下创建目录。
             </DialogDescription>
           </DialogHeader>
           <Input
             placeholder="请输入子目录名称"
             value={newFolderName}
             onChange={(event) => setNewFolderName(event.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleCreateFolder()}
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateFolderOpen(false)}>
@@ -540,12 +614,13 @@ export function CasesPage() {
         </DialogContent>
       </Dialog>
 
+      {/* 删除目录确认 */}
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>删除目录</DialogTitle>
             <DialogDescription>
-              确认删除目录「{folders.find((item) => item.id === targetFolderId)?.name ?? "--"}」？该操作不可撤销。
+              确认删除目录「{directories.find((d) => d.id === targetFolderId)?.name ?? "—"}」？该操作不可撤销。
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
