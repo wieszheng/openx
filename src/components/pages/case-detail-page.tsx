@@ -9,13 +9,34 @@ import {
     Tag,
     User,
     Zap,
+    Workflow,
 } from "lucide-react"
+import {
+    Background,
+    MarkerType,
+    MiniMap,
+    type Edge,
+    type Node,
+    ReactFlow,
+    ReactFlowProvider,
+} from "@xyflow/react"
+import "@xyflow/react/dist/style.css"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { casesApi } from "@/lib/api"
 import type { TestCase } from "@/lib/api"
+import { useTheme } from "@/components/theme-provider"
+
+// 引入自动化节点相关
+import { nodeTypes } from "./automation/nodes/node-registry"
+import {
+    NODE_KIND_TO_CATEGORY,
+    type AnyNodeData,
+    type NodeCategory,
+    type NodeKind,
+} from "./automation/nodes/types"
 
 interface CaseDetailPageProps {
     caseId: string
@@ -42,8 +63,161 @@ const STATUS_CONFIG: Record<string, { label: string; dot: string }> = {
     "已停用": { label: "已停用", dot: "bg-slate-400" },
 }
 
+// ─── 分类颜色映射（用于边）───────────────────────────────────────────────────
+const CATEGORY_EDGE_COLORS: Record<NodeCategory, string> = {
+    trigger: "#8b5cf6", // violet
+    appUi:   "#3b82f6", // blue
+    api:     "#06b6d4", // cyan
+    data:    "#f59e0b", // amber
+    assert:  "#10b981", // emerald
+}
+
+function getEdgeColorByNodeKind(kind: string): string {
+    const category = NODE_KIND_TO_CATEGORY[kind as NodeKind]
+    return CATEGORY_EDGE_COLORS[category]
+}
+
+
+
 function formatDateTime(iso: string) {
     return iso.replace("T", " ").slice(0, 19)
+}
+
+// ─── Mock 自动测试流程数据 ────────────────────────────────────────────────────
+const MOCK_AUTO_TEST_NODES: Node<AnyNodeData>[] = [
+    {
+        id: "n1",
+        type: "webhookTrigger",
+        position: { x: 100, y: 200 },
+        data: { kind: "webhookTrigger", label: "接收任务事件", status: "已配置", webhookUrl: "https://api.openx.com/hook/v1/trigger/a1b2c3d4" },
+    },
+    {
+        id: "n2",
+        type: "appLaunch",
+        position: { x: 400, y: 200 },
+        data: { kind: "appLaunch", label: "启动测试应用", status: "已配置", packageName: "com.example.app", launchType: "warm" },
+    },
+    {
+        id: "n3",
+        type: "uiClick",
+        position: { x: 700, y: 200 },
+        data: { kind: "uiClick", label: "点击登录按钮", status: "已配置", selector: "//android.widget.Button[@text='登录']" },
+    },
+    {
+        id: "n4",
+        type: "uiInput",
+        position: { x: 700, y: 400 },
+        data: { kind: "uiInput", label: "输入用户名", status: "已配置", selector: "//android.widget.EditText[@hint='用户名']", inputText: "test_user" },
+    },
+    {
+        id: "n5",
+        type: "assertExists",
+        position: { x: 1000, y: 300 },
+        data: { kind: "assertExists", label: "断言首页加载", status: "已配置", selector: "//android.widget.TextView[@text='首页']" },
+    },
+]
+
+const MOCK_AUTO_TEST_EDGES: Edge[] = [
+    {
+        id: "e1-2",
+        source: "n1",
+        target: "n2",
+        type: "bezier",
+        markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: CATEGORY_EDGE_COLORS.trigger, strokeWidth: 2, strokeDasharray: "5,5" },
+        animated: true,
+    },
+    {
+        id: "e2-3",
+        source: "n2",
+        target: "n3",
+        type: "bezier",
+        markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: CATEGORY_EDGE_COLORS.appUi, strokeWidth: 2, strokeDasharray: "5,5" },
+        animated: true,
+    },
+    {
+        id: "e2-4",
+        source: "n2",
+        target: "n4",
+        type: "bezier",
+        markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: CATEGORY_EDGE_COLORS.appUi, strokeWidth: 2, strokeDasharray: "5,5" },
+        animated: true,
+    },
+    {
+        id: "e3-5",
+        source: "n3",
+        target: "n5",
+        type: "bezier",
+        markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: CATEGORY_EDGE_COLORS.appUi, strokeWidth: 2, strokeDasharray: "5,5" },
+        animated: true,
+    },
+    {
+        id: "e4-5",
+        source: "n4",
+        target: "n5",
+        type: "bezier",
+        markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: CATEGORY_EDGE_COLORS.appUi, strokeWidth: 2, strokeDasharray: "5,5" },
+        animated: true,
+    },
+]
+
+// ─── 自动测试画布组件（只读）────────────────────────────────────────────────────
+function AutoTestCanvas() {
+    const { theme } = useTheme()
+
+    return (
+        <div className="flex h-[600px] w-full overflow-hidden rounded-lg border bg-muted/20">
+            {/* 画布区域 - 只读 */}
+            <div className="relative flex-1 overflow-hidden">
+                <ReactFlow<Node<AnyNodeData>, Edge>
+                    nodes={MOCK_AUTO_TEST_NODES}
+                    edges={MOCK_AUTO_TEST_EDGES}
+                    nodeTypes={nodeTypes}
+                    defaultEdgeOptions={{
+                        type: "bezier",
+                        style: { strokeWidth: 2, strokeDasharray: "5,5" },
+                        animated: true,
+                    }}
+                    colorMode={theme}
+                    fitView
+                    fitViewOptions={{ padding: 0.2 }}
+                    snapToGrid
+                    snapGrid={[16, 16]}
+                    // 禁用所有交互
+                    nodesDraggable={false}
+                    nodesConnectable={false}
+                    elementsSelectable={false}
+                    zoomOnScroll={true}
+                    zoomOnPinch={true}
+                    panOnScroll={false}
+                    panOnDrag={true}
+                    selectionOnDrag={false}
+                    selectNodesOnDrag={false}
+                >
+                    <Background gap={12} />
+                    <MiniMap
+                        pannable
+                        zoomable
+                        position="bottom-left"
+                        nodeBorderRadius={20}
+                        nodeColor={(node) => getEdgeColorByNodeKind(node.type ?? "")}
+                    />
+                </ReactFlow>
+
+                {/* 只读提示 */}
+                <div className="absolute left-3 top-3 z-20">
+                    <Badge variant="secondary" className="text-[10px] h-6 gap-1">
+                        <Workflow className="size-3" />
+                        只读模式
+                    </Badge>
+                </div>
+            </div>
+        </div>
+    )
 }
 
 export function CaseDetailPage({
@@ -106,9 +280,9 @@ export function CaseDetailPage({
                 <CardHeader className="pb-4">
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                            <CardTitle className="text-xl">{testCase.name}</CardTitle>
+                            <CardTitle className="text-lg">{testCase.name}</CardTitle>
                             <p className="mt-1 text-sm text-muted-foreground">
-                                用例ID: {testCase.id} · 版本 {testCase.version}
+                                描述信息: {testCase.description}
                             </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -222,94 +396,94 @@ export function CaseDetailPage({
                 </CardContent>
             </Card>
 
-            {/* 描述信息 */}
-            {testCase.description && (
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-base">用例描述</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm leading-relaxed text-muted-foreground">
-                            {testCase.description}
-                        </p>
-                    </CardContent>
-                </Card>
-            )}
+            {/* 用例详情 - Tabs切换 */}
+            <Card className="p-4">
+                <Tabs defaultValue="manual" className="w-full">
+                    <TabsList className="mb-4">
+                        <TabsTrigger value="manual" className="gap-1.5">
+                            <User className="size-3.5" />
+                            手工测试
+                        </TabsTrigger>
+                        <TabsTrigger value="auto" className="gap-1.5">
+                            <Zap className="size-3.5" />
+                            自动测试
+                        </TabsTrigger>
+                    </TabsList>
 
-            {/* 测试步骤 / 前置条件 / 预期结果 */}
-            <div className="grid gap-6 lg:grid-cols-3">
-                {/* 左侧：前置条件 */}
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-base">前置条件</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {testCase.preconditions ? (
-                            <div className="space-y-2">
-                                {testCase.preconditions.split("\n").map((line, i) => (
-                                    <p key={i} className="text-sm leading-relaxed text-muted-foreground">
-                                        {line}
-                                    </p>
-                                ))}
+                    {/* 手工测试 */}
+                    <TabsContent value="manual" className="space-y-0">
+                        {/* 前置条件 */}
+                        <div className="mb-4">
+                            <div className="flex items-center gap-2 mb-1.5">
+                                <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200 text-xs">
+                                    前置条件
+                                </Badge>
                             </div>
-                        ) : (
-                            <p className="text-sm text-muted-foreground">暂无前置条件</p>
-                        )}
-                    </CardContent>
-                </Card>
+                            <div className="pl-4 text-sm text-muted-foreground">
+                                {testCase.preconditions ? (
+                                    testCase.preconditions.split("\n").map((line, i) => (
+                                        <p key={i}>{line}</p>
+                                    ))
+                                ) : (
+                                    <span className="text-muted-foreground/50">暂无</span>
+                                )}
+                            </div>
+                        </div>
 
-                {/* 中间：测试步骤 */}
-                <Card className="lg:col-span-2">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-base">测试步骤</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {testCase.steps_manual && testCase.steps_manual.length > 0 ? (
-                            <div className="space-y-4">
-                                {testCase.steps_manual.map((step, index) => (
-                                    <div key={index} className="relative pl-8">
-                                        {/* 步骤序号 */}
-                                        <div className="absolute left-0 top-0 flex size-6 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
-                                            {(step as { step: number }).step ?? index + 1}
-                                        </div>
-                                        {/* 步骤内容 */}
-                                        <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
-                                            <div>
-                                                <p className="text-xs font-medium text-muted-foreground">操作步骤</p>
-                                                <p className="mt-0.5 text-sm">{(step as { action: string }).action}</p>
+                        {/* 测试步骤 */}
+                        <div className="mb-4">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200 text-xs">
+                                    测试步骤
+                                </Badge>
+                            </div>
+                            <div className="space-y-2 pl-3">
+                                {testCase.steps_manual && testCase.steps_manual.length > 0 ? (
+                                    testCase.steps_manual.map((step, index) => (
+                                        <div key={index} className="flex gap-3">
+                                            <div className="flex-shrink-0 flex items-center justify-center size-4.5 rounded-full bg-emerald-500 text-xs font-medium text-white ">
+                                                {(step as { step: number }).step ?? index + 1}
                                             </div>
-                                            <Separator />
-                                            <div>
-                                                <p className="text-xs font-medium text-muted-foreground">预期结果</p>
-                                                <p className="mt-0.5 text-sm">
-                                                    {(step as { expected: string }).expected ?? "—"}
-                                                </p>
+                                            <div className="flex-1 grid grid-cols-2 gap-4 text-sm">
+                                                <div>
+                                                    <span className="text-xs text-muted-foreground">操作: </span>
+                                                    <span>{(step as { action: string }).action}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-xs text-muted-foreground">预期: </span>
+                                                    <span>{(step as { expected: string }).expected ?? "—"}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-muted-foreground/50 pl-8">暂无测试步骤</p>
+                                )}
                             </div>
-                        ) : (
-                            <p className="text-sm text-muted-foreground">暂无测试步骤</p>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
+                        </div>
 
-            {/* 预期结果 */}
-            <Card>
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-base">预期结果</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {testCase.expected_result ? (
-                        <p className="text-sm leading-relaxed text-muted-foreground">
-                            {testCase.expected_result}
-                        </p>
-                    ) : (
-                        <p className="text-sm text-muted-foreground">暂无预期结果</p>
-                    )}
-                </CardContent>
+                        {/* 预期结果 */}
+                        {testCase.expected_result && (
+                            <div>
+                                <div className="flex items-center gap-2  mb-2">
+                                    <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 text-xs">
+                                        预期结果
+                                    </Badge>
+                                </div>
+                                <div className="pl-4 text-sm text-muted-foreground">
+                                    {testCase.expected_result}
+                                </div>
+                            </div>
+                        )}
+                    </TabsContent>
+
+                    {/* 自动测试 */}
+                    <TabsContent value="auto" className="space-y-0">
+                        <ReactFlowProvider>
+                            <AutoTestCanvas />
+                        </ReactFlowProvider>
+                    </TabsContent>
+                </Tabs>
             </Card>
         </div>
     )
