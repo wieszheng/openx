@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useNavigate, useParams } from "react-router-dom"
 import {
     ArrowLeft,
     Calendar,
@@ -28,6 +29,7 @@ import { Badge } from "@/components/ui/badge"
 import { casesApi } from "@/lib/api"
 import type { TestCase } from "@/lib/api"
 import { useTheme } from "@/components/theme-provider"
+import { CaseEditDialog } from "@/components/case-edit-dialog"
 
 // 引入自动化节点相关
 import { nodeTypes } from "./automation/nodes/node-registry"
@@ -39,7 +41,7 @@ import {
 } from "./automation/nodes/types"
 
 interface CaseDetailPageProps {
-    caseId: string
+    caseId?: string
     onBack?: () => void
     onEdit?: (id: string) => void
     onExecute?: (id: string) => void
@@ -221,15 +223,22 @@ function AutoTestCanvas() {
 }
 
 export function CaseDetailPage({
-    caseId,
+    caseId: propCaseId,
     onBack,
     onEdit,
     onExecute,
 }: CaseDetailPageProps) {
+    const { id: paramId } = useParams<{ id: string }>()
+    const navigate = useNavigate()
+    const caseId = propCaseId ?? paramId ?? ""
+    const goBack = onBack ?? (() => navigate("/cases"))
+
     const [testCase, setTestCase] = useState<TestCase | null>(null)
     const [loading, setLoading] = useState(true)
+    const [isEditOpen, setIsEditOpen] = useState(false)
 
     useEffect(() => {
+        if (!caseId) return
         setLoading(true)
         casesApi.get(caseId)
             .then(setTestCase)
@@ -250,7 +259,7 @@ export function CaseDetailPage({
             <div className="flex h-[calc(100vh-8rem)] flex-col items-center justify-center gap-4">
                 <FileText className="size-12 text-muted-foreground/50" />
                 <p className="text-muted-foreground">未找到该用例</p>
-                <Button variant="outline" onClick={onBack}>
+                <Button variant="outline" onClick={goBack}>
                     <ArrowLeft className="mr-2 size-4" />
                     返回列表
                 </Button>
@@ -262,10 +271,11 @@ export function CaseDetailPage({
     const statusConfig = STATUS_CONFIG[testCase.status] ?? STATUS_CONFIG["正常运行"]
 
     return (
+        <>
         <div className="space-y-6">
             {/* 顶部导航 */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Button variant="ghost" size="sm" className="gap-1.5" onClick={onBack}>
+                <Button variant="ghost" size="sm" className="gap-1.5" onClick={goBack}>
                     <ArrowLeft className="size-4" />
                     返回
                 </Button>
@@ -290,7 +300,7 @@ export function CaseDetailPage({
                                 variant="outline"
                                 size="sm"
                                 className="gap-2"
-                                onClick={() => onEdit?.(testCase.id)}
+                                onClick={() => setIsEditOpen(true)}
                             >
                                 <Settings className="size-4" />
                                 编辑
@@ -486,5 +496,17 @@ export function CaseDetailPage({
                 </Tabs>
             </Card>
         </div>
+
+        {/* 编辑弹窗 */}
+        {testCase && (
+            <CaseEditDialog
+                open={isEditOpen}
+                onOpenChange={setIsEditOpen}
+                caseData={testCase}
+                directoryId={testCase.directory_id ?? ""}
+                onSuccess={(updated) => setTestCase(updated)}
+            />
+        )}
+        </>
     )
 }

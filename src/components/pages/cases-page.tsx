@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Folder, FolderOpen, FolderTree, Pencil, Plus, RotateCcw, Search, Trash2 } from "lucide-react"
 
+import { CaseEditDialog } from "@/components/case-edit-dialog"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -47,11 +49,8 @@ const STATUS_STYLES: Record<string, { dot: string; text: string }> = {
   "异常": { dot: "bg-red-500", text: "text-slate-600" },
 }
 
-interface CasesPageProps {
-  onViewCase?: (caseId: string) => void
-}
-
-export function CasesPage({ onViewCase }: CasesPageProps) {
+export function CasesPage() {
+  const navigate = useNavigate()
   // ── 数据状态 ────────────────────────────────────────────────
   const [groups, setGroups] = useState<Group[]>([])
   const [directories, setDirectories] = useState<Directory[]>([])
@@ -84,6 +83,10 @@ export function CasesPage({ onViewCase }: CasesPageProps) {
   const [createFolderGroupId, setCreateFolderGroupId] = useState<number | null>(null)
   const [renameFolderName, setRenameFolderName] = useState("")
   const [targetFolderId, setTargetFolderId] = useState<string | null>(null)
+
+  // ── 用例编辑状态 ───────────────────────────────────────────
+  const [isEditCaseOpen, setIsEditCaseOpen] = useState(false)
+  const [editingCase, setEditingCase] = useState<TestCase | null>(null)
 
   // ── 挂载：一次性加载所有 Groups + Directories ───────────────
   useEffect(() => {
@@ -416,6 +419,19 @@ export function CasesPage({ onViewCase }: CasesPageProps) {
                   </Button>
                 </div>
 
+                <div className="flex items-center gap-3">
+                  <Button
+                    className="gap-2"
+                    onClick={() => {
+                      setEditingCase(null)
+                      setIsEditCaseOpen(true)
+                    }}
+                  >
+                    <Plus className="size-4" />
+                    新建用例
+                  </Button>
+                </div>
+
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -464,14 +480,27 @@ export function CasesPage({ onViewCase }: CasesPageProps) {
                           <TableCell>{item.created_by ?? "—"}</TableCell>
                           <TableCell>{formatDate(item.updated_at)}</TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 px-2 text-primary"
-                              onClick={() => onViewCase?.(item.id)}
-                            >
-                              查看
-                            </Button>
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                                onClick={() => {
+                                  setEditingCase(item)
+                                  setIsEditCaseOpen(true)
+                                }}
+                              >
+                                编辑
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 px-2 text-primary"
+                                onClick={() => navigate(`/cases/${item.id}`)}
+                              >
+                                查看
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -633,6 +662,24 @@ export function CasesPage({ onViewCase }: CasesPageProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 用例编辑弹窗 */}
+      <CaseEditDialog
+        open={isEditCaseOpen}
+        onOpenChange={setIsEditCaseOpen}
+        caseData={editingCase}
+        directoryId={activeDirId || ""}
+        onSuccess={(newCase) => {
+          if (editingCase) {
+            // 编辑模式：更新列表中的用例
+            setCases((prev) => prev.map((c) => (c.id === newCase.id ? newCase : c)))
+          } else {
+            // 新建模式：添加到列表
+            setCases((prev) => [...prev, newCase])
+            setTotalRecords((prev) => prev + 1)
+          }
+        }}
+      />
     </section>
   )
 }
