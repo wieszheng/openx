@@ -114,6 +114,40 @@ export type CaseListParams = {
   page_size?: number
 }
 
+export type Script = {
+  id: string
+  case_id: string
+  nodes: Record<string, unknown>[]
+  edges: Record<string, unknown>[]
+  env_config: Record<string, unknown>
+  timeout_ms: number
+  retry_count: number
+  version: number
+  updated_at: string
+}
+
+export type ScriptSave = {
+  nodes: Record<string, unknown>[]
+  edges: Record<string, unknown>[]
+  env_config?: Record<string, unknown>
+  timeout_ms?: number
+  retry_count?: number
+}
+
+export const scriptsApi = {
+  get: (caseId: string) =>
+    request<Script>(`/api/cases/${caseId}/script`),
+
+  save: (caseId: string, data: ScriptSave) =>
+    request<Script>(`/api/cases/${caseId}/script`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (caseId: string) =>
+    request<void>(`/api/cases/${caseId}/script`, { method: "DELETE" }),
+}
+
 export const casesApi = {
   get: (id: string) =>
     request<TestCase>(`/api/cases/${id}`),

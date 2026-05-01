@@ -39,6 +39,7 @@ def get_case(case_id: str, db: Session = Depends(get_db)):
 
 
 
+@router.patch("/api/cases/{case_id}", response_model=schemas.TestCaseOut)
 def update_case(case_id: str, body: schemas.TestCaseUpdate, db: Session = Depends(get_db)):
     case = crud.update_case(db, case_id, body)
     if not case:

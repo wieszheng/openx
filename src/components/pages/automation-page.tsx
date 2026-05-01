@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react"
+import { useEffect, useMemo, useState, useCallback } from "react"
 import {
   Activity,
   Bot,
@@ -7,8 +7,10 @@ import {
   Clock3,
   Database,
   DatabaseZap,
+  FileText,
   Fingerprint,
   GripVertical,
+  Link2,
   MousePointer2,
   Move,
   Play,
@@ -40,6 +42,8 @@ import {
 import "@xyflow/react/dist/style.css"
 
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -55,6 +59,9 @@ import {
   type NodeCategory,
   type NodeKind,
 } from "./automation/nodes/types"
+import { CaseSelectorDialog } from "@/components/case-selector-dialog"
+import type { TestCase } from "@/lib/api"
+import { scriptsApi } from "@/lib/api"
 
 // ─── 分类颜色映射（用于边）───────────────────────────────────────────────────
 const CATEGORY_EDGE_COLORS: Record<NodeCategory, string> = {
@@ -340,8 +347,30 @@ function AutomationWorkbench() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [nodeConfigOpen, setNodeConfigOpen] = useState(false)
+  const [boundCase, setBoundCase] = useState<TestCase | null>(null)
+  const [selectorOpen, setSelectorOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
   const { screenToFlowPosition } = useReactFlow()
   const { theme } = useTheme()
+
+  // 切换关联用例时，从后端加载脚本
+  useEffect(() => {
+    if (!boundCase) {
+      setNodes(initialNodes)
+      setEdges(initialEdges)
+      return
+    }
+    scriptsApi.get(boundCase.id)
+      .then((script) => {
+        setNodes(script.nodes as Node<AnyNodeData>[])
+        setEdges(script.edges as Edge[])
+      })
+      .catch(() => {
+        // 404 表示还没有脚本，保持空白画布
+        setNodes([])
+        setEdges([])
+      })
+  }, [boundCase?.id])
 
   const selectedNode = useMemo(
     () => nodes.find((n) => n.id === selectedNodeId) ?? null,
@@ -368,6 +397,19 @@ function AutomationWorkbench() {
     setSelectedNodeId(newId)
     setNodeConfigOpen(true)
   }, [nodes.length, setNodes])
+
+  const handleSave = useCallback(async () => {
+    if (!boundCase || saving) return
+    setSaving(true)
+    try {
+      await scriptsApi.save(boundCase.id, {
+        nodes: nodes as unknown as Record<string, unknown>[],
+        edges: edges as unknown as Record<string, unknown>[],
+      })
+    } finally {
+      setSaving(false)
+    }
+  }, [boundCase, saving, nodes, edges])
 
   const onConnect = useCallback((connection: Connection) => {
     // 根据源节点类型获取边颜色
@@ -429,94 +471,207 @@ function AutomationWorkbench() {
   }, [screenToFlowPosition, setNodes])
 
   return (
-    <div className="flex h-full w-full overflow-hidden rounded-xl border bg-muted/20">
-      {/* 左侧节点库 */}
-      <NodeLibraryPanel onAddNode={addTemplateNode} onDragStart={onDragStart} />
+    <div className="flex h-full flex-col space-y-4">
 
-      {/* 画布区域 */}
-      <div className="relative flex-1 overflow-hidden">
-        {/* 工具栏 */}
-        <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button size="icon-xs" variant="outline" className="size-8 bg-background/90 backdrop-blur-sm shadow-sm">
-                <Settings className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>流程设置</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button size="icon-xs" variant="outline" className="size-8 bg-background/90 backdrop-blur-sm shadow-sm">
-                <Save className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>保存草稿</TooltipContent>
-          </Tooltip>
-          <Button size="sm" className="h-8 gap-1.5 px-3 shadow-sm">
-            <Play className="size-3.5 fill-current" />
-            运行流程
-          </Button>
-        </div>
+      {/* ── 用例绑定区（画布外） ─────────────────────────────────── */}
+      <Card className="p-3">
+        {boundCase ? (
+          <div className="flex items-center gap-2">
+            {/* 图标 */}
+            <FileText className="size-4 shrink-0 text-primary" />
 
-        {/* ReactFlow */}
-        <div className="absolute inset-0" >
-          <ReactFlow<Node<AnyNodeData>, Edge>
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            defaultEdgeOptions={{
-              type: "bezier",
-              style: { strokeWidth: 2, strokeDasharray: "5,5" },
-              animated: true,
-            }}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeClick={handleNodeClick}
-            onPaneClick={() => {
-              setNodeConfigOpen(false)
-              setSelectedNodeId(null)
-            }}
-            colorMode={theme}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-            fitView
-            snapToGrid
-            snapGrid={[16, 16]}
-            deleteKeyCode={["Backspace", "Delete"]}
-          >
-            <Background gap={12} />
-            {nodes.length === 0 && (
-              <Panel position="top-center" className="!inset-0 !transform-none flex flex-col items-center justify-center gap-3 pointer-events-none select-none">
-                <div className="flex size-16 items-center justify-center rounded-2xl border-2 border-dashed border-border bg-muted/40">
-                  <Workflow className="size-7 text-muted-foreground/50" />
+            {/* 用例信息 */}
+            <div className="flex flex-1 items-center gap-3 min-w-0">
+              {/* 名称 */}
+              <span className="max-w-[260px] truncate text-sm font-semibold">
+                {boundCase.name}
+              </span>
+
+              {/* 优先级 */}
+              <Badge
+                variant="outline"
+                className={`shrink-0 font-mono text-[11px] ${
+                  boundCase.priority === "P0" ? "bg-red-100 text-red-700 border-red-200" :
+                  boundCase.priority === "P1" ? "bg-orange-100 text-orange-700 border-orange-200" :
+                  boundCase.priority === "P2" ? "bg-blue-100 text-blue-700 border-blue-200" :
+                  "bg-gray-100 text-gray-700 border-gray-200"
+                }`}
+              >
+                {boundCase.priority}
+              </Badge>
+
+              {/* 状态 */}
+              <div className="flex shrink-0 items-center gap-1.5">
+                <span className={`size-1.5 rounded-full ${
+                  boundCase.status === "正常运行" ? "bg-emerald-500" :
+                  boundCase.status === "调试中"   ? "bg-blue-500" :
+                  "bg-slate-400"
+                }`} />
+                <span className="text-xs text-muted-foreground">{boundCase.status}</span>
+              </div>
+
+              {/* 分隔 */}
+              <span className="text-muted-foreground/50">·</span>
+
+              {/* 创建人 */}
+              {boundCase.created_by && (
+                <span className="shrink-0 text-xs text-muted-foreground">{boundCase.created_by}</span>
+              )}
+
+              {/* 标签 */}
+              {boundCase.tags.length > 0 && (
+                <div className="flex items-center gap-1 overflow-hidden">
+                  {boundCase.tags.slice(0, 3).map((tag) => (
+                    <Badge key={tag} variant="secondary" className="h-4 px-1.5 text-[10px]">
+                      {tag}
+                    </Badge>
+                  ))}
+                  {boundCase.tags.length > 3 && (
+                    <span className="text-[10px] text-muted-foreground">+{boundCase.tags.length - 3}</span>
+                  )}
                 </div>
-                <div className="text-center">
-                  <p className="text-sm font-medium text-muted-foreground">画布为空</p>
-                  <p className="mt-1 text-xs text-muted-foreground/60">从左侧节点库拖拽或点击节点开始编排</p>
-                </div>
-              </Panel>
-            )}
-            <MiniMap
-              pannable
-              zoomable
-              position="bottom-left"
-              nodeBorderRadius={20}
-              nodeColor={(node) => getEdgeColorByNodeKind(node.type ?? "")}
-            />
-          </ReactFlow>
-        </div>
+              )}
+            </div>
 
-        {/* 右侧配置面板 */}
-        <ConfigPanel
-          node={selectedNode as { id: string; type: string; data: AnyNodeData } | null}
-          isOpen={nodeConfigOpen}
-          onClose={() => setNodeConfigOpen(false)}
-          onDelete={deleteSelectedNode}
-          onUpdate={updateNodeData}
-        />
+            {/* 操作 */}
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1 text-[13px] text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+                onClick={() => setSelectorOpen(true)}
+              >
+                <Link2 className="size-4" />
+                更换
+              </button>
+              <button
+                type="button"
+                className="text-muted-foreground/40 hover:text-destructive"
+                onClick={() => setBoundCase(null)}
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <FileText className="size-4 text-muted-foreground" />
+            <span className="text-[13px] text-muted-foreground">当前工作流未关联用例</span>
+            <button
+              type="button"
+              className="ml-auto flex items-center gap-1.5 rounded-md border border-dashed border-muted-foreground/40 px-3 py-1 text-[13px] text-muted-foreground transition-colors hover:border-primary/60 hover:text-primary"
+              onClick={() => setSelectorOpen(true)}
+            >
+              <Link2 className="size-4" />
+              关联用例
+            </button>
+          </div>
+        )}
+      </Card>
+
+      {/* ── 画布主体 ────────────────────────────────────────────── */}
+      <div className="flex flex-1 overflow-hidden rounded-xl border bg-muted/20">
+        {/* 左侧节点库 */}
+        <NodeLibraryPanel onAddNode={addTemplateNode} onDragStart={onDragStart} />
+
+        {/* 画布区域 */}
+        <div className="relative flex-1 overflow-hidden">
+          {/* 悬浮工具栏（还原原始位置） */}
+          <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="icon-xs" variant="outline" className="size-8 bg-background/90 backdrop-blur-sm shadow-sm">
+                  <Settings className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>流程设置</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon-xs"
+                  variant="outline"
+                  className="size-8 bg-background/90 backdrop-blur-sm shadow-sm"
+                  disabled={!boundCase || saving}
+                  onClick={handleSave}
+                >
+                  <Save className={cn("size-3.5", saving && "animate-spin")} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>保存草稿</TooltipContent>
+            </Tooltip>
+            <Button size="sm" className="h-8 gap-1.5 px-3 shadow-sm">
+              <Play className="size-3.5 fill-current" />
+              运行流程
+            </Button>
+          </div>
+
+          {/* ReactFlow */}
+          <div className="absolute inset-0">
+            <ReactFlow<Node<AnyNodeData>, Edge>
+              nodes={nodes}
+              edges={edges}
+              nodeTypes={nodeTypes}
+              defaultEdgeOptions={{
+                type: "bezier",
+                style: { strokeWidth: 2, strokeDasharray: "5,5" },
+                animated: true,
+              }}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onNodeClick={handleNodeClick}
+              onPaneClick={() => {
+                setNodeConfigOpen(false)
+                setSelectedNodeId(null)
+              }}
+              colorMode={theme}
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+              fitView
+              snapToGrid
+              snapGrid={[16, 16]}
+              deleteKeyCode={["Backspace", "Delete"]}
+            >
+              <Background gap={12} />
+              {nodes.length === 0 && (
+                <Panel position="top-center" className="!inset-0 !transform-none flex flex-col items-center justify-center gap-3 pointer-events-none select-none">
+                  <div className="flex size-16 items-center justify-center rounded-2xl border-2 border-dashed border-border bg-muted/40">
+                    <Workflow className="size-7 text-muted-foreground/50" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-muted-foreground">画布为空</p>
+                    <p className="mt-1 text-xs text-muted-foreground/60">从左侧节点库拖拽或点击节点开始编排</p>
+                  </div>
+                </Panel>
+              )}
+              <MiniMap
+                pannable
+                zoomable
+                position="bottom-left"
+                nodeBorderRadius={20}
+                nodeColor={(node) => getEdgeColorByNodeKind(node.type ?? "")}
+              />
+            </ReactFlow>
+          </div>
+
+          {/* 右侧配置面板 */}
+          <ConfigPanel
+            node={selectedNode as { id: string; type: string; data: AnyNodeData } | null}
+            isOpen={nodeConfigOpen}
+            onClose={() => setNodeConfigOpen(false)}
+            onDelete={deleteSelectedNode}
+            onUpdate={updateNodeData}
+          />
+        </div>
       </div>
+
+      {/* 用例选择器 */}
+      <CaseSelectorDialog
+        open={selectorOpen}
+        onOpenChange={setSelectorOpen}
+        currentCase={boundCase}
+        onSelect={setBoundCase}
+      />
     </div>
   )
 }

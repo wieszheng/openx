@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, ConfigDict
-from .models import StatusEnum, CasePriority
+from .models import StatusEnum, CasePriority, TaskStatus, NodeStatus, CaseType
 
 
 # ── CaseGroup ─────────────────────────────────────────────────────────────
@@ -90,3 +90,83 @@ class PaginatedTestCases(BaseModel):
     page:      int
     page_size: int
     items:     list[TestCaseOut]
+
+
+# ── AutomationScript ──────────────────────────────────────────────────────
+
+class ScriptSave(BaseModel):
+    """创建或全量更新脚本（PUT 语义）"""
+    nodes:       list[dict] = []
+    edges:       list[dict] = []
+    env_config:  dict = {}
+    timeout_ms:  int = 60_000
+    retry_count: int = 0
+    created_by:  Optional[str] = None
+
+class ScriptOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id:          str
+    case_id:     str
+    nodes:       list
+    edges:       list
+    env_config:  dict
+    timeout_ms:  int
+    retry_count: int
+    version:     int
+    updated_at:  datetime
+
+
+# ── TaskRun ───────────────────────────────────────────────────────────────
+
+class RunCreate(BaseModel):
+    triggered_by: Optional[str] = None
+    env_snapshot: dict = {}
+
+class RunStatusUpdate(BaseModel):
+    status:      TaskStatus
+    started_at:  Optional[datetime] = None
+    ended_at:    Optional[datetime] = None
+    duration_ms: Optional[int] = None
+    error_msg:   Optional[str] = None
+
+class NodeResultOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id:             str
+    node_id:        str
+    node_type:      str
+    exec_order:     int
+    desc:           str
+    status:         NodeStatus
+    output:         dict
+    duration_ms:    Optional[int]
+    screenshot_url: Optional[str]
+    error_msg:      Optional[str]
+
+class RunOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id:             str
+    case_id:        str
+    script_id:      Optional[str]
+    serial:         Optional[str]
+    status:         TaskStatus
+    script_version: int
+    env_snapshot:   dict
+    started_at:     Optional[datetime]
+    ended_at:       Optional[datetime]
+    duration_ms:    Optional[int]
+    error_msg:      Optional[str]
+    triggered_by:   Optional[str]
+    node_results:   list[NodeResultOut] = []
+
+class PaginatedRuns(BaseModel):
+    total:     int
+    page:      int
+    page_size: int
+    items:     list[RunOut]
+
+
+# ── NodeResult ────────────────────────────────────────────────────────────
+
+class NodeResultBulkCreate(BaseModel):
+    """批量上报节点执行结果"""
+    results: list[dict]
