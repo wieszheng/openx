@@ -377,8 +377,8 @@ export function CasesPage() {
           <ResizableHandle withHandle />
 
           <ResizablePanel defaultSize="76%">
-            <Card className="h-full rounded-none border-none shadow-none">
-              <CardHeader>
+            <Card className="flex h-full flex-col rounded-none border-none shadow-none">
+              <CardHeader className="shrink-0">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <span>项目</span>
                   <span>/</span>
@@ -388,8 +388,9 @@ export function CasesPage() {
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-4 pt-1">
-                <div className="grid gap-3 md:grid-cols-[1.5fr_1fr_auto_auto]">
+              <CardContent className="flex flex-1 flex-col gap-4 overflow-hidden pt-1">
+                {/* 筛选栏 */}
+                <div className="shrink-0 grid gap-3 md:grid-cols-[1.5fr_1fr_auto_auto]">
                   <Input
                     placeholder="输入用例名称"
                     value={keyword}
@@ -419,7 +420,7 @@ export function CasesPage() {
                   </Button>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="shrink-0 flex items-center gap-3">
                   <Button
                     className="gap-2"
                     onClick={() => {
@@ -432,6 +433,8 @@ export function CasesPage() {
                   </Button>
                 </div>
 
+                {/* 表格：flex-1 + overflow-y-auto 确保内容超出时可滚动 */}
+                <div className="flex-1 overflow-y-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -507,10 +510,11 @@ export function CasesPage() {
                     )}
                   </TableBody>
                 </Table>
+                </div>
 
-                {/* 分页 */}
+                {/* 分页：固定在内容区底部，不随表格滚动 */}
                 {totalRecords > 0 && (
-                  <div className="flex items-center justify-between border-t px-4 py-3">
+                  <div className="shrink-0 flex items-center justify-between border-t px-4 py-3">
                     <p className="text-sm text-muted-foreground">
                       共 <span className="font-medium text-foreground">{totalRecords}</span> 条记录
                     </p>

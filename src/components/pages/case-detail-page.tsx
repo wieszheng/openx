@@ -14,7 +14,6 @@ import {
 } from "lucide-react"
 import {
     Background,
-    MarkerType,
     MiniMap,
     type Edge,
     type Node,
@@ -26,7 +25,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { casesApi } from "@/lib/api"
+import { casesApi, scriptsApi } from "@/lib/api"
 import type { TestCase } from "@/lib/api"
 import { useTheme } from "@/components/theme-provider"
 import { CaseEditDialog } from "@/components/case-edit-dialog"
@@ -85,138 +84,83 @@ function formatDateTime(iso: string) {
     return iso.replace("T", " ").slice(0, 19)
 }
 
-// ─── Mock 自动测试流程数据 ────────────────────────────────────────────────────
-const MOCK_AUTO_TEST_NODES: Node<AnyNodeData>[] = [
-    {
-        id: "n1",
-        type: "webhookTrigger",
-        position: { x: 100, y: 200 },
-        data: { kind: "webhookTrigger", label: "接收任务事件", status: "已配置", webhookUrl: "https://api.openx.com/hook/v1/trigger/a1b2c3d4" },
-    },
-    {
-        id: "n2",
-        type: "appLaunch",
-        position: { x: 400, y: 200 },
-        data: { kind: "appLaunch", label: "启动测试应用", status: "已配置", packageName: "com.example.app", launchType: "warm" },
-    },
-    {
-        id: "n3",
-        type: "uiClick",
-        position: { x: 700, y: 200 },
-        data: { kind: "uiClick", label: "点击登录按钮", status: "已配置", selector: "//android.widget.Button[@text='登录']" },
-    },
-    {
-        id: "n4",
-        type: "uiInput",
-        position: { x: 700, y: 400 },
-        data: { kind: "uiInput", label: "输入用户名", status: "已配置", selector: "//android.widget.EditText[@hint='用户名']", inputText: "test_user" },
-    },
-    {
-        id: "n5",
-        type: "assertExists",
-        position: { x: 1000, y: 300 },
-        data: { kind: "assertExists", label: "断言首页加载", status: "已配置", selector: "//android.widget.TextView[@text='首页']" },
-    },
-]
-
-const MOCK_AUTO_TEST_EDGES: Edge[] = [
-    {
-        id: "e1-2",
-        source: "n1",
-        target: "n2",
-        type: "bezier",
-        markerEnd: { type: MarkerType.ArrowClosed },
-        style: { stroke: CATEGORY_EDGE_COLORS.trigger, strokeWidth: 2, strokeDasharray: "5,5" },
-        animated: true,
-    },
-    {
-        id: "e2-3",
-        source: "n2",
-        target: "n3",
-        type: "bezier",
-        markerEnd: { type: MarkerType.ArrowClosed },
-        style: { stroke: CATEGORY_EDGE_COLORS.appUi, strokeWidth: 2, strokeDasharray: "5,5" },
-        animated: true,
-    },
-    {
-        id: "e2-4",
-        source: "n2",
-        target: "n4",
-        type: "bezier",
-        markerEnd: { type: MarkerType.ArrowClosed },
-        style: { stroke: CATEGORY_EDGE_COLORS.appUi, strokeWidth: 2, strokeDasharray: "5,5" },
-        animated: true,
-    },
-    {
-        id: "e3-5",
-        source: "n3",
-        target: "n5",
-        type: "bezier",
-        markerEnd: { type: MarkerType.ArrowClosed },
-        style: { stroke: CATEGORY_EDGE_COLORS.appUi, strokeWidth: 2, strokeDasharray: "5,5" },
-        animated: true,
-    },
-    {
-        id: "e4-5",
-        source: "n4",
-        target: "n5",
-        type: "bezier",
-        markerEnd: { type: MarkerType.ArrowClosed },
-        style: { stroke: CATEGORY_EDGE_COLORS.appUi, strokeWidth: 2, strokeDasharray: "5,5" },
-        animated: true,
-    },
-]
-
 // ─── 自动测试画布组件（只读）────────────────────────────────────────────────────
-function AutoTestCanvas() {
+function AutoTestCanvas({ caseId }: { caseId: string }) {
     const { theme } = useTheme()
+    const [nodes, setNodes] = useState<Node<AnyNodeData>[]>([])
+    const [edges, setEdges] = useState<Edge[]>([])
+    const [loaded, setLoaded] = useState(false)
+    const [hasScript, setHasScript] = useState(false)
+
+    useEffect(() => {
+        if (!caseId) return
+        scriptsApi.get(caseId)
+            .then((script) => {
+                setNodes(script.nodes as Node<AnyNodeData>[])
+                setEdges(script.edges as Edge[])
+                setHasScript(true)
+            })
+            .catch(() => {
+                setNodes([])
+                setEdges([])
+                setHasScript(false)
+            })
+            .finally(() => setLoaded(true))
+    }, [caseId])
 
     return (
-        <div className="flex h-[600px] w-full overflow-hidden rounded-lg border bg-muted/20">
-            {/* 画布区域 - 只读 */}
+        <div className="flex h-[500px] w-full overflow-hidden rounded-lg border bg-muted/20">
             <div className="relative flex-1 overflow-hidden">
-                <ReactFlow<Node<AnyNodeData>, Edge>
-                    nodes={MOCK_AUTO_TEST_NODES}
-                    edges={MOCK_AUTO_TEST_EDGES}
-                    nodeTypes={nodeTypes}
-                    defaultEdgeOptions={{
-                        type: "bezier",
-                        style: { strokeWidth: 2, strokeDasharray: "5,5" },
-                        animated: true,
-                    }}
-                    colorMode={theme}
-                    fitView
-                    fitViewOptions={{ padding: 0.2 }}
-                    snapToGrid
-                    snapGrid={[16, 16]}
-                    // 禁用所有交互
-                    nodesDraggable={false}
-                    nodesConnectable={false}
-                    elementsSelectable={false}
-                    zoomOnScroll={true}
-                    zoomOnPinch={true}
-                    panOnScroll={false}
-                    panOnDrag={true}
-                    selectionOnDrag={false}
-                    selectNodesOnDrag={false}
-                >
-                    <Background gap={12} />
-                    <MiniMap
-                        pannable
-                        zoomable
-                        position="bottom-left"
-                        nodeBorderRadius={20}
-                        nodeColor={(node) => getEdgeColorByNodeKind(node.type ?? "")}
-                    />
-                </ReactFlow>
+                {loaded && !hasScript ? (
+                    <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
+                        <Workflow className="size-10 opacity-30" />
+                        <p className="text-sm">该用例暂无自动化脚本</p>
+                    </div>
+                ) : (
+                    <ReactFlow<Node<AnyNodeData>, Edge>
+                        nodes={nodes}
+                        edges={edges}
+                        nodeTypes={nodeTypes}
+                        defaultEdgeOptions={{
+                            type: "bezier",
+                            style: { strokeWidth: 2, strokeDasharray: "5,5" },
+                            animated: true,
+                        }}
+                        colorMode={theme}
+                        fitView
+                        fitViewOptions={{ padding: 0.2 }}
+                        snapToGrid
+                        snapGrid={[16, 16]}
+                        nodesDraggable={false}
+                        nodesConnectable={false}
+                        elementsSelectable={false}
+                        zoomOnScroll={true}
+                        zoomOnPinch={true}
+                        panOnScroll={false}
+                        panOnDrag={true}
+                        selectionOnDrag={false}
+                        selectNodesOnDrag={false}
+                    >
+                        <Background gap={12} />
+                        <MiniMap
+                            pannable
+                            zoomable
+                            position="bottom-left"
+                            nodeBorderRadius={20}
+                            nodeColor={(node) => getEdgeColorByNodeKind(node.type ?? "")}
+                        />
+                    </ReactFlow>
+                )}
 
                 {/* 只读提示 */}
-                <div className="absolute left-3 top-3 z-20">
-                    <Badge variant="secondary" className="text-[10px] h-6 gap-1">
-                        <Workflow className="size-3" />
-                        只读模式
-                    </Badge>
-                </div>
+                {loaded && hasScript && (
+                    <div className="absolute left-3 top-3 z-20">
+                        <Badge variant="secondary" className="text-[10px] h-6 gap-1">
+                            <Workflow className="size-3" />
+                            只读模式
+                        </Badge>
+                    </div>
+                )}
             </div>
         </div>
     )
@@ -304,6 +248,15 @@ export function CaseDetailPage({
                             >
                                 <Settings className="size-4" />
                                 编辑
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-2"
+                                onClick={() => navigate(`/automation?caseId=${testCase.id}`)}
+                            >
+                                <Workflow className="size-4" />
+                                自动化
                             </Button>
                             <Button
                                 size="sm"
@@ -490,7 +443,7 @@ export function CaseDetailPage({
                     {/* 自动测试 */}
                     <TabsContent value="auto" className="space-y-0">
                         <ReactFlowProvider>
-                            <AutoTestCanvas />
+                            <AutoTestCanvas caseId={testCase.id} />
                         </ReactFlowProvider>
                     </TabsContent>
                 </Tabs>

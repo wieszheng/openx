@@ -61,7 +61,18 @@ import {
 } from "./automation/nodes/types"
 import { CaseSelectorDialog } from "@/components/case-selector-dialog"
 import type { TestCase } from "@/lib/api"
-import { scriptsApi } from "@/lib/api"
+import { casesApi, scriptsApi } from "@/lib/api"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useSearchParams } from "react-router-dom"
 
 // ─── 分类颜色映射（用于边）───────────────────────────────────────────────────
 const CATEGORY_EDGE_COLORS: Record<NodeCategory, string> = {
@@ -350,8 +361,18 @@ function AutomationWorkbench() {
   const [boundCase, setBoundCase] = useState<TestCase | null>(null)
   const [selectorOpen, setSelectorOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [pendingCase, setPendingCase] = useState<TestCase | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const { screenToFlowPosition } = useReactFlow()
   const { theme } = useTheme()
+  const [searchParams] = useSearchParams()
+
+  // URL 参数 caseId 自动绑定用例（从详情页跳转）
+  useEffect(() => {
+    const caseId = searchParams.get("caseId")
+    if (!caseId) return
+    casesApi.get(caseId).then((c) => setBoundCase(c)).catch(() => {})
+  }, [searchParams])
 
   // 切换关联用例时，从后端加载脚本
   useEffect(() => {
@@ -366,10 +387,20 @@ function AutomationWorkbench() {
         setEdges(script.edges as Edge[])
       })
       .catch(() => {
-        // 404 表示还没有脚本，保持空白画布
         setNodes([])
         setEdges([])
       })
+  }, [boundCase?.id])
+
+  // 选择新用例：若新用例已有脚本则弹确认框
+  const handleCaseSelect = useCallback((newCase: TestCase) => {
+    if (newCase.id === boundCase?.id) return
+    if (newCase.is_automated) {
+      setPendingCase(newCase)
+      setConfirmOpen(true)
+    } else {
+      setBoundCase(newCase)
+    }
   }, [boundCase?.id])
 
   const selectedNode = useMemo(
@@ -670,8 +701,29 @@ function AutomationWorkbench() {
         open={selectorOpen}
         onOpenChange={setSelectorOpen}
         currentCase={boundCase}
-        onSelect={setBoundCase}
+        onSelect={handleCaseSelect}
       />
+
+      {/* 切换用例确认弹窗（新用例已有脚本时） */}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>切换关联用例</AlertDialogTitle>
+            <AlertDialogDescription>
+              用例「{pendingCase?.name}」已有自动化脚本，切换后将加载其脚本并覆盖当前画布内容，是否继续？
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingCase(null)}>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (pendingCase) setBoundCase(pendingCase)
+              setPendingCase(null)
+            }}>
+              确认切换
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
