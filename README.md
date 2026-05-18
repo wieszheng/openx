@@ -1,4 +1,4 @@
-# electron-vite
+# openx
 
 An Electron application with React, TypeScript, Vite, and shadcn/ui.
 
@@ -31,26 +31,26 @@ src/
 ### Install Dependencies
 
 ```bash
-pnpm install
+npm install
 ```
 
 ### Development
 
 ```bash
-pnpm dev
+npm dev
 ```
 
 ### Build
 
 ```bash
 # For Windows
-pnpm build:win
+npm build:win
 
 # For macOS
-pnpm build:mac
+npm build:mac
 
 # For Linux
-pnpm build:linux
+npm build:linux
 ```
 
 ### Adding shadcn Components
