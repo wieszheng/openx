@@ -2,14 +2,16 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   Search,
   Smartphone,
-  Play,
   Pause,
   Trash2,
   RefreshCw,
   Grid3X3,
   List,
   Loader2,
-  MoreVertical
+  MoreVertical,
+  Rocket,
+  Info,
+  Download
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -138,52 +140,22 @@ export function AppsPage(): React.JSX.Element {
     return app.name.toLowerCase().includes(q) || app.packageName.toLowerCase().includes(q)
   })
 
-  const renderActions = (app: DeviceApp, compact = false) => {
+  const renderActions = (app: DeviceApp) => {
     const busy = actionKey?.endsWith(`:${app.packageName}`) ?? false
-    const btnClass = compact ? 'h-7 w-7' : 'h-8 w-8'
-    const iconClass = compact ? 'w-3.5 h-3.5' : 'w-4 h-4'
 
     return (
-      <div className={`flex items-center ${compact ? 'gap-1' : 'justify-end gap-1'}`}>
-        <Button
-          variant="ghost"
-          size="icon"
-          className={btnClass}
-          title="启动"
-          disabled={busy || loading}
-          onClick={() => void handleStart(app)}
-        >
-          {actionKey === `start:${app.packageName}` ? (
-            <Loader2 className={`${iconClass} animate-spin`} />
-          ) : (
-            <Play className={iconClass} />
-          )}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className={btnClass}
-          title="停止"
-          disabled={busy || loading}
-          onClick={() => void handleStop(app)}
-        >
-          {actionKey === `stop:${app.packageName}` ? (
-            <Loader2 className={`${iconClass} animate-spin`} />
-          ) : (
-            <Pause className={iconClass} />
-          )}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className={btnClass}
-          title="卸载"
-          disabled={busy || loading}
-          onClick={() => setUninstallTarget(app)}
-        >
-          <Trash2 className={`${iconClass} text-destructive`} />
-        </Button>
-      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8" disabled={busy || loading}>
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <MoreVertical className="h-4 w-4" />
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">{renderMenuActions(app)}</DropdownMenuContent>
+      </DropdownMenu>
     )
   }
 
@@ -192,12 +164,20 @@ export function AppsPage(): React.JSX.Element {
     return (
       <>
         <DropdownMenuItem disabled={busy || loading} onSelect={() => void handleStart(app)}>
-          <Play className="mr-2 h-4 w-4" />
+          <Rocket className="mr-1 h-4 w-4" />
           启动
         </DropdownMenuItem>
         <DropdownMenuItem disabled={busy || loading} onSelect={() => void handleStop(app)}>
-          <Pause className="mr-2 h-4 w-4" />
+          <Pause className="mr-1 h-4 w-4" />
           停止
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          disabled={busy || loading}
+          onSelect={() => toast.info('导出 APK 功能开发中...')}
+        >
+          <Download className="mr-1 h-4 w-4" />
+          导出APK
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -205,8 +185,13 @@ export function AppsPage(): React.JSX.Element {
           onSelect={() => setUninstallTarget(app)}
           className="text-destructive"
         >
-          <Trash2 className="mr-2 h-4 w-4" />
+          <Trash2 className="mr-1 h-4 w-4" />
           卸载
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem disabled={busy} onSelect={() => toast.info('详细信息功能开发中...')}>
+          <Info className="mr-1 h-4 w-4" />
+          详细信息
         </DropdownMenuItem>
       </>
     )
@@ -283,7 +268,7 @@ export function AppsPage(): React.JSX.Element {
                   <TableHead>应用</TableHead>
                   <TableHead>包名</TableHead>
                   <TableHead>版本</TableHead>
-                  <TableHead className="w-[150px] text-right">操作</TableHead>
+                  <TableHead>操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -317,7 +302,7 @@ export function AppsPage(): React.JSX.Element {
                           </span>
                         ) : null}
                       </TableCell>
-                      <TableCell className="text-right">{renderActions(app)}</TableCell>
+                      <TableCell>{renderActions(app)}</TableCell>
                     </TableRow>
                   )
                 })}
@@ -369,7 +354,7 @@ export function AppsPage(): React.JSX.Element {
                             <MoreVertical className="h-3 w-3" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-28">
+                        <DropdownMenuContent align="end">
                           {renderMenuActions(app)}
                         </DropdownMenuContent>
                       </DropdownMenu>
