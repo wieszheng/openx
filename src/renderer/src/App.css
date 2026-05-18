@@ -45,7 +45,21 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
-}
+    --animate-gradient: gradient 8s linear infinite;
+    --shiny-width: 0.15em;
+    --bg-size: 300%;
+  @keyframes gradient {
+  to {
+    background-position: var(--bg-size, 300%) 0;
+        }
+    }
+  --animate-shiny-text: shiny-text 8s infinite
+;
+  @keyframes shiny-text {
+  0%, 90%, 100% {
+    background-position: calc(-100% - var(--shiny-width)) 0;}
+  30%, 60% {
+    background-position: calc(100% + var(--shiny-width)) 0;}}}
 
 :root {
     --background: oklch(1 0 0);
@@ -124,7 +138,6 @@
     @apply bg-background text-foreground;
   }
 }
-
 
 /* 无边框窗口拖拽区域 */
 .drag-region {

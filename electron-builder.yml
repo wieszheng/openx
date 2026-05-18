@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: electron-vite
+appId: com.openx.app
+productName: OpenX
 directories:
   buildResources: build
 files:
@@ -11,8 +11,13 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - resources/**
+extraResources:
+  - from: resources/toolkit
+    to: toolkit
+    filter:
+      - '**/*'
 win:
-  executableName: electron-vite
+  executableName: openx
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
