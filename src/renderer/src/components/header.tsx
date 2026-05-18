@@ -11,9 +11,9 @@ import {
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { useTheme } from 'next-themes'
-import { useDevicesStore } from '../stores/devices'
+import { useDevicesStore } from '@/stores/devices'
 import type { UnifiedDevice } from '../../../shared/unified-device'
-import { AnimatedGradientText } from './ui/animated-gradient-text'
+import { AnimatedGradientText } from '@/components/ui/animated-gradient-text'
 import { AnimatedShinyText } from '@/components/ui/animated-shiny-text'
 
 /**
@@ -112,7 +112,7 @@ export function Header(): React.JSX.Element {
         <button
           type="button"
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="flex items-center gap-2 px-3 py-1 transition-colors max-w-[min(100vw-12rem,22rem)] text-left"
+          className="flex items-center gap-2 px-3 mt-2 transition-colors max-w-[min(100vw-12rem,22rem)] text-left"
         >
           <ChevronsUpDown className="w-4.5 h-4.5 text-muted-foreground shrink-0 self-center" />
           <span className="min-w-0 flex flex-col gap-0.5" title={headerTitle}>

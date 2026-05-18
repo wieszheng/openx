@@ -5,6 +5,7 @@ import { DashboardPage } from '@/pages/dashboard'
 import { GlobalVariablesPage } from '@/pages/global-variables'
 import { Toaster } from 'sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { AppsPage } from '@/pages/apps'
 
 function App(): React.JSX.Element {
   const [activeMenu, setActiveMenu] = useState('home')
@@ -13,6 +14,8 @@ function App(): React.JSX.Element {
     switch (activeMenu) {
       case 'global-variables':
         return <GlobalVariablesPage />
+      case 'apps':
+        return <AppsPage />
       case 'home':
       default:
         return <DashboardPage />

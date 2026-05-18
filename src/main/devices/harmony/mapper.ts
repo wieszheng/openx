@@ -1,4 +1,4 @@
-import type { UnifiedDevice } from '../types'
+import type { UnifiedDevice } from '../../../shared/unified-device'
 import { getHdcClient } from './client'
 
 /** 从软件版本字符串解析 OpenHarmony 版本号 */

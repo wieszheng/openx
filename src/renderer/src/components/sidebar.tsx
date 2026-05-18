@@ -1,4 +1,4 @@
-import { Home, Settings, Key, ArrowDownWideNarrow } from 'lucide-react'
+import { Home, Settings, Key, ArrowDownWideNarrow, LayoutPanelLeft } from 'lucide-react'
 
 interface MenuItem {
   id: string
@@ -8,6 +8,7 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { id: 'home', icon: <Home className="w-5 h-5" />, label: '首页' },
+  { id: 'apps', icon: <LayoutPanelLeft className="w-5 h-5" />, label: '应用列表' },
   { id: 'global-variables', icon: <Key className="w-5 h-5" />, label: '全局变量' }
 ]
 

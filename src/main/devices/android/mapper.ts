@@ -1,6 +1,7 @@
 import type { Device } from '@devicefarmer/adbkit'
-import type { UnifiedDevice, UnifiedDeviceState } from '../types'
+
 import { getAdbClient } from './client'
+import { UnifiedDevice, UnifiedDeviceState } from '../../../shared/unified-device'
 
 /** ADB 设备类型映射为统一状态 */
 function mapAdbType(type: Device['type']): UnifiedDeviceState {

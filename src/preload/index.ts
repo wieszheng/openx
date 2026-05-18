@@ -1,5 +1,13 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { IPC } from '../shared/ipc-channels'
+import type {
+  AppActionResult,
+  AppsListResult,
+  ListAppsOptions,
+  ScreencapResult,
+  StartAppPayload
+} from '../shared/device-app'
 import type { UnifiedDevice } from '../shared/unified-device'
 
 // Custom APIs for renderer
@@ -22,6 +30,18 @@ const api = {
         ipcRenderer.removeListener(channel, listener)
       }
     }
+  },
+  apps: {
+    list: (deviceId: string, options?: ListAppsOptions): Promise<AppsListResult> =>
+      ipcRenderer.invoke(IPC.apps.list, deviceId, options),
+    start: (deviceId: string, payload: StartAppPayload): Promise<AppActionResult> =>
+      ipcRenderer.invoke(IPC.apps.start, deviceId, payload),
+    stop: (deviceId: string, packageName: string): Promise<AppActionResult> =>
+      ipcRenderer.invoke(IPC.apps.stop, deviceId, packageName),
+    uninstall: (deviceId: string, packageName: string): Promise<AppActionResult> =>
+      ipcRenderer.invoke(IPC.apps.uninstall, deviceId, packageName),
+    install: (deviceId: string): Promise<AppActionResult> =>
+      ipcRenderer.invoke(IPC.apps.install, deviceId)
   }
 }
 
