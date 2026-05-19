@@ -6,6 +6,7 @@ import { GlobalVariablesPage } from '@/pages/global-variables'
 import { Toaster } from 'sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AppsPage } from '@/pages/apps'
+import { ScreenshotPage } from '@/pages/screenshot'
 
 function App(): React.JSX.Element {
   const [activeMenu, setActiveMenu] = useState('home')
@@ -16,6 +17,8 @@ function App(): React.JSX.Element {
         return <GlobalVariablesPage />
       case 'apps':
         return <AppsPage />
+      case 'screenshot':
+        return <ScreenshotPage />
       case 'home':
       default:
         return <DashboardPage />
@@ -35,7 +38,7 @@ function App(): React.JSX.Element {
           </main>
         </div>
       </div>
-      <Toaster />
+      <Toaster position='top-center'/>
     </TooltipProvider>
   )
 }
