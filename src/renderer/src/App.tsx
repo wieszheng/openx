@@ -7,6 +7,7 @@ import { Toaster } from 'sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AppsPage } from '@/pages/apps'
 import { ScreenshotPage } from '@/pages/screenshot'
+import { SettingsPage } from '@/pages/settings'
 
 function App(): React.JSX.Element {
   const [activeMenu, setActiveMenu] = useState('home')
@@ -19,6 +20,8 @@ function App(): React.JSX.Element {
         return <AppsPage />
       case 'screenshot':
         return <ScreenshotPage />
+      case 'settings':
+        return <SettingsPage />
       case 'home':
       default:
         return <DashboardPage />
