@@ -91,6 +91,25 @@ export function MirrorWindowPage(): React.JSX.Element {
     })
 
     const offFrame = window.api.mirror.onFrame((packet: FramePacket) => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+
+      // HarmonyOS: polling JPEG frames
+      if (packet.type === 'jpeg') {
+        const blob = new Blob([new Uint8Array(packet.data).buffer], { type: 'image/jpeg' })
+        createImageBitmap(blob).then((bitmap) => {
+          if (canvas.width !== bitmap.width || canvas.height !== bitmap.height) {
+            canvas.width = bitmap.width
+            canvas.height = bitmap.height
+          }
+          const ctx = canvas.getContext('2d')
+          if (ctx) ctx.drawImage(bitmap, 0, 0)
+          bitmap.close()
+        }).catch((e) => console.error('[mirror-window] JPEG frame error', e))
+        return
+      }
+
+      // Android: H.264 VideoDecoder
       const dec = decoderRef.current
       if (!dec || dec.state === 'closed') return
 

@@ -3,10 +3,10 @@ import { BrowserWindow, screen } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import { startAndroidMirror, stopAndroidMirror } from '../../devices/android/mirror'
-import type { MirrorOptions } from '../../devices/android/mirror'
+import { startHarmonyMirror, stopHarmonyMirror } from '../../devices/harmony/mirror'
 import { parseDeviceRef, logErr } from '../../devices/device-ref'
 import { IPC } from '../../../shared/ipc-channels'
-import type { MirrorActionResult } from '../../../shared/mirror'
+import type { MirrorActionResult, MirrorOptions } from '../../../shared/mirror'
 import { createLogger } from '../../log'
 
 const logger = createLogger('ipc:mirror')
@@ -100,6 +100,7 @@ export function handleOpenMirrorWindow(
     // Stop mirror if still running (user force-closed the window)
     if (mirrorWindowSerial) {
       stopAndroidMirror(mirrorWindowSerial)
+      stopHarmonyMirror(mirrorWindowSerial)
       mirrorWindowSerial = null
     }
     mirrorWindow = null
@@ -121,34 +122,30 @@ export async function handleMirrorStart(
   options?: MirrorOptions,
 ): Promise<MirrorActionResult> {
   const ref = parseDeviceRef(deviceId)
-  if (!ref || ref.platform !== 'android') {
-    return { ok: false, error: '屏幕镜像仅支持 Android 设备' }
-  }
+  if (!ref) return { ok: false, error: '无效的设备 ID' }
 
   const sender = event.sender
 
+  const onMeta = (meta: { deviceName: string; width: number; height: number }): void => {
+    fitMirrorWindowToDevice(meta.width, meta.height)
+    if (!sender.isDestroyed()) sender.send(IPC.mirror.metadata, meta)
+  }
+  const onData = (data: unknown): void => {
+    const target = getFrameTarget(sender)
+    if (!target.isDestroyed()) target.send(IPC.mirror.frame, data)
+  }
+  const onError = (err: Error): void => {
+    if (!sender.isDestroyed()) sender.send(IPC.mirror.error, err.message)
+  }
+
   try {
-    await startAndroidMirror(
-      ref.key,
-      options ?? {},
-      (meta) => {
-        fitMirrorWindowToDevice(meta.width, meta.height)
-        if (!sender.isDestroyed()) {
-          sender.send(IPC.mirror.metadata, meta)
-        }
-      },
-      (data) => {
-        const target = getFrameTarget(sender)
-        if (!target.isDestroyed()) {
-          target.send(IPC.mirror.frame, data)
-        }
-      },
-      (err) => {
-        if (!sender.isDestroyed()) {
-          sender.send(IPC.mirror.error, err.message)
-        }
-      },
-    )
+    if (ref.platform === 'android') {
+      await startAndroidMirror(ref.key, options ?? {}, onMeta, onData, onError)
+    } else if (ref.platform === 'harmony') {
+      await startHarmonyMirror(ref.key, { intervalMs: options?.intervalMs }, onMeta, onData, onError)
+    } else {
+      return { ok: false, error: '该平台暂不支持屏幕镜像' }
+    }
     return { ok: true }
   } catch (e) {
     const { errMessage } = logErr(e)
@@ -162,9 +159,12 @@ export function handleMirrorStop(
   deviceId: string,
 ): void {
   const ref = parseDeviceRef(deviceId)
-  if (ref?.platform === 'android') {
+  if (!ref) return
+  if (ref.platform === 'android') {
     stopAndroidMirror(ref.key)
-    logger.debug('mirror stopped', deviceId)
+  } else if (ref.platform === 'harmony') {
+    stopHarmonyMirror(ref.key)
   }
+  logger.debug('mirror stopped', deviceId)
 }
 

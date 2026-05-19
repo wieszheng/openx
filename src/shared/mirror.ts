@@ -13,12 +13,15 @@ export type MirrorActionResult =
   | { ok: false; error: string }
 
 export interface MirrorOptions {
+  // Android scrcpy options
   maxSize?: number
   bitRate?: number
+  // HarmonyOS UiDriver options
+  intervalMs?: number
+  scale?: number
 }
 
-export interface FramePacket {
-  type: 'configuration' | 'data'
-  data: Buffer
-  keyframe?: boolean
-}
+export type FramePacket =
+  | { type: 'configuration'; data: Buffer }
+  | { type: 'data'; data: Buffer; keyframe: boolean }
+  | { type: 'jpeg'; data: Buffer }

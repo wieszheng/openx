@@ -106,6 +106,25 @@ export function MirrorPage(): React.JSX.Element {
         })
 
         const offFrame = window.api.mirror.onFrame((packet: FramePacket) => {
+            const canvas = canvasRef.current
+            if (!canvas) return
+
+            // HarmonyOS: polling JPEG frames
+            if (packet.type === 'jpeg') {
+                const blob = new Blob([new Uint8Array(packet.data).buffer], { type: 'image/jpeg' })
+                createImageBitmap(blob).then((bitmap) => {
+                    if (canvas.width !== bitmap.width || canvas.height !== bitmap.height) {
+                        canvas.width = bitmap.width
+                        canvas.height = bitmap.height
+                    }
+                    const ctx = canvas.getContext('2d')
+                    if (ctx) ctx.drawImage(bitmap, 0, 0)
+                    bitmap.close()
+                }).catch((e) => console.error('[mirror] JPEG frame error', e))
+                return
+            }
+
+            // Android: H.264 VideoDecoder
             const dec = decoderRef.current
             if (!dec || dec.state === 'closed') return
 
@@ -197,77 +216,65 @@ export function MirrorPage(): React.JSX.Element {
     }, [selectedId, disposeDecoder])
 
     const isAndroid = selectedId?.startsWith('android:')
-    const canStart = !!selectedId && !!isAndroid
+    const isHarmony = selectedId?.startsWith('harmony:')
+    const canStart = !!selectedId && (!!isAndroid || !!isHarmony)
     const isActive = status === 'streaming' || status === 'connecting'
 
     return (
         <div className="flex flex-col h-full gap-4">
             {/* toolbar */}
             <div className="flex items-center gap-3 shrink-0">
+
                 <div className="ml-auto flex gap-2">
-                    {!isActive && !windowOpen && (
-                        <>
-  
-                        </>
-                    )}
                     {isActive && (
                         <Button size="sm" variant="outline" onClick={stop}>
                             <Square className="w-4 h-4 mr-1" />
                             停止
                         </Button>
                     )}
+
                 </div>
             </div>
 
             {/* canvas area */}
-            <div className="flex-1 flex items-center justify-center bg-black/5 rounded-xl overflow-hidden relative">
+            <div className="flex-1 flex items-center justify-center rounded-xl overflow-hidden relative">
                 {!selectedId && (
                     <p className="text-sm text-muted-foreground">请先选择设备</p>
                 )}
-                {selectedId && !isAndroid && (
-                    <p className="text-sm text-muted-foreground">屏幕镜像仅支持 Android 设备</p>
+                {selectedId && !isAndroid && !isHarmony && (
+                    <p className="text-sm text-muted-foreground">屏幕镜像暂不支持该设备平台</p>
                 )}
-                {isAndroid && status === 'idle' && !windowOpen && (
-                    //   <p className="text-sm text-muted-foreground">点击「开始镜像」或「弹出窗口」连接设备屏幕</p>
-                    <div className="flex flex-col items-center justify-center h-full gap-6 text-muted-foreground">
-                        <div className="w-18 h-18 rounded-full bg-muted flex items-center justify-center">
-                            <Monitor className="w-12 h-12" />
-                        </div>
-                        <div className="text-center">
-                            <h2 className="text-xl font-medium text-foreground mb-2">屏幕镜像</h2>
-                            <p>选择一个设备开始镜像</p>
-                        </div>
-                        <div className="flex gap-2">
-                            {!isActive && !windowOpen && (
-                                <>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={openWindow}
-                                        disabled={!canStart}
-                                    >
-                                        <ExternalLink className="w-4 h-4 mr-1" />
-                                        弹出窗口
-                                    </Button>
-                                    <Button size="sm" onClick={start} disabled={!canStart}>
-                                        <Play className="w-4 h-4 mr-1" />
-                                        开始镜像
-                                    </Button>
-                                </>
-                            )}
-                            {isActive && (
-                                <Button size="sm" variant="outline" onClick={stop}>
-                                    <Square className="w-4 h-4 mr-1" />
-                                    停止
+                {isAndroid || isHarmony ? (
+                    status === 'idle' && !windowOpen && (
+                        <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+                            <div className="w-20 h-18 rounded-2xl bg-muted flex items-center justify-center">
+                                <Monitor className="w-13 h-13" />
+                            </div>
+                            
+                            <p>屏幕镜像</p>
+                            <p className="text-xs">选择一个设备开始镜像</p>
+                            <div className="flex gap-2">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={openWindow}
+                                    disabled={!canStart}
+                                >
+                                    <ExternalLink className="w-4 h-4 mr-1" />
+                                    弹出窗口
                                 </Button>
+                                <Button size="sm" onClick={start} disabled={!canStart}>
+                                    <Play className="w-4 h-4 mr-1" />
+                                    开始镜像
+                                </Button>
+                            </div>
+
+                            {!selectedId && (
+                                <p className="text-sm">请先在标题栏选择设备</p>
                             )}
                         </div>
-
-                        {!selectedId && (
-                            <p className="text-sm">请先在标题栏选择设备</p>
-                        )}
-                    </div>
-                )}
+                    )
+                ) : null}
                 {windowOpen && (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                         <ExternalLink className="w-8 h-8" />
@@ -277,7 +284,7 @@ export function MirrorPage(): React.JSX.Element {
                 {!windowOpen && status === 'connecting' && (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                         <Loader2 className="w-8 h-8 animate-spin" />
-                        <span className="text-sm">正在连接 scrcpy…</span>
+                        <span className="text-sm">正在连接设备…</span>
                     </div>
                 )}
                 {status === 'error' && (
