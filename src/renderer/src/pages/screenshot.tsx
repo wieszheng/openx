@@ -692,6 +692,7 @@ export function ScreenshotPage(): React.JSX.Element {
       e.stopPropagation()
       
       const canvas = canvasRef.current
+      if (!canvas) return
       const rect = canvas?.getBoundingClientRect()
       const scaleX = rect ? canvas.width / rect.width : 1
       
@@ -734,6 +735,7 @@ export function ScreenshotPage(): React.JSX.Element {
       const { x, y } = getCanvasCoords(e)
       
       const canvas = canvasRef.current
+      if (!canvas) return
       const rect = canvas?.getBoundingClientRect()
       const scaleX = rect ? canvas.width / rect.width : 1
 
@@ -815,6 +817,7 @@ export function ScreenshotPage(): React.JSX.Element {
         const last = prev.points[prev.points.length - 1]
         
         const canvas = canvasRef.current
+        if (!canvas) return
         const rect = canvas?.getBoundingClientRect()
         const scaleX = rect ? canvas.width / rect.width : 1
         
