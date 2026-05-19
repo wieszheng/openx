@@ -41,7 +41,15 @@ const api = {
     uninstall: (deviceId: string, packageName: string): Promise<AppActionResult> =>
       ipcRenderer.invoke(IPC.apps.uninstall, deviceId, packageName),
     install: (deviceId: string): Promise<AppActionResult> =>
-      ipcRenderer.invoke(IPC.apps.install, deviceId)
+      ipcRenderer.invoke(IPC.apps.install, deviceId),
+    clearData: (deviceId: string, packageName: string): Promise<AppActionResult> =>
+      ipcRenderer.invoke(IPC.apps.clearData, deviceId, packageName),
+    clearCache: (deviceId: string, packageName: string): Promise<AppActionResult> =>
+      ipcRenderer.invoke(IPC.apps.clearCache, deviceId, packageName),
+    disable: (deviceId: string, packageName: string): Promise<AppActionResult> =>
+      ipcRenderer.invoke(IPC.apps.disable, deviceId, packageName),
+    enable: (deviceId: string, packageName: string): Promise<AppActionResult> =>
+      ipcRenderer.invoke(IPC.apps.enable, deviceId, packageName)
   },
   screencap: {
     capture: (deviceId: string): Promise<ScreencapResult> =>

@@ -11,7 +11,10 @@ import {
   MoreVertical,
   Rocket,
   Info,
-  Download
+  Download,
+  Eraser,
+  Ban,
+  CheckCircle
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -49,6 +52,8 @@ import {
 
 export function AppsPage(): React.JSX.Element {
   const selectedId = useDevicesStore((s) => s.selectedId)
+  const selectedDevice = useDevicesStore((s) => s.devices.find((d) => d.id === s.selectedId))
+  const isAndroid = selectedDevice?.platform === 'android'
 
   const [apps, setApps] = useState<DeviceApp[]>([])
   const [loading, setLoading] = useState(false)
@@ -135,6 +140,71 @@ export function AppsPage(): React.JSX.Element {
     }
   }
 
+  const handleClearData = async (app: DeviceApp) => {
+    if (!selectedId) return
+    const key = `clearData:${app.packageName}`
+    setActionKey(key)
+    try {
+      const result = await window.api.apps.clearData(selectedId, app.packageName)
+      if (result.ok) {
+        toast.success(`已清除 ${app.name} 的数据`)
+      } else {
+        toast.error(result.error)
+      }
+    } finally {
+      setActionKey(null)
+    }
+  }
+
+  const handleClearCache = async (app: DeviceApp) => {
+    if (!selectedId) return
+    const key = `clearCache:${app.packageName}`
+    setActionKey(key)
+    try {
+      const result = await window.api.apps.clearCache(selectedId, app.packageName)
+      if (result.ok) {
+        toast.success(`已清除 ${app.name} 的缓存`)
+      } else {
+        toast.error(result.error)
+      }
+    } finally {
+      setActionKey(null)
+    }
+  }
+
+  const handleDisable = async (app: DeviceApp) => {
+    if (!selectedId) return
+    const key = `disable:${app.packageName}`
+    setActionKey(key)
+    try {
+      const result = await window.api.apps.disable(selectedId, app.packageName)
+      if (result.ok) {
+        toast.success(`已禁用 ${app.name}`)
+      } else {
+        toast.error(result.error)
+      }
+    } finally {
+      setActionKey(null)
+    }
+  }
+
+  const handleEnable = async (app: DeviceApp) => {
+    if (!selectedId) return
+    const key = `enable:${app.packageName}`
+    setActionKey(key)
+    try {
+      const result = await window.api.apps.enable(selectedId, app.packageName)
+      if (result.ok) {
+        toast.success(`已启用 ${app.name}`)
+      } else {
+        toast.error(result.error)
+      }
+    } finally {
+      setActionKey(null)
+    }
+  }
+  
+
   const filteredApps = apps.filter((app) => {
     const q = search.toLowerCase()
     return app.name.toLowerCase().includes(q) || app.packageName.toLowerCase().includes(q)
@@ -171,6 +241,30 @@ export function AppsPage(): React.JSX.Element {
           <Pause className="mr-1 h-4 w-4" />
           停止
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem disabled={busy || loading} onSelect={() => void handleClearData(app)}>
+          <Eraser className="mr-1 h-4 w-4" />
+          清除数据
+        </DropdownMenuItem>
+        {!isAndroid && (
+          <DropdownMenuItem disabled={busy || loading} onSelect={() => void handleClearCache(app)}>
+            <Eraser className="mr-1 h-4 w-4" />
+            清除缓存
+          </DropdownMenuItem>
+        )}
+        {isAndroid && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled={busy || loading} onSelect={() => void handleDisable(app)}>
+              <Ban className="mr-1 h-4 w-4" />
+              禁用
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={busy || loading} onSelect={() => void handleEnable(app)}>
+              <CheckCircle className="mr-1 h-4 w-4" />
+              启用
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           disabled={busy || loading}

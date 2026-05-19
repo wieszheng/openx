@@ -18,7 +18,11 @@ export const IPC = {
     start: 'apps:start',
     stop: 'apps:stop',
     uninstall: 'apps:uninstall',
-    install: 'apps:install'
+    install: 'apps:install',
+    clearData: 'apps:clear-data',
+    clearCache: 'apps:clear-cache',
+    disable: 'apps:disable',
+    enable: 'apps:enable'
   },
   screencap: {
     capture: 'screencap:capture'

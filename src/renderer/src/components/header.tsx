@@ -7,14 +7,18 @@ import {
   Smartphone,
   Tablet,
   Sun,
-  Moon
+  Moon,
+  Loader2,
+  PackagePlus
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { useTheme } from 'next-themes'
 import { useDevicesStore } from '@/stores/devices'
 import type { UnifiedDevice } from '../../../shared/unified-device'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { AnimatedGradientText } from '@/components/ui/animated-gradient-text'
 import { AnimatedShinyText } from '@/components/ui/animated-shiny-text'
+import { toast } from 'sonner'
 
 /**
  * 获取设备版本摘要信息
@@ -61,6 +65,7 @@ export function Header(): React.JSX.Element {
 
   const [isMaximized, setIsMaximized] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [installing, setInstalling] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // 监听窗口最大化状态
@@ -100,11 +105,40 @@ export function Header(): React.JSX.Element {
     window.api?.window?.close?.()
   }
 
+  const handleInstallApp = async () => {
+    if (!selectedId) {
+      toast.error('请先选择设备')
+      return
+    }
+    if (selectedDevice?.state !== 'online') {
+      toast.error('设备未在线，无法安装')
+      return
+    }
+
+    setInstalling(true)
+    try {
+      const result = await window.api.apps.install(selectedId)
+      if (result.ok) {
+        toast.success('应用安装成功')
+      } else if (!result.cancelled && result.error) {
+        toast.error(result.error)
+      }
+    } catch (err) {
+      toast.error(String(err))
+    } finally {
+      setInstalling(false)
+    }
+  }
+  
   const headerPrimary = selectedDevice?.displayName ?? '未检测到设备'
   const headerSecondary = selectedDevice
     ? [versionSummary(selectedDevice), selectedDevice.connectionKey].filter(Boolean).join(' · ')
     : ''
   const headerTitle = selectedDevice?.label ?? headerPrimary
+  const installTooltip =
+    selectedDevice?.platform === 'harmony'
+      ? '安装 HAP 应用包到设备'
+      : '安装 APK 到设备'
 
   return (
     <header className="drag-region min-h-10 flex items-center select-none py-1">
@@ -201,10 +235,30 @@ export function Header(): React.JSX.Element {
           </div>
         </div>
 
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={() => void handleInstallApp()}
+              disabled={!selectedId || installing || selectedDevice?.state !== 'online'}
+              className="w-8 h-8 flex items-center justify-center hover:bg-accent transition-colors rounded-lg mx-1"
+            >
+              {installing ? (
+                <Loader2 className="w-4.5 h-4.5 animate-spin" />
+              ) : (
+                <PackagePlus className="w-4.5 h-4.5" />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" sideOffset={6}>
+            {installTooltip}
+          </TooltipContent>
+        </Tooltip>
+        
         <button
           type="button"
           onClick={handleMinimize}
-          className="w-8 h-8 flex items-center justify-center hover:bg-accent transition-colors"
+          className="w-8 h-8 flex items-center justify-center hover:bg-accent transition-colors rounded-lg"
           aria-label="最小化"
         >
           <Minus className="w-4 h-4" />
@@ -213,7 +267,7 @@ export function Header(): React.JSX.Element {
         <button
           type="button"
           onClick={handleMaximize}
-          className="w-8 h-8 flex items-center justify-center hover:bg-accent transition-colors"
+          className="w-8 h-8 flex items-center justify-center hover:bg-accent transition-colors rounded-lg"
           aria-label={isMaximized ? '还原' : '最大化'}
         >
           {isMaximized ? <Square className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
@@ -222,7 +276,7 @@ export function Header(): React.JSX.Element {
         <button
           type="button"
           onClick={handleClose}
-          className="w-8.5 h-8 flex items-center justify-center hover:bg-destructive transition-colors group"
+          className="w-8.5 h-8 flex items-center justify-center hover:bg-destructive transition-colors rounded-lg"
           aria-label="关闭"
         >
           <X className="w-4 h-4 group-hover:text-destructive-foreground" />

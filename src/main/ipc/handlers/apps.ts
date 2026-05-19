@@ -6,7 +6,18 @@ import type {
   ListAppsOptions,
   StartAppPayload
 } from '../../../shared/device-app'
-import { listDeviceApps } from '../../devices'
+
+import {
+  listDeviceApps,
+  installDeviceApp,
+  startDeviceApp,
+  stopDeviceApp,
+  uninstallDeviceApp,
+  clearDeviceApp,
+  clearDeviceAppCache,
+  disableDeviceApp,
+  enableDeviceApp
+} from '../../devices'
 
 import { logErr, parseDeviceRef } from '../../devices/device-ref'
 import { createLogger } from '../../log'
@@ -33,7 +44,7 @@ export async function handleAppsStart(
   payload: StartAppPayload
 ): Promise<AppActionResult> {
   try {
-    // await startDeviceApp(deviceId, payload)
+    await startDeviceApp(deviceId, payload)
     return { ok: true }
   } catch (e) {
     logger.warn('apps:start failed', { deviceId, payload, error: logErr(e).errMessage })
@@ -47,7 +58,7 @@ export async function handleAppsStop(
   packageName: string
 ): Promise<AppActionResult> {
   try {
-    // await stopDeviceApp(deviceId, packageName)
+    await stopDeviceApp(deviceId, packageName)
     return { ok: true }
   } catch (e) {
     logger.warn('apps:stop failed', { deviceId, packageName, error: logErr(e).errMessage })
@@ -61,7 +72,7 @@ export async function handleAppsUninstall(
   packageName: string
 ): Promise<AppActionResult> {
   try {
-    // await uninstallDeviceApp(deviceId, packageName)
+    await uninstallDeviceApp(deviceId, packageName)
     return { ok: true }
   } catch (e) {
     logger.warn('apps:uninstall failed', { deviceId, packageName, error: logErr(e).errMessage })
@@ -89,6 +100,7 @@ export async function handleAppsInstall(
     properties: ['openFile'],
     filters
   }
+  logger.debug(dialogOptions)
   const picked = parentWindow
     ? await dialog.showOpenDialog(parentWindow, dialogOptions)
     : await dialog.showOpenDialog(dialogOptions)
@@ -100,10 +112,66 @@ export async function handleAppsInstall(
   const packagePath = picked.filePaths[0]
 
   try {
-    // await installDeviceApp(deviceId, packagePath)
+    await installDeviceApp(deviceId, packagePath)
     return { ok: true }
   } catch (e) {
     logger.warn('apps:install failed', { deviceId, packagePath, error: logErr(e).errMessage })
+    return { ok: false, error: logErr(e).errMessage }
+  }
+}
+
+export async function handleAppsClearData(
+  _event: IpcMainInvokeEvent,
+  deviceId: string,
+  packageName: string
+): Promise<AppActionResult> {
+  try {
+    await clearDeviceApp(deviceId, packageName)
+    return { ok: true }
+  } catch (e) {
+    logger.warn('apps:clearData failed', { deviceId, packageName, error: logErr(e).errMessage })
+    return { ok: false, error: logErr(e).errMessage }
+  }
+}
+
+export async function handleAppsClearCache(
+  _event: IpcMainInvokeEvent,
+  deviceId: string,
+  packageName: string
+): Promise<AppActionResult> {
+  try {
+    await clearDeviceAppCache(deviceId, packageName)
+    return { ok: true }
+  } catch (e) {
+    logger.warn('apps:clearCache failed', { deviceId, packageName, error: logErr(e).errMessage })
+    return { ok: false, error: logErr(e).errMessage }
+  }
+}
+
+export async function handleAppsDisable(
+  _event: IpcMainInvokeEvent,
+  deviceId: string,
+  packageName: string
+): Promise<AppActionResult> {
+  try {
+    await disableDeviceApp(deviceId, packageName)
+    return { ok: true }
+  } catch (e) {
+    logger.warn('apps:disable failed', { deviceId, packageName, error: logErr(e).errMessage })
+    return { ok: false, error: logErr(e).errMessage }
+  }
+}
+
+export async function handleAppsEnable(
+  _event: IpcMainInvokeEvent,
+  deviceId: string,
+  packageName: string
+): Promise<AppActionResult> {
+  try {
+    await enableDeviceApp(deviceId, packageName)
+    return { ok: true }
+  } catch (e) {
+    logger.warn('apps:enable failed', { deviceId, packageName, error: logErr(e).errMessage })
     return { ok: false, error: logErr(e).errMessage }
   }
 }

@@ -26,6 +26,10 @@ interface AppsAPI {
   stop: (deviceId: string, packageName: string) => Promise<AppActionResult>
   uninstall: (deviceId: string, packageName: string) => Promise<AppActionResult>
   install: (deviceId: string) => Promise<AppActionResult>
+  clearData: (deviceId: string, packageName: string) => Promise<AppActionResult>
+  clearCache: (deviceId: string, packageName: string) => Promise<AppActionResult>
+  disable: (deviceId: string, packageName: string) => Promise<AppActionResult>
+  enable: (deviceId: string, packageName: string) => Promise<AppActionResult>
 }
 
 interface ScreencapAPI {
