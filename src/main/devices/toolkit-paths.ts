@@ -1,5 +1,5 @@
 import { app } from 'electron'
-import { join } from 'node:path'
+import { join, normalize } from 'node:path'
 import { existsSync } from 'node:fs'
 
 /** 与 `electron-builder.yml` 中 `extraResources.to: toolkit` 一致 */
@@ -7,7 +7,18 @@ function toolkitRoot(): string {
   if (app.isPackaged) {
     return join(process.resourcesPath, 'toolkit')
   }
-  return join(__dirname, '../../../resources/toolkit')
+  // 开发：electron-vite 主进程入口多为 out/main，相对路径应为 ../../resources/toolkit
+  const candidates = [
+    join(app.getAppPath(), 'resources', 'toolkit'),
+    join(__dirname, '../../resources/toolkit'),
+    join(__dirname, '../../../resources/toolkit'),
+  ]
+  for (const c of candidates) {
+    if (existsSync(c)) {
+      return normalize(c)
+    }
+  }
+  return normalize(join(app.getAppPath(), 'resources', 'toolkit'))
 }
 
 function platformSubdir(): string {
@@ -58,4 +69,14 @@ export function getBundledHdcPath(): string | null {
 /** hdckit `bin`：优先包内，其次 PATH 上的 `hdc` */
 export function resolveHdcExecutable(): string {
   return getBundledHdcPath() ?? 'hdc'
+}
+
+/** 已随包放置的 scrcpy-server.jar 绝对路径；不存在则返回 `null` */
+export function resolveScrcpyServerPath(): string | null {
+  const override = readOverride('OPENX_SCRCPY_SERVER_PATH')
+  if (override) {
+    return override
+  }
+  const candidate = join(toolkitRoot(), 'scrcpy-server.jar')
+  return existsSync(candidate) ? candidate : null
 }

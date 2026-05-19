@@ -6,6 +6,7 @@ import { GlobalVariablesPage } from '@/pages/global-variables'
 import { Toaster } from 'sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AppsPage } from '@/pages/apps'
+import { MirrorPage } from '@/pages/mirror'
 import { ScreenshotPage } from '@/pages/screenshot'
 import { SettingsPage } from '@/pages/settings'
 
@@ -18,6 +19,8 @@ function App(): React.JSX.Element {
         return <GlobalVariablesPage />
       case 'apps':
         return <AppsPage />
+      case 'mirror':
+        return <MirrorPage />
       case 'screenshot':
         return <ScreenshotPage />
       case 'settings':
