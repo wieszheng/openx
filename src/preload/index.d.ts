@@ -28,6 +28,10 @@ interface AppsAPI {
   install: (deviceId: string) => Promise<AppActionResult>
 }
 
+interface ScreencapAPI {
+  capture: (deviceId: string) => Promise<ScreencapResult>
+}
+
 interface LogAPI {
   getPath: () => Promise<string>
 }
@@ -38,6 +42,7 @@ declare global {
       window: WindowAPI
       devices: DevicesAPI
       apps: AppsAPI
+      screencap: ScreencapAPI
       log: LogAPI
     }
   }

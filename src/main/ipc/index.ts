@@ -9,6 +9,7 @@ import {
   handleAppsUninstall,
   handleAppsInstall
 } from './handlers/apps'
+import { handleScreencap } from './handlers/screencap'
 
 const logger = createLogger('ipc')
 
@@ -54,7 +55,7 @@ export function registerIpc({ getMainWindow }: RegisterIpcOptions): void {
   ipcMain.handle(IPC.apps.install, handleAppsInstall)
 
   // ── Screencap ───────────────────────────────────────────────────────────
-  // ipcMain.handle(IPC.screencap.capture, handleScreencap)
+  ipcMain.handle(IPC.screencap.capture, handleScreencap)
 
   // ── Mirror ──────────────────────────────────────────────────────────────
   // ipcMain.handle(IPC.mirror.openWindow, handleOpenMirrorWindow)

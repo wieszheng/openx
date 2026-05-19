@@ -1,4 +1,4 @@
-import { Home, Settings, Key, ArrowDownWideNarrow, LayoutPanelLeft } from 'lucide-react'
+import { Home, Settings, Key, LayoutPanelLeft } from 'lucide-react'
 
 interface MenuItem {
   id: string
@@ -19,10 +19,11 @@ interface SidebarProps {
 
 export function Sidebar({ activeMenu = 'home', onMenuChange }: SidebarProps): React.JSX.Element {
   return (
-    <aside className="w-14 flex flex-col items-center py-4">
+    <aside className="w-14 flex flex-col items-center py-3">
       {/* Logo */}
-      <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center mb-4">
-        <ArrowDownWideNarrow className="w-5 h-5 text-primary-foreground" />
+      <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4">
+        {/* <ArrowDownWideNarrow className="w-5 h-5 text-primary-foreground" /> */}
+        <svg width="1024" height="1024" viewBox="0 0 100 100" fill="none" stroke="oklch(0.508 0.118 165.612)" stroke-linecap="round" stroke-linejoin="round"  xmlns="http://www.w3.org/2000/svg"><path d="M 20 50 L 35 20 L 80 20" stroke-width="6"></path><path d="M 80 50 L 65 80 L 20 80" stroke-width="6"></path><path d="M 35 35 L 65 65 M 35 65 L 65 35" stroke-width="6"></path></svg>
       </div>
 
       {/* 菜单项 */}
