@@ -47,6 +47,10 @@ interface MirrorAPI {
   onWindowClosed: (cb: () => void) => () => void
 }
 
+interface ToolkitAPI {
+  status: () => Promise<ToolkitStatusResult>
+}
+
 interface LogAPI {
   getPath: () => Promise<string>
 }
@@ -59,6 +63,7 @@ declare global {
       apps: AppsAPI
       screencap: ScreencapAPI
       mirror: MirrorAPI
+      toolkit: ToolkitAPI
       log: LogAPI
     }
   }

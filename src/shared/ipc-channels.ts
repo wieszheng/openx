@@ -40,6 +40,9 @@ export const IPC = {
     /** main → main-window renderer: mirror window was closed */
     windowClosed: 'mirror:window-closed'
   },
+  toolkit: {
+    status: 'toolkit:status',
+  },
   log: {
     getPath: 'log:get-path'
   },

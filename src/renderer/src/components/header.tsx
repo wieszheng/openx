@@ -202,16 +202,14 @@ export function Header(): React.JSX.Element {
       }
     }
   }, [isRecording])
-  
+
   const headerPrimary = selectedDevice?.displayName ?? '未检测到设备'
   const headerSecondary = selectedDevice
     ? [versionSummary(selectedDevice), selectedDevice.connectionKey].filter(Boolean).join(' · ')
     : ''
   const headerTitle = selectedDevice?.label ?? headerPrimary
   const installTooltip =
-    selectedDevice?.platform === 'harmony'
-      ? '安装 HAP 应用包到设备'
-      : '安装 APK 到设备'
+    selectedDevice?.platform === 'harmony' ? '安装 HAP 应用包到设备' : '安装 APK 到设备'
 
   return (
     <header className="drag-region min-h-10 flex items-center select-none py-1">
@@ -381,7 +379,7 @@ export function Header(): React.JSX.Element {
             </TooltipContent>
           </Tooltip>
         )}
-        
+
         <button
           type="button"
           onClick={handleMinimize}

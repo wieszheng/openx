@@ -24,7 +24,23 @@ export function Sidebar({ activeMenu = 'home', onMenuChange }: SidebarProps): Re
     <aside className="w-14 flex flex-col items-center py-3">
       {/* Logo */}
       <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-4">
-        <svg width="1024" height="1024" viewBox="0 0 100 100" fill="none" stroke="oklch(0.508 0.118 165.612)" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M 6 50 H 22 L 32 20 L 68 80 L 78 50 H 94" stroke-width="10.8" stroke-linejoin="round"></path><path d="M 32 80 L 68 20" stroke-width="10.8"></path></svg>
+        <svg
+          width="1024"
+          height="1024"
+          viewBox="0 0 100 100"
+          fill="none"
+          stroke="oklch(0.508 0.118 165.612)"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M 6 50 H 22 L 32 20 L 68 80 L 78 50 H 94"
+            stroke-width="10.8"
+            stroke-linejoin="round"
+          ></path>
+          <path d="M 32 80 L 68 20" stroke-width="10.8"></path>
+        </svg>
         {/* <svg width="1024" height="1024" viewBox="0 0 100 100" fill="none" stroke="oklch(0.508 0.118 165.612)" stroke-linecap="round" stroke-linejoin="round"  xmlns="http://www.w3.org/2000/svg"><path d="M 20 50 L 35 20 L 80 20" stroke-width="6"></path><path d="M 80 50 L 65 80 L 20 80" stroke-width="6"></path><path d="M 35 35 L 65 65 M 35 65 L 65 35" stroke-width="6"></path></svg> */}
       </div>
 
@@ -38,9 +54,10 @@ export function Sidebar({ activeMenu = 'home', onMenuChange }: SidebarProps): Re
               onClick={() => onMenuChange?.(item.id)}
               className={`
                 relative w-full h-11 flex items-center justify-center rounded-xl transition-all duration-200
-                ${isActive
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                ${
+                  isActive
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }
               `}
               title={item.label}
@@ -58,10 +75,11 @@ export function Sidebar({ activeMenu = 'home', onMenuChange }: SidebarProps): Re
       <div className="mt-auto flex flex-col gap-2">
         {/* 设置 */}
         <button
-          className={`w-12 h-12 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200                 ${activeMenu === 'settings'
+          className={`w-12 h-12 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200                 ${
+            activeMenu === 'settings'
               ? 'text-primary'
               : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-            }`}
+          }`}
           title="设置"
           onClick={() => onMenuChange?.('settings')}
         >

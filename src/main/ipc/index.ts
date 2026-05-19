@@ -15,6 +15,7 @@ import {
 } from './handlers/apps'
 import { handleScreencap } from './handlers/screencap'
 import { handleMirrorStart, handleMirrorStop, handleOpenMirrorWindow } from './handlers/mirror'
+import { getToolkitStatus } from './handlers/toolkit'
 
 const logger = createLogger('ipc')
 
@@ -71,6 +72,9 @@ export function registerIpc({ getMainWindow }: RegisterIpcOptions): void {
   ipcMain.handle(IPC.mirror.openWindow, handleOpenMirrorWindow)
   ipcMain.handle(IPC.mirror.start, handleMirrorStart)
   ipcMain.handle(IPC.mirror.stop, handleMirrorStop)
+
+  // ── Toolkit ─────────────────────────────────────────────────────────────
+  ipcMain.handle(IPC.toolkit.status, () => getToolkitStatus())
 
   // ── Log ─────────────────────────────────────────────────────────────────
   ipcMain.handle(IPC.log.getPath, () => getLogPath())

@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from "react"
-import { Copy, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react"
+import { useEffect, useMemo, useState } from 'react'
+import { Copy, Loader2, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import {
   Pagination,
   PaginationContent,
   PaginationItem,
   PaginationLink,
   PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination"
+  PaginationPrevious
+} from '@/components/ui/pagination'
 
 import {
   Dialog,
@@ -15,43 +15,46 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  DialogTitle
+} from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+  SelectValue
+} from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
+  TableRow
+} from '@/components/ui/table'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 
-import { globalVariablesApi, type GlobalVariable, type GlobalVariableType } from "@/lib/api"
+import { globalVariablesApi, type GlobalVariable, type GlobalVariableType } from '@/lib/api'
 
 const TYPE_OPTIONS: { value: GlobalVariableType; label: string; color: string }[] = [
-  { value: "string", label: "字符串", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  { value: "number", label: "数字", color: "bg-purple-100 text-purple-700 border-purple-200" },
-  { value: "boolean", label: "布尔", color: "bg-amber-100 text-amber-700 border-amber-200" },
-  { value: "json", label: "JSON", color: "bg-green-100 text-green-700 border-green-200" },
-  { value: "list", label: "列表", color: "bg-cyan-100 text-cyan-700 border-cyan-200" },
-  { value: "secret", label: "密钥", color: "bg-red-100 text-red-700 border-red-200" },
+  { value: 'string', label: '字符串', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+  { value: 'number', label: '数字', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+  { value: 'boolean', label: '布尔', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+  { value: 'json', label: 'JSON', color: 'bg-green-100 text-green-700 border-green-200' },
+  { value: 'list', label: '列表', color: 'bg-cyan-100 text-cyan-700 border-cyan-200' },
+  { value: 'secret', label: '密钥', color: 'bg-red-100 text-red-700 border-red-200' }
 ]
 
 function getTypeStyle(varType: GlobalVariableType) {
-  return TYPE_OPTIONS.find((o) => o.value === varType)?.color ?? "bg-gray-100 text-gray-700 border-gray-200"
+  return (
+    TYPE_OPTIONS.find((o) => o.value === varType)?.color ??
+    'bg-gray-100 text-gray-700 border-gray-200'
+  )
 }
 
 function getTypeLabel(varType: GlobalVariableType) {
@@ -59,7 +62,7 @@ function getTypeLabel(varType: GlobalVariableType) {
 }
 
 function formatDate(iso: string) {
-  return iso.replace("T", " ").slice(0, 19)
+  return iso.replace('T', ' ').slice(0, 19)
 }
 
 interface FormData {
@@ -70,10 +73,10 @@ interface FormData {
 }
 
 const INITIAL_FORM: FormData = {
-  name: "",
-  var_type: "string",
-  value: "",
-  description: "",
+  name: '',
+  var_type: 'string',
+  value: '',
+  description: ''
 }
 
 const PAGE_SIZE = 10
@@ -81,8 +84,8 @@ const PAGE_SIZE = 10
 export function GlobalVariablesPage() {
   const [variables, setVariables] = useState<GlobalVariable[]>([])
   const [loading, setLoading] = useState(true)
-  const [keyword, setKeyword] = useState("")
-  const [typeFilter, setTypeFilter] = useState<GlobalVariableType | "">("")
+  const [keyword, setKeyword] = useState('')
+  const [typeFilter, setTypeFilter] = useState<GlobalVariableType | ''>('')
   const [showValueIds, setShowValueIds] = useState<Set<string>>(new Set())
   const [currentPage, setCurrentPage] = useState(1)
   const [total, setTotal] = useState(0)
@@ -93,7 +96,7 @@ export function GlobalVariablesPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<FormData>(INITIAL_FORM)
   const [saving, setSaving] = useState(false)
-  const [formError, setFormError] = useState("")
+  const [formError, setFormError] = useState('')
 
   // 删除确认弹窗
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -103,13 +106,18 @@ export function GlobalVariablesPage() {
   const fetchVariables = async () => {
     setLoading(true)
     try {
-      const params: { page: number; page_size: number; keyword?: string; var_type?: GlobalVariableType } = {
+      const params: {
+        page: number
+        page_size: number
+        keyword?: string
+        var_type?: GlobalVariableType
+      } = {
         page: currentPage,
-        page_size: PAGE_SIZE,
+        page_size: PAGE_SIZE
       }
       if (keyword.trim()) params.keyword = keyword.trim()
       if (typeFilter) params.var_type = typeFilter as GlobalVariableType
-      
+
       const response = await globalVariablesApi.list(params)
       console.log(response)
       setVariables(response.items)
@@ -144,7 +152,7 @@ export function GlobalVariablesPage() {
   const openCreate = () => {
     setEditingId(null)
     setForm(INITIAL_FORM)
-    setFormError("")
+    setFormError('')
     setDialogOpen(true)
   }
 
@@ -154,47 +162,47 @@ export function GlobalVariablesPage() {
       name: v.name,
       var_type: v.var_type,
       value: v.value,
-      description: v.description ?? "",
+      description: v.description ?? ''
     })
-    setFormError("")
+    setFormError('')
     setDialogOpen(true)
   }
 
   const handleSave = async () => {
     if (!form.name.trim()) {
-      setFormError("变量名称不能为空")
+      setFormError('变量名称不能为空')
       return
     }
-    if (form.var_type === "json") {
+    if (form.var_type === 'json') {
       try {
         JSON.parse(form.value)
       } catch {
-        setFormError("JSON 格式不正确，请检查语法")
+        setFormError('JSON 格式不正确，请检查语法')
         return
       }
     }
     setSaving(true)
-    setFormError("")
+    setFormError('')
     try {
       if (editingId) {
         await globalVariablesApi.update(editingId, {
           name: form.name.trim(),
           var_type: form.var_type,
           value: form.value,
-          description: form.description.trim() || null,
+          description: form.description.trim() || null
         })
       } else {
         await globalVariablesApi.create({
           name: form.name.trim(),
           var_type: form.var_type,
           value: form.value,
-          description: form.description.trim() || undefined,
+          description: form.description.trim() || undefined
         })
       }
       setDialogOpen(false)
       fetchVariables()
     } catch (e) {
-      setFormError(e instanceof Error ? e.message : "保存失败")
+      setFormError(e instanceof Error ? e.message : '保存失败')
     } finally {
       setSaving(false)
     }
@@ -230,11 +238,11 @@ export function GlobalVariablesPage() {
   }
 
   const maskValue = (v: GlobalVariable) => {
-    if (v.var_type === "secret") {
-      return showValueIds.has(v.id) ? v.value : "••••••••"
+    if (v.var_type === 'secret') {
+      return showValueIds.has(v.id) ? v.value : '••••••••'
     }
-    if (v.var_type === "json" || v.var_type === "list") {
-      if (!showValueIds.has(v.id)) return v.var_type === "json" ? "{ ... }" : "[ ... ]"
+    if (v.var_type === 'json' || v.var_type === 'list') {
+      if (!showValueIds.has(v.id)) return v.var_type === 'json' ? '{ ... }' : '[ ... ]'
       try {
         return JSON.stringify(JSON.parse(v.value), null, 2)
       } catch {
@@ -262,8 +270,8 @@ export function GlobalVariablesPage() {
           />
         </div>
         <Select
-          value={typeFilter || "all"}
-          onValueChange={(v) => setTypeFilter(v === "all" ? "" : v as GlobalVariableType)}
+          value={typeFilter || 'all'}
+          onValueChange={(v) => setTypeFilter(v === 'all' ? '' : (v as GlobalVariableType))}
         >
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="全部类型" />
@@ -306,7 +314,7 @@ export function GlobalVariablesPage() {
             {variables.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  {keyword || typeFilter ? "没有找到匹配的变量" : "暂无全局变量，点击上方按钮创建"}
+                  {keyword || typeFilter ? '没有找到匹配的变量' : '暂无全局变量，点击上方按钮创建'}
                 </TableCell>
               </TableRow>
             ) : (
@@ -321,12 +329,14 @@ export function GlobalVariablesPage() {
                   <TableCell>
                     <div className="flex items-center gap-2 font-mono text-sm">
                       <span className="truncate max-w-[200px]">{maskValue(v)}</span>
-                      {(v.var_type === "secret" || v.var_type === "json" || v.var_type === "list") && (
+                      {(v.var_type === 'secret' ||
+                        v.var_type === 'json' ||
+                        v.var_type === 'list') && (
                         <button
                           onClick={() => toggleShowValue(v.id)}
                           className="shrink-0 text-xs text-muted-foreground hover:text-foreground underline"
                         >
-                          {showValueIds.has(v.id) ? "收起" : "展开"}
+                          {showValueIds.has(v.id) ? '收起' : '展开'}
                         </button>
                       )}
                       <button
@@ -339,7 +349,7 @@ export function GlobalVariablesPage() {
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                    {v.description || "-"}
+                    {v.description || '-'}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {formatDate(v.updated_at)}
@@ -374,7 +384,9 @@ export function GlobalVariablesPage() {
       {/* 分页器 */}
       {!loading && total > 0 && (
         <div className="flex items-center justify-between px-2">
-          <span className="text-sm text-muted-foreground">共 {total} 条数据，第 {currentPage}/{totalPages} 页</span>
+          <span className="text-sm text-muted-foreground">
+            共 {total} 条数据，第 {currentPage}/{totalPages} 页
+          </span>
           <Pagination className="w-auto mx-0">
             <PaginationContent>
               <PaginationItem>
@@ -382,7 +394,7 @@ export function GlobalVariablesPage() {
                   onClick={() => setCurrentPage(currentPage - 1)}
                   aria-disabled={currentPage <= 1}
                   text="上一页"
-                  className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                  className={currentPage <= 1 ? 'pointer-events-none opacity-50' : ''}
                 />
               </PaginationItem>
               {pageNums.map((num) => (
@@ -400,7 +412,7 @@ export function GlobalVariablesPage() {
                   onClick={() => setCurrentPage(currentPage + 1)}
                   aria-disabled={currentPage >= totalPages}
                   text="下一页"
-                  className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
+                  className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : ''}
                 />
               </PaginationItem>
             </PaginationContent>
@@ -412,9 +424,9 @@ export function GlobalVariablesPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingId ? "编辑变量" : "新建变量"}</DialogTitle>
+            <DialogTitle>{editingId ? '编辑变量' : '新建变量'}</DialogTitle>
             <DialogDescription>
-              {editingId ? "修改全局变量的属性" : "创建一个可在测试用例中引用的全局变量"}
+              {editingId ? '修改全局变量的属性' : '创建一个可在测试用例中引用的全局变量'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -424,7 +436,12 @@ export function GlobalVariablesPage() {
                 id="gv-name"
                 placeholder="例如：BASE_URL、API_KEY"
                 value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, "") }))}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    name: e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '')
+                  }))
+                }
               />
             </div>
             <div className="space-y-2">
@@ -448,25 +465,31 @@ export function GlobalVariablesPage() {
             <div className="space-y-2">
               <Label htmlFor="gv-value">
                 值
-                {form.var_type === "secret" && (
-                  <span className="ml-2 text-xs text-muted-foreground font-normal">（将加密存储）</span>
+                {form.var_type === 'secret' && (
+                  <span className="ml-2 text-xs text-muted-foreground font-normal">
+                    （将加密存储）
+                  </span>
                 )}
-                {form.var_type === "json" && (
-                  <span className="ml-2 text-xs text-muted-foreground font-normal">（JSON 格式）</span>
+                {form.var_type === 'json' && (
+                  <span className="ml-2 text-xs text-muted-foreground font-normal">
+                    （JSON 格式）
+                  </span>
                 )}
               </Label>
-              {form.var_type === "boolean" ? (
+              {form.var_type === 'boolean' ? (
                 <div className="flex items-center gap-2 pt-2">
                   <Switch
                     id="gv-value-bool"
-                    checked={form.value === "true"}
-                    onCheckedChange={(checked) => setForm((f) => ({ ...f, value: String(checked) }))}
+                    checked={form.value === 'true'}
+                    onCheckedChange={(checked) =>
+                      setForm((f) => ({ ...f, value: String(checked) }))
+                    }
                   />
                   <Label htmlFor="gv-value-bool" className="font-normal">
-                    {form.value === "true" ? "true" : "false"}
+                    {form.value === 'true' ? 'true' : 'false'}
                   </Label>
                 </div>
-              ) : form.var_type === "json" ? (
+              ) : form.var_type === 'json' ? (
                 <Textarea
                   id="gv-value"
                   placeholder={'{\n  "key": "value"\n}'}
@@ -494,9 +517,7 @@ export function GlobalVariablesPage() {
                 rows={2}
               />
             </div>
-            {formError && (
-              <p className="text-sm text-destructive">{formError}</p>
-            )}
+            {formError && <p className="text-sm text-destructive">{formError}</p>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>

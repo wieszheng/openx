@@ -28,7 +28,11 @@ export function MirrorWindowPage(): React.JSX.Element {
   const disposeDecoder = useCallback(() => {
     const dec = decoderRef.current
     if (dec && dec.state !== 'closed') {
-      try { dec.close() } catch { /* ignore */ }
+      try {
+        dec.close()
+      } catch {
+        /* ignore */
+      }
     }
     decoderRef.current = null
     configDataRef.current = null
@@ -60,11 +64,15 @@ export function MirrorWindowPage(): React.JSX.Element {
         console.error('[mirror-window] VideoDecoder error', e)
         setErrorMsg(e.message)
         setStatus('error')
-      },
+      }
     })
     decoderRef.current = decoder
 
-    const configureAndDecode = (dec: VideoDecoder, configData: Uint8Array, frameData: Uint8Array): void => {
+    const configureAndDecode = (
+      dec: VideoDecoder,
+      configData: Uint8Array,
+      frameData: Uint8Array
+    ): void => {
       try {
         const { profileIndex, constraintSet, levelIndex } = h264ParseConfiguration(configData)
         const codec = `avc1.${toHex2(profileIndex)}${toHex2(constraintSet)}${toHex2(levelIndex)}`
@@ -97,15 +105,17 @@ export function MirrorWindowPage(): React.JSX.Element {
       // HarmonyOS: polling JPEG frames
       if (packet.type === 'jpeg') {
         const blob = new Blob([new Uint8Array(packet.data).buffer], { type: 'image/jpeg' })
-        createImageBitmap(blob).then((bitmap) => {
-          if (canvas.width !== bitmap.width || canvas.height !== bitmap.height) {
-            canvas.width = bitmap.width
-            canvas.height = bitmap.height
-          }
-          const ctx = canvas.getContext('2d')
-          if (ctx) ctx.drawImage(bitmap, 0, 0)
-          bitmap.close()
-        }).catch((e) => console.error('[mirror-window] JPEG frame error', e))
+        createImageBitmap(blob)
+          .then((bitmap) => {
+            if (canvas.width !== bitmap.width || canvas.height !== bitmap.height) {
+              canvas.width = bitmap.width
+              canvas.height = bitmap.height
+            }
+            const ctx = canvas.getContext('2d')
+            if (ctx) ctx.drawImage(bitmap, 0, 0)
+            bitmap.close()
+          })
+          .catch((e) => console.error('[mirror-window] JPEG frame error', e))
         return
       }
 

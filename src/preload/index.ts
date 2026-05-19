@@ -10,6 +10,7 @@ import type {
 } from '../shared/device-app'
 import type { UnifiedDevice } from '../shared/unified-device'
 import type { MirrorActionResult, MirrorMetadata, MirrorOptions, FramePacket } from '../shared/mirror'
+import { ToolkitStatusResult } from '../shared/toolkit-status'
 
 // Custom APIs for renderer
 const api = {
@@ -83,6 +84,9 @@ const api = {
       ipcRenderer.on(IPC.mirror.windowClosed, listener)
       return () => ipcRenderer.removeListener(IPC.mirror.windowClosed, listener)
     },
+  },
+  toolkit: {
+    status: (): Promise<ToolkitStatusResult> => ipcRenderer.invoke(IPC.toolkit.status),
   },
   log: {
     getPath: (): Promise<string> => ipcRenderer.invoke(IPC.log.getPath)

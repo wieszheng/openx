@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import {
   Search,
   Smartphone,
@@ -41,7 +41,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { DeviceApp } from '../../../shared/device-app'
 // import { appIconSrc } from '../lib/app-icon'
-import { useDevicesStore } from '../stores/devices'
+import { useDevicesStore } from '@/stores/devices'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -203,7 +203,6 @@ export function AppsPage(): React.JSX.Element {
       setActionKey(null)
     }
   }
-  
 
   const filteredApps = apps.filter((app) => {
     const q = search.toLowerCase()

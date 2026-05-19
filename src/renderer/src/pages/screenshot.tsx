@@ -18,20 +18,20 @@ import {
   Layers,
   ImageIcon,
   X,
-  Copy,
+  Copy
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useDevicesStore } from '../stores/devices'
+import { useDevicesStore } from '@/stores/devices'
 import { cn } from '@/lib/utils'
 import {
   formatHistoryTime,
   MAX_SCREENSHOT_HISTORY,
   stitchImages,
   type ScreenshotHistoryItem,
-  type StitchDirection,
+  type StitchDirection
 } from '@/lib/screenshot-history'
 
 /** 绘图工具类型 */
@@ -86,7 +86,7 @@ interface TextEditorState {
 const DEFAULT_STYLE: DrawStyle = {
   strokeColor: '#ef4444',
   fillColor: 'transparent',
-  lineWidth: 3,
+  lineWidth: 3
 }
 
 const COLORS = [
@@ -99,7 +99,7 @@ const COLORS = [
   '#8b5cf6',
   '#ec4899',
   '#000000',
-  '#ffffff',
+  '#ffffff'
 ]
 
 const TEXT_LINE_HEIGHT_RATIO = 1.25
@@ -110,7 +110,7 @@ function getShapeFontSize(shape: TextShape): number {
 
 function measureTextShape(
   ctx: CanvasRenderingContext2D,
-  shape: TextShape,
+  shape: TextShape
 ): { width: number; height: number; lineHeight: number } {
   const fontSize = getShapeFontSize(shape)
   const lineHeight = fontSize * TEXT_LINE_HEIGHT_RATIO
@@ -123,7 +123,7 @@ function measureTextShape(
   return {
     width,
     height: Math.max(lineHeight, lines.length * lineHeight),
-    lineHeight,
+    lineHeight
   }
 }
 
@@ -132,7 +132,7 @@ function hitTestText(
   shape: TextShape,
   x: number,
   y: number,
-  padding: number,
+  padding: number
 ): boolean {
   const { width, height } = measureTextShape(ctx, shape)
   return (
@@ -164,7 +164,12 @@ function drawShape(ctx: CanvasRenderingContext2D, shape: Shape): void {
 
   switch (shape.tool) {
     case 'rect':
-      ctx.strokeRect(shape.startX, shape.startY, shape.endX - shape.startX, shape.endY - shape.startY)
+      ctx.strokeRect(
+        shape.startX,
+        shape.startY,
+        shape.endX - shape.startX,
+        shape.endY - shape.startY
+      )
       break
 
     case 'ellipse': {
@@ -211,10 +216,10 @@ function drawArrow(
   fromX: number,
   fromY: number,
   toX: number,
-  toY: number,
+  toY: number
 ): void {
   // 箭头大小根据自适应物理宽度进行缩放，适配超清大图
-  const headLen = ctx.lineWidth * 4 + 5 
+  const headLen = ctx.lineWidth * 4 + 5
   const angle = Math.atan2(toY - fromY, toX - fromX)
 
   ctx.beginPath()
@@ -226,19 +231,19 @@ function drawArrow(
   ctx.moveTo(toX, toY)
   ctx.lineTo(
     toX - headLen * Math.cos(angle - Math.PI / 6),
-    toY - headLen * Math.sin(angle - Math.PI / 6),
+    toY - headLen * Math.sin(angle - Math.PI / 6)
   )
   ctx.moveTo(toX, toY)
   ctx.lineTo(
     toX - headLen * Math.cos(angle + Math.PI / 6),
-    toY - headLen * Math.sin(angle + Math.PI / 6),
+    toY - headLen * Math.sin(angle + Math.PI / 6)
   )
   ctx.stroke()
 }
 
 function computeCanvasSize(
   img: HTMLImageElement,
-  container: HTMLElement,
+  container: HTMLElement
 ): { width: number; height: number } {
   const padding = 32
   const rect = container.getBoundingClientRect()
@@ -309,12 +314,12 @@ export function ScreenshotPage(): React.JSX.Element {
         dataUrl,
         createdAt: Date.now(),
         deviceId: selectedId ?? undefined,
-        deviceName: selectedDevice?.displayName,
+        deviceName: selectedDevice?.displayName
       }
       setCaptureHistory((prev) => [item, ...prev].slice(0, MAX_SCREENSHOT_HISTORY))
       return item.id
     },
-    [selectedId, selectedDevice],
+    [selectedId, selectedDevice]
   )
 
   const applyBaseImage = useCallback(
@@ -327,7 +332,7 @@ export function ScreenshotPage(): React.JSX.Element {
         pushCaptureHistory(dataUrl)
       }
     },
-    [pushCaptureHistory, resetAnnotations],
+    [pushCaptureHistory, resetAnnotations]
   )
 
   const getOrderedSelectedItems = useCallback((): ScreenshotHistoryItem[] => {
@@ -446,7 +451,12 @@ export function ScreenshotPage(): React.JSX.Element {
         ctx.strokeStyle = '#3b82f6'
         ctx.lineWidth = 1 * scaleX
         ctx.setLineDash([4 * scaleX, 4 * scaleX])
-        ctx.strokeRect(shape.startX - 4 * scaleX, shape.startY - 4 * scaleX, mw + 8 * scaleX, mh + 8 * scaleX)
+        ctx.strokeRect(
+          shape.startX - 4 * scaleX,
+          shape.startY - 4 * scaleX,
+          mw + 8 * scaleX,
+          mh + 8 * scaleX
+        )
         ctx.restore()
       }
     }
@@ -501,7 +511,7 @@ export function ScreenshotPage(): React.JSX.Element {
     // 把画布里的物理坐标等比转换到屏幕定位绝对坐标下
     return {
       left: (canvasX / canvas.width) * rect.width,
-      top: (canvasY / canvas.height) * rect.height,
+      top: (canvasY / canvas.height) * rect.height
     }
   }, [])
 
@@ -563,7 +573,7 @@ export function ScreenshotPage(): React.JSX.Element {
       setShapes(next)
       saveShapeHistory(next)
     },
-    [saveShapeHistory],
+    [saveShapeHistory]
   )
 
   const toggleCaptureSelection = useCallback((id: string) => {
@@ -584,7 +594,7 @@ export function ScreenshotPage(): React.JSX.Element {
       setSelectedCaptureIds(new Set([item.id]))
       toast.success('已加载到画布')
     },
-    [applyBaseImage],
+    [applyBaseImage]
   )
 
   const runStitch = useCallback(
@@ -618,7 +628,7 @@ export function ScreenshotPage(): React.JSX.Element {
         setStitching(false)
       }
     },
-    [applyBaseImage, exportCanvasSnapshot, getOrderedSelectedItems],
+    [applyBaseImage, exportCanvasSnapshot, getOrderedSelectedItems]
   )
 
   const removeSelectedFromHistory = useCallback(() => {
@@ -650,7 +660,7 @@ export function ScreenshotPage(): React.JSX.Element {
 
     return {
       x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
+      y: (e.clientY - rect.top) * scaleY
     }
   }, [])
 
@@ -675,7 +685,7 @@ export function ScreenshotPage(): React.JSX.Element {
       endX: textEditor.canvasX,
       endY: textEditor.canvasY,
       text,
-      fontSize,
+      fontSize
     }
     const newShapes = [...shapesRef.current, newShape]
     shapesRef.current = newShapes
@@ -690,41 +700,38 @@ export function ScreenshotPage(): React.JSX.Element {
       }
       e.preventDefault()
       e.stopPropagation()
-      
+
       const canvas = canvasRef.current
       if (!canvas) return
       const rect = canvas?.getBoundingClientRect()
       const scaleX = rect ? canvas.width / rect.width : 1
-      
+
       const { x, y } = getCanvasCoords(e)
       setTextEditor({ canvasX: x, canvasY: y, value: '', scaleX })
     },
-    [tool, imageReady, getCanvasCoords],
+    [tool, imageReady, getCanvasCoords]
   )
 
-  const findTextAtPoint = useCallback(
-    (x: number, y: number): TextShape | null => {
-      const canvas = canvasRef.current
-      if (!canvas) return null
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return null
-      
-      const rect = canvas.getBoundingClientRect()
-      const scaleX = rect ? canvas.width / rect.width : 1
-      const padding = 6 * scaleX 
-      
-      for (let i = shapesRef.current.length - 1; i >= 0; i--) {
-        const shape = shapesRef.current[i]
-        if (shape.tool === 'text') {
-           if (hitTestText(ctx, shape as TextShape, x, y, padding)) {
-             return shape as TextShape
-           }
+  const findTextAtPoint = useCallback((x: number, y: number): TextShape | null => {
+    const canvas = canvasRef.current
+    if (!canvas) return null
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return null
+
+    const rect = canvas.getBoundingClientRect()
+    const scaleX = rect ? canvas.width / rect.width : 1
+    const padding = 6 * scaleX
+
+    for (let i = shapesRef.current.length - 1; i >= 0; i--) {
+      const shape = shapesRef.current[i]
+      if (shape.tool === 'text') {
+        if (hitTestText(ctx, shape as TextShape, x, y, padding)) {
+          return shape as TextShape
         }
       }
-      return null
-    },
-    [],
-  )
+    }
+    return null
+  }, [])
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -733,7 +740,7 @@ export function ScreenshotPage(): React.JSX.Element {
       }
 
       const { x, y } = getCanvasCoords(e)
-      
+
       const canvas = canvasRef.current
       if (!canvas) return
       const rect = canvas?.getBoundingClientRect()
@@ -747,7 +754,7 @@ export function ScreenshotPage(): React.JSX.Element {
           textDragRef.current = {
             id: hit.id,
             offsetX: x - hit.startX,
-            offsetY: y - hit.startY,
+            offsetY: y - hit.startY
           }
         } else {
           setSelectedTextId(null)
@@ -769,23 +776,23 @@ export function ScreenshotPage(): React.JSX.Element {
           id: `shape-${Date.now()}`,
           tool: 'pencil',
           style: scaledStyle,
-          points: [{ x, y }],
+          points: [{ x, y }]
         }
         currentShapeRef.current = pencilShape
       } else {
-         currentShapeRef.current = {
+        currentShapeRef.current = {
           id: `shape-${Date.now()}`,
           tool,
           style: scaledStyle,
           startX: x,
           startY: y,
           endX: x,
-          endY: y,
+          endY: y
         } as Shape
       }
       drawCanvas()
     },
-    [tool, style, getCanvasCoords, imageReady, findTextAtPoint, drawCanvas],
+    [tool, style, getCanvasCoords, imageReady, findTextAtPoint, drawCanvas]
   )
 
   const handleMouseMove = useCallback(
@@ -796,14 +803,14 @@ export function ScreenshotPage(): React.JSX.Element {
         const td = textDragRef.current
         const nx = x - td.offsetX
         const ny = y - td.offsetY
-        
+
         shapesRef.current = shapesRef.current.map((shape) => {
           if (shape.id !== td.id || shape.tool !== 'text') {
             return shape
           }
           return { ...shape, startX: nx, startY: ny, endX: nx, endY: ny }
         })
-        
+
         drawCanvas()
         return
       }
@@ -815,12 +822,12 @@ export function ScreenshotPage(): React.JSX.Element {
       if (currentShapeRef.current.tool === 'pencil') {
         const prev = currentShapeRef.current as PencilShape
         const last = prev.points[prev.points.length - 1]
-        
+
         const canvas = canvasRef.current
         if (!canvas) return
         const rect = canvas?.getBoundingClientRect()
         const scaleX = rect ? canvas.width / rect.width : 1
-        
+
         if (last && Math.hypot(last.x - x, last.y - y) < 1.5 * scaleX) {
           return
         }
@@ -828,18 +835,18 @@ export function ScreenshotPage(): React.JSX.Element {
       } else {
         currentShapeRef.current = { ...currentShapeRef.current, endX: x, endY: y }
       }
-      
+
       requestAnimationFrame(drawCanvas)
     },
-    [getCanvasCoords, drawCanvas],
+    [getCanvasCoords, drawCanvas]
   )
 
   const finishDrawing = useCallback(() => {
     if (!isDrawingRef.current || !currentShapeRef.current) {
       return
     }
-    
-    // Prevent empty rects due to microscopic pointer jitter clicks 
+
+    // Prevent empty rects due to microscopic pointer jitter clicks
     const shape = currentShapeRef.current
     if (shape.tool !== 'pencil' && shape.tool !== 'text') {
       if (Math.abs(shape.endX - shape.startX) < 2 && Math.abs(shape.endY - shape.startY) < 2) {
@@ -853,7 +860,7 @@ export function ScreenshotPage(): React.JSX.Element {
     isDrawingRef.current = false
     const newShapes = [...shapesRef.current, currentShapeRef.current]
     currentShapeRef.current = null
-    
+
     shapesRef.current = newShapes
     setShapes(newShapes)
     saveShapeHistory(newShapes)
@@ -873,7 +880,7 @@ export function ScreenshotPage(): React.JSX.Element {
   useEffect(() => {
     const onWindowMouseUp = (): void => {
       if (textDragRef.current || isDrawingRef.current) {
-         handleMouseUp()
+        handleMouseUp()
       }
     }
     window.addEventListener('mouseup', onWindowMouseUp)
@@ -947,7 +954,7 @@ export function ScreenshotPage(): React.JSX.Element {
     active,
     onClick,
     title,
-    disabled,
+    disabled
   }: {
     icon: React.ComponentType<{ className?: string }>
     active?: boolean
@@ -1038,7 +1045,7 @@ export function ScreenshotPage(): React.JSX.Element {
               type="button"
               className={cn(
                 'w-5 h-5 rounded border-2 transition-transform hover:scale-110',
-                style.strokeColor === color ? 'border-primary' : 'border-transparent',
+                style.strokeColor === color ? 'border-primary' : 'border-transparent'
               )}
               style={{ backgroundColor: color }}
               onClick={() => setStyle({ ...style, strokeColor: color })}
@@ -1079,7 +1086,6 @@ export function ScreenshotPage(): React.JSX.Element {
             ) : (
               <Camera className="w-4 h-4" />
             )}
-          
           </Button>
           <Button variant="outline" size="sm" onClick={handleCopy} disabled={!imageReady || busy}>
             <Copy className="w-4 h-4" />
@@ -1096,41 +1102,41 @@ export function ScreenshotPage(): React.JSX.Element {
           ref={containerRef}
           className="relative flex-1 min-h-0 flex items-center justify-center p-4 bg-muted/20 rounded-lg overflow-hidden"
         >
-         <div
-              className="absolute top-3 left-3 z-10 flex flex-col gap-1 rounded-md border border-border/60 bg-background/90 px-3 py-2 text-[11px] leading-snug text-muted-foreground shadow-sm backdrop-blur-sm pointer-events-none"
-              aria-hidden
-            >
-              <span>
-                工具:{' '}
+          <div
+            className="absolute top-3 left-3 z-10 flex flex-col gap-1 rounded-md border border-border/60 bg-background/90 px-3 py-2 text-[11px] leading-snug text-muted-foreground shadow-sm backdrop-blur-sm pointer-events-none"
+            aria-hidden
+          >
+            <span>
+              工具:{' '}
+              {
                 {
-                  {
-                    select: '选择',
-                    rect: '矩形',
-                    ellipse: '椭圆',
-                    arrow: '箭头',
-                    text: '文字',
-                    pencil: '画笔',
-                  }[tool]
-                }
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                颜色
-                <span
-                  className="inline-block h-3 w-3 rounded-sm border border-border/80"
-                  style={{ backgroundColor: style.strokeColor }}
-                />
-                <span className="font-mono text-[10px] opacity-80">{style.strokeColor}</span>
-              </span>
-              <span>粗细: {style.lineWidth}px</span>
-              <span>标注: {shapes.length}</span>
-              <span>
-                历史: {captureHistory.length}
-                {selectedCount > 0 ? ` · 已选 ${selectedCount}` : ''}
-              </span>
-              {tool === 'select' && (
-                <span className="text-[10px] opacity-80">选择模式下可拖动文字</span>
-              )}
-            </div>
+                  select: '选择',
+                  rect: '矩形',
+                  ellipse: '椭圆',
+                  arrow: '箭头',
+                  text: '文字',
+                  pencil: '画笔'
+                }[tool]
+              }
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              颜色
+              <span
+                className="inline-block h-3 w-3 rounded-sm border border-border/80"
+                style={{ backgroundColor: style.strokeColor }}
+              />
+              <span className="font-mono text-[10px] opacity-80">{style.strokeColor}</span>
+            </span>
+            <span>粗细: {style.lineWidth}px</span>
+            <span>标注: {shapes.length}</span>
+            <span>
+              历史: {captureHistory.length}
+              {selectedCount > 0 ? ` · 已选 ${selectedCount}` : ''}
+            </span>
+            {tool === 'select' && (
+              <span className="text-[10px] opacity-80">选择模式下可拖动文字</span>
+            )}
+          </div>
 
           {screenshot ? (
             <div
@@ -1147,7 +1153,7 @@ export function ScreenshotPage(): React.JSX.Element {
                       ? 'default'
                       : tool === 'text'
                         ? 'text'
-                        : 'crosshair',
+                        : 'crosshair'
                 }}
                 onClick={handleCanvasClick}
                 onMouseDown={handleMouseDown}
@@ -1179,18 +1185,18 @@ export function ScreenshotPage(): React.JSX.Element {
                         autoComplete="off"
                         className="resize-y rounded-md outline-none"
                         style={{
-                              fontSize: `${displayFontSize}px`,
-                              lineHeight: TEXT_LINE_HEIGHT_RATIO,
-                              color: style.strokeColor,
-                              caretColor: style.strokeColor,
-                              padding: 0,
-                              margin: 0,
-                              resize: 'none',
-                              minWidth: '50px',
-                            }}
+                          fontSize: `${displayFontSize}px`,
+                          lineHeight: TEXT_LINE_HEIGHT_RATIO,
+                          color: style.strokeColor,
+                          caretColor: style.strokeColor,
+                          padding: 0,
+                          margin: 0,
+                          resize: 'none',
+                          minWidth: '50px'
+                        }}
                         onChange={(e) =>
                           setTextEditor((prev) =>
-                            prev ? { ...prev, value: e.target.value } : null,
+                            prev ? { ...prev, value: e.target.value } : null
                           )
                         }
                         onKeyDown={(e) => {
@@ -1232,9 +1238,7 @@ export function ScreenshotPage(): React.JSX.Element {
               <span className="text-xs font-medium">历史记录</span>
               <span className="text-xs text-muted-foreground">{captureHistory.length}</span>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
-              单击多选 · 双击加载
-            </p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">单击多选 · 双击加载</p>
           </div>
 
           <div className="p-2 flex items-center gap-1 shrink-0">
@@ -1273,53 +1277,52 @@ export function ScreenshotPage(): React.JSX.Element {
 
           <ScrollArea className="flex-1 min-h-0">
             <div className="p-2 space-y-2 pr-3">
-            {captureHistory.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-xs gap-2">
-                <ImageIcon className="w-8 h-8 opacity-40" />
-                暂无历史截图
-              </div>
-            ) : (
-              captureHistory.map((item) => {
-                const selected = selectedCaptureIds.has(item.id)
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={cn(
-                      'w-full rounded-md border p-1 text-left transition-colors',
-                      selected
-                        ? 'border-primary ring-2 ring-primary/30 bg-primary/5'
-                        : 'border-border hover:border-primary/50',
-                    )}
-                    onClick={() => toggleCaptureSelection(item.id)}
-                    onDoubleClick={(e) => {
-                      e.preventDefault()
-                      loadSingleCapture(item)
-                    }}
-                  >
-                    <img
-                      src={item.dataUrl}
-                      alt=""
-                      className="w-full aspect-video object-cover rounded bg-muted"
-                      draggable={false}
-                    />
-                    <p className="text-[10px] text-muted-foreground mt-1 truncate px-0.5">
-                      {formatHistoryTime(item.createdAt)}
-                    </p>
-                    {item.deviceName && (
-                      <p className="text-[10px] text-muted-foreground truncate px-0.5">
-                        {item.deviceName}
+              {captureHistory.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-xs gap-2">
+                  <ImageIcon className="w-8 h-8 opacity-40" />
+                  暂无历史截图
+                </div>
+              ) : (
+                captureHistory.map((item) => {
+                  const selected = selectedCaptureIds.has(item.id)
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={cn(
+                        'w-full rounded-md border p-1 text-left transition-colors',
+                        selected
+                          ? 'border-primary ring-2 ring-primary/30 bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      )}
+                      onClick={() => toggleCaptureSelection(item.id)}
+                      onDoubleClick={(e) => {
+                        e.preventDefault()
+                        loadSingleCapture(item)
+                      }}
+                    >
+                      <img
+                        src={item.dataUrl}
+                        alt=""
+                        className="w-full aspect-video object-cover rounded bg-muted"
+                        draggable={false}
+                      />
+                      <p className="text-[10px] text-muted-foreground mt-1 truncate px-0.5">
+                        {formatHistoryTime(item.createdAt)}
                       </p>
-                    )}
-                  </button>
-                )
-              })
-            )}
+                      {item.deviceName && (
+                        <p className="text-[10px] text-muted-foreground truncate px-0.5">
+                          {item.deviceName}
+                        </p>
+                      )}
+                    </button>
+                  )
+                })
+              )}
             </div>
           </ScrollArea>
         </aside>
       </div>
-
     </div>
   )
 }
