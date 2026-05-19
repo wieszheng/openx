@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import {
   Monitor,
   Smartphone,
@@ -456,17 +456,22 @@ export function SettingsPage(): React.JSX.Element {
                       viewBox="0 0 100 100"
                       fill="none"
                       stroke="oklch(0.508 0.118 165.612)"
-                      strokeWidth="6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      xmlns="http://www.w3.org/2000/svg"
                     >
-                      <path d="M 20 50 L 35 20 L 80 20" />
-                      <path d="M 80 50 L 65 80 L 20 80" />
-                      <path d="M 35 35 L 65 65 M 35 65 L 65 35" strokeWidth="6" />
+                      <path
+                        d="M 6 50 H 22 L 32 20 L 68 80 L 78 50 H 94"
+                        stroke-width="10.8"
+                        stroke-linejoin="round"
+                      ></path>
+                      <path d="M 32 80 L 68 20" stroke-width="10.8"></path>
                     </svg>
                   </div>
                   <div>
-                    <p className="text-lg font-semibold">OpenX</p>
+                    <p className="text-lg font-semibold">
+                      Open<span className="text-primary font-black">X</span>
+                    </p>
                     <p className="text-sm text-muted-foreground">版本 {currentVersion}</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       基于 Electron + React 的跨平台设备管理工具

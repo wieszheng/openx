@@ -1,4 +1,5 @@
 import { Home, Settings, Key, LayoutPanelLeft, Camera, Monitor } from 'lucide-react'
+import React from 'react'
 
 interface MenuItem {
   id: string
@@ -23,10 +24,10 @@ export function Sidebar({ activeMenu = 'home', onMenuChange }: SidebarProps): Re
   return (
     <aside className="w-14 flex flex-col items-center py-3">
       {/* Logo */}
-      <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-4">
+      <div className="w-8.5 h-8.5 rounded-xl flex items-center justify-center mb-4">
         <svg
-          width="1024"
-          height="1024"
+          width="48"
+          height="48"
           viewBox="0 0 100 100"
           fill="none"
           stroke="oklch(0.508 0.118 165.612)"

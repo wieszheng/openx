@@ -269,7 +269,7 @@ export function Header(): React.JSX.Element {
       </div>
 
       <div className="no-drag flex items-center ml-auto gap-1 self-center pr-1">
-        <div className="mx-5">
+        <div className="mx-3">
           <div
             role="button"
             tabIndex={0}
