@@ -9,9 +9,10 @@ import {
   Sun,
   Moon,
   Loader2,
-  PackagePlus
+  PackagePlus,
+  Circle
 } from 'lucide-react'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTheme } from 'next-themes'
 import { useDevicesStore } from '@/stores/devices'
 import type { UnifiedDevice } from '../../../shared/unified-device'
@@ -19,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { AnimatedGradientText } from '@/components/ui/animated-gradient-text'
 import { AnimatedShinyText } from '@/components/ui/animated-shiny-text'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 /**
  * 获取设备版本摘要信息
@@ -66,6 +68,9 @@ export function Header(): React.JSX.Element {
   const [isMaximized, setIsMaximized] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [installing, setInstalling] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingTime, setRecordingTime] = useState(0)
+  const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // 监听窗口最大化状态
@@ -129,6 +134,74 @@ export function Header(): React.JSX.Element {
       setInstalling(false)
     }
   }
+
+  // 格式化录制时间
+  const formatRecordingTime = useCallback((seconds: number): string => {
+    const hrs = Math.floor(seconds / 3600)
+    const mins = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
+    if (hrs > 0) {
+      return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    }
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }, [])
+
+  const handleStartRecording = async () => {
+    if (!selectedId) {
+      toast.error('请先选择设备')
+      return
+    }
+    if (selectedDevice?.state !== 'online') {
+      toast.error('设备未在线，无法录制')
+      return
+    }
+
+    try {
+      // TODO: 调用实际的录制开始 IPC
+      // const result = await window.api.mirror.startRecord(selectedId)
+      setIsRecording(true)
+      setRecordingTime(0)
+      toast.success('开始录制')
+    } catch (err) {
+      toast.error(String(err))
+    }
+  }
+
+  const handleStopRecording = async () => {
+    try {
+      // TODO: 调用实际的录制停止 IPC，获取录制文件路径
+      // const result = await window.api.mirror.stopRecord()
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current)
+        recordingIntervalRef.current = null
+      }
+      setIsRecording(false)
+      const duration = formatRecordingTime(recordingTime)
+      toast.success(`录制已停止，时长: ${duration}`)
+      setRecordingTime(0)
+    } catch (err) {
+      toast.error(String(err))
+    }
+  }
+
+  // 录制计时器
+  useEffect(() => {
+    if (isRecording) {
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime((prev) => prev + 1)
+      }, 1000)
+    } else {
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current)
+        recordingIntervalRef.current = null
+      }
+    }
+    return () => {
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current)
+      }
+    }
+  }, [isRecording])
   
   const headerPrimary = selectedDevice?.displayName ?? '未检测到设备'
   const headerSecondary = selectedDevice
@@ -254,6 +327,60 @@ export function Header(): React.JSX.Element {
             {installTooltip}
           </TooltipContent>
         </Tooltip>
+
+        {/* 灵动岛风格录制按钮 */}
+        {isRecording ? (
+          // 录制中 - 灵动岛风格
+          <div
+            className={cn(
+              'relative flex items-center gap-2 mx-1 px-3 h-8 rounded-full cursor-pointer',
+              'bg-black/90 hover:bg-black/80 transition-all duration-300',
+              'animate-[glow-pulse_2s_ease-in-out_infinite]'
+            )}
+            onClick={handleStopRecording}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                handleStopRecording()
+              }
+            }}
+          >
+            {/* 闪烁的录制指示灯 */}
+            <div className="relative flex items-center justify-center">
+              <Circle
+                className={cn(
+                  'w-2.5 h-2.5 fill-red-500 text-red-500',
+                  'animate-[recording-blink_1s_ease-in-out_infinite]'
+                )}
+              />
+            </div>
+            {/* 录制时间 */}
+            <span className="text-white text-xs font-medium tabular-nums">
+              {formatRecordingTime(recordingTime)}
+            </span>
+            {/* 停止图标 */}
+            <div className="w-2 h-2 bg-white rounded-sm" />
+          </div>
+        ) : (
+          // 非录制状态 - 录制按钮
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={handleStartRecording}
+                disabled={!selectedId || selectedDevice?.state !== 'online'}
+                className="w-8 h-8 flex items-center justify-center hover:bg-accent transition-colors rounded-lg mx-1"
+              >
+                <Circle className="w-4 h-4 fill-red-500/20 text-red-500" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={6}>
+              开始屏幕录制
+            </TooltipContent>
+          </Tooltip>
+        )}
         
         <button
           type="button"

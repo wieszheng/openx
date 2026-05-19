@@ -149,3 +149,40 @@
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }
+
+/* 灵动岛录制效果 - 脉冲发光动画 */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px 2px rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 16px 4px rgba(239, 68, 68, 0.5);
+  }
+}
+
+/* 录制指示灯闪烁动画 */
+@keyframes recording-blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* 灵动岛进入动画 */
+@keyframes island-expand {
+  0% {
+    transform: scaleX(0.5);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* 灵动岛录制按钮激活态 */
+.recording-active {
+  animation: glow-pulse 2s ease-in-out infinite, island-expand 0.3s ease-out;
+}
