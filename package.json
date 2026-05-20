@@ -1,6 +1,6 @@
 {
   "name": "openx",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "OpenX - A modern Electron application",
   "main": "./out/main/index.js",
   "author": "openx.com",

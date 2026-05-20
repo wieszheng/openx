@@ -209,12 +209,6 @@ export function SettingsPage(): React.JSX.Element {
     toast.success('导出目录已保存')
   }
 
-  const handleResetExportDir = async () => {
-    await window.api.settings.setExportDir('')
-    setExportDir(null)
-    toast.success('已恢复默认导出目录')
-  }
-
   return (
     <div className="flex flex-col h-full">
       {/* 垂直 Tabs 布局 */}
