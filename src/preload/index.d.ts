@@ -54,6 +54,19 @@ interface ToolkitAPI {
 interface LogAPI {
   getPath: () => Promise<string>
 }
+
+interface UpdaterAPI {
+  check: () => void
+  download: () => void
+  install: () => void
+  onChecking: (cb: () => void) => () => void
+  onAvailable: (cb: (info: { version: string; releaseNotes?: string }) => void) => () => void
+  onNotAvailable: (cb: () => void) => () => void
+  onProgress: (cb: (info: { percent: number }) => void) => () => void
+  onDownloaded: (cb: () => void) => () => void
+  onError: (cb: (info: { message: string }) => void) => () => void
+}
+
 declare global {
   interface Window {
     electron: ElectronAPI
@@ -65,6 +78,7 @@ declare global {
       mirror: MirrorAPI
       toolkit: ToolkitAPI
       log: LogAPI
+      updater: UpdaterAPI
     }
   }
 }

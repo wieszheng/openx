@@ -46,6 +46,26 @@ export const IPC = {
   log: {
     getPath: 'log:get-path'
   },
+  updater: {
+    /** renderer → main: 手动检查更新 */
+    check: 'updater:check',
+    /** renderer → main: 开始下载 */
+    download: 'updater:download',
+    /** renderer → main: 退出并安装 */
+    install: 'updater:install',
+    /** main → renderer: 正在检查 */
+    checking: 'updater:checking',
+    /** main → renderer: 有可用更新 { version, releaseNotes } */
+    available: 'updater:available',
+    /** main → renderer: 已是最新版本 */
+    notAvailable: 'updater:not-available',
+    /** main → renderer: 下载进度 { percent } */
+    progress: 'updater:progress',
+    /** main → renderer: 下载完成 */
+    downloaded: 'updater:downloaded',
+    /** main → renderer: 错误 { message } */
+    error: 'updater:error',
+  },
   debug: {
     ping: 'ping'
   }

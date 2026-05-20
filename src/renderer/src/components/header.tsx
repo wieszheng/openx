@@ -10,7 +10,9 @@ import {
   Moon,
   Loader2,
   PackagePlus,
-  Circle
+  Circle,
+  ArrowDownToLine,
+  RefreshCw
 } from 'lucide-react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTheme } from 'next-themes'
@@ -73,6 +75,11 @@ export function Header(): React.JSX.Element {
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
+  type UpdateState = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error'
+  const [updateState, setUpdateState] = useState<UpdateState>('idle')
+  const [updateVersion, setUpdateVersion] = useState<string>('')
+  const [downloadPercent, setDownloadPercent] = useState(0)
+
   // 监听窗口最大化状态
   useEffect(() => {
     const checkMaximized = async () => {
@@ -132,6 +139,34 @@ export function Header(): React.JSX.Element {
       toast.error(String(err))
     } finally {
       setInstalling(false)
+    }
+  }
+
+  useEffect(() => {
+    const offs = [
+      window.api.updater.onChecking(() => setUpdateState('checking')),
+      window.api.updater.onAvailable((info) => {
+        setUpdateState('available')
+        setUpdateVersion(info.version)
+      }),
+      window.api.updater.onNotAvailable(() => setUpdateState('idle')),
+      window.api.updater.onProgress((info) => {
+        setUpdateState('downloading')
+        setDownloadPercent(info.percent)
+      }),
+      window.api.updater.onDownloaded(() => setUpdateState('downloaded')),
+      window.api.updater.onError(() => setUpdateState('error')),
+    ]
+    return () => offs.forEach((off) => off())
+  }, [])
+
+  const handleUpdateClick = () => {
+    if (updateState === 'idle' || updateState === 'error') {
+      window.api.updater.check()
+    } else if (updateState === 'available') {
+      window.api.updater.download()
+    } else if (updateState === 'downloaded') {
+      window.api.updater.install()
     }
   }
 
@@ -269,6 +304,39 @@ export function Header(): React.JSX.Element {
       </div>
 
       <div className="no-drag flex items-center ml-auto gap-1 self-center pr-1">
+        {/* Update indicator */}
+        {updateState !== 'idle' && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={handleUpdateClick}
+                disabled={updateState === 'checking' || updateState === 'downloading'}
+                className={`relative w-8 h-8 flex items-center justify-center hover:bg-accent transition-colors rounded-lg ${
+                  updateState === 'available' || updateState === 'downloaded' ? 'text-primary' : ''
+                } ${updateState === 'error' ? 'text-destructive' : ''}`}
+              >
+                {updateState === 'checking' && <Loader2 className="w-4 h-4 animate-spin" />}
+                {updateState === 'available' && <ArrowDownToLine className="w-4 h-4" />}
+                {updateState === 'downloading' && (
+                  <span className="text-[10px] font-mono font-bold">{downloadPercent}%</span>
+                )}
+                {updateState === 'downloaded' && <RefreshCw className="w-4 h-4" />}
+                {updateState === 'error' && <RefreshCw className="w-4 h-4" />}
+                {(updateState === 'available' || updateState === 'downloaded') && (
+                  <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-primary" />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={6}>
+              {updateState === 'checking' && '检查更新中…'}
+              {updateState === 'available' && `发现新版本 v${updateVersion}，点击下载`}
+              {updateState === 'downloading' && `正在下载 ${downloadPercent}%`}
+              {updateState === 'downloaded' && '下载完成，点击重启安装'}
+              {updateState === 'error' && '更新出错，点击重试'}
+            </TooltipContent>
+          </Tooltip>
+        )}
         <div className="mx-3">
           <div
             role="button"

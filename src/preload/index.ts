@@ -90,6 +90,41 @@ const api = {
   },
   log: {
     getPath: (): Promise<string> => ipcRenderer.invoke(IPC.log.getPath)
+  },
+  updater: {
+    check: (): void => ipcRenderer.send(IPC.updater.check),
+    download: (): void => ipcRenderer.send(IPC.updater.download),
+    install: (): void => ipcRenderer.send(IPC.updater.install),
+    onChecking: (cb: () => void): (() => void) => {
+      const listener = (): void => cb()
+      ipcRenderer.on(IPC.updater.checking, listener)
+      return () => ipcRenderer.removeListener(IPC.updater.checking, listener)
+    },
+    onAvailable: (cb: (info: { version: string; releaseNotes?: string }) => void): (() => void) => {
+      const listener = (_e: Electron.IpcRendererEvent, info: { version: string; releaseNotes?: string }): void => cb(info)
+      ipcRenderer.on(IPC.updater.available, listener)
+      return () => ipcRenderer.removeListener(IPC.updater.available, listener)
+    },
+    onNotAvailable: (cb: () => void): (() => void) => {
+      const listener = (): void => cb()
+      ipcRenderer.on(IPC.updater.notAvailable, listener)
+      return () => ipcRenderer.removeListener(IPC.updater.notAvailable, listener)
+    },
+    onProgress: (cb: (info: { percent: number }) => void): (() => void) => {
+      const listener = (_e: Electron.IpcRendererEvent, info: { percent: number }): void => cb(info)
+      ipcRenderer.on(IPC.updater.progress, listener)
+      return () => ipcRenderer.removeListener(IPC.updater.progress, listener)
+    },
+    onDownloaded: (cb: () => void): (() => void) => {
+      const listener = (): void => cb()
+      ipcRenderer.on(IPC.updater.downloaded, listener)
+      return () => ipcRenderer.removeListener(IPC.updater.downloaded, listener)
+    },
+    onError: (cb: (info: { message: string }) => void): (() => void) => {
+      const listener = (_e: Electron.IpcRendererEvent, info: { message: string }): void => cb(info)
+      ipcRenderer.on(IPC.updater.error, listener)
+      return () => ipcRenderer.removeListener(IPC.updater.error, listener)
+    },
   }
 }
 

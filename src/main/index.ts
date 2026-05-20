@@ -6,6 +6,7 @@ import icon from '../../resources/icon.png?asset'
 import { registerIpc } from './ipc'
 import { createLogger, initLog } from './log'
 import { startDeviceDiscovery, stopDeviceDiscovery } from './devices'
+import { initUpdater } from './ipc/handlers/updater'
 
 initLog()
 const logger = createLogger('main')
@@ -66,7 +67,7 @@ app.whenReady().then(async () => {
   registerIpc({ getMainWindow: () => mainWindow })
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
-
+  initUpdater(() => mainWindow)
   await startDeviceDiscovery()
 
   createWindow()
