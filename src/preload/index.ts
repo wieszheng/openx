@@ -11,6 +11,7 @@ import type {
 import type { UnifiedDevice } from '../shared/unified-device'
 import type { MirrorActionResult, MirrorMetadata, MirrorOptions, FramePacket } from '../shared/mirror'
 import { ToolkitStatusResult } from '../shared/toolkit-status'
+import { RecordStartResult, RecordStopResult } from '../shared/record'
 
 // Custom APIs for renderer
 const api = {
@@ -85,11 +86,24 @@ const api = {
       return () => ipcRenderer.removeListener(IPC.mirror.windowClosed, listener)
     },
   },
+  record: {
+    start: (deviceId: string): Promise<RecordStartResult> =>
+      ipcRenderer.invoke(IPC.record.start, deviceId),
+    stop: (deviceId: string): Promise<RecordStopResult> =>
+      ipcRenderer.invoke(IPC.record.stop, deviceId),
+  },
   toolkit: {
     status: (): Promise<ToolkitStatusResult> => ipcRenderer.invoke(IPC.toolkit.status),
   },
   log: {
     getPath: (): Promise<string> => ipcRenderer.invoke(IPC.log.getPath)
+  },
+  dialog: {
+    openFolder: (): Promise<string | null> => ipcRenderer.invoke(IPC.dialog.openFolder),
+  },
+  settings: {
+    getExportDir: (): Promise<string | null> => ipcRenderer.invoke(IPC.settings.getExportDir),
+    setExportDir: (dir: string): Promise<void> => ipcRenderer.invoke(IPC.settings.setExportDir, dir),
   },
   updater: {
     check: (): void => ipcRenderer.send(IPC.updater.check),

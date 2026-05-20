@@ -8,6 +8,13 @@ import { createLogger, initLog } from './log'
 import { startDeviceDiscovery, stopDeviceDiscovery } from './devices'
 import { initUpdater } from './ipc/handlers/updater'
 
+// macOS GUI 启动不继承 shell PATH，手动注入常用工具目录
+if (process.platform === 'darwin' && !is.dev) {
+  const extra = ['/opt/homebrew/bin', '/opt/homebrew/sbin', '/usr/local/bin', '/usr/local/sbin']
+  const current = (process.env.PATH ?? '').split(':').filter(Boolean)
+  process.env.PATH = [...new Set([...extra, ...current])].join(':')
+}
+
 initLog()
 const logger = createLogger('main')
 

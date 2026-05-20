@@ -192,11 +192,13 @@ export function Header(): React.JSX.Element {
     }
 
     try {
-      // TODO: 调用实际的录制开始 IPC
-      // const result = await window.api.mirror.startRecord(selectedId)
-      setIsRecording(true)
-      setRecordingTime(0)
-      toast.success('开始录制')
+      const result = await window.api.record.start(selectedId)
+      if (result.ok) {
+        setIsRecording(true)
+        setRecordingTime(0)
+      } else {
+        toast.error(result.error)
+      }
     } catch (err) {
       toast.error(String(err))
     }
@@ -204,16 +206,21 @@ export function Header(): React.JSX.Element {
 
   const handleStopRecording = async () => {
     try {
-      // TODO: 调用实际的录制停止 IPC，获取录制文件路径
-      // const result = await window.api.mirror.stopRecord()
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current)
-        recordingIntervalRef.current = null
+      if (!selectedId) return
+      if (isRecording) {
+        const result = await window.api.record.stop(selectedId)
+        if (recordingIntervalRef.current) {
+          clearInterval(recordingIntervalRef.current)
+          recordingIntervalRef.current = null
+        }
+        setIsRecording(false)
+        setRecordingTime(0)
+        if (result.ok) {
+          toast.success(`录制完成（${result.durationSec}s）已保存至 ${result.filePath}`)
+        } else {
+          toast.error(result.error)
+        }
       }
-      setIsRecording(false)
-      const duration = formatRecordingTime(recordingTime)
-      toast.success(`录制已停止，时长: ${duration}`)
-      setRecordingTime(0)
     } catch (err) {
       toast.error(String(err))
     }
@@ -237,6 +244,8 @@ export function Header(): React.JSX.Element {
       }
     }
   }, [isRecording])
+
+
 
   const headerPrimary = selectedDevice?.displayName ?? '未检测到设备'
   const headerSecondary = selectedDevice
@@ -280,9 +289,8 @@ export function Header(): React.JSX.Element {
                     setSelectedId(device.id)
                     setIsDropdownOpen(false)
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm text-left hover:bg-accent transition-colors ${
-                    selectedId === device.id ? 'text-primary font-medium' : ''
-                  }`}
+                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm text-left hover:bg-accent transition-colors ${selectedId === device.id ? 'text-primary font-medium' : ''
+                    }`}
                 >
                   <DeviceIcon device={device} />
                   <span
@@ -312,9 +320,8 @@ export function Header(): React.JSX.Element {
                 type="button"
                 onClick={handleUpdateClick}
                 disabled={updateState === 'checking' || updateState === 'downloading'}
-                className={`relative w-8 h-8 flex items-center justify-center hover:bg-accent transition-colors rounded-lg ${
-                  updateState === 'available' || updateState === 'downloaded' ? 'text-primary' : ''
-                } ${updateState === 'error' ? 'text-destructive' : ''}`}
+                className={`relative w-8 h-8 flex items-center justify-center hover:bg-accent transition-colors rounded-lg ${updateState === 'available' || updateState === 'downloaded' ? 'text-primary' : ''
+                  } ${updateState === 'error' ? 'text-destructive' : ''}`}
               >
                 {updateState === 'checking' && <Loader2 className="w-4 h-4 animate-spin" />}
                 {updateState === 'available' && <ArrowDownToLine className="w-4 h-4" />}
@@ -348,9 +355,8 @@ export function Header(): React.JSX.Element {
                 setTheme(theme === 'dark' ? 'light' : 'dark')
               }
             }}
-            className={`relative flex items-center w-[64px] h-[35px] rounded-xl p-0.5 cursor-pointer transition-colors ${
-              theme === 'dark' ? 'bg-background border border-border' : 'bg-accent/50 border'
-            }`}
+            className={`relative flex items-center w-[64px] h-[35px] rounded-xl p-0.5 cursor-pointer transition-colors ${theme === 'dark' ? 'bg-background border border-border' : 'bg-accent/50 border'
+              }`}
           >
             <div
               className={`
@@ -358,11 +364,10 @@ export function Header(): React.JSX.Element {
               w-[28px] h-[28px] rounded-lg
               flex items-center justify-center
               transition-all duration-300 ease-in-out
-              ${
-                theme === 'dark'
+              ${theme === 'dark'
                   ? 'right-0.5 bg-zinc-700'
                   : 'left-0.5 bg-white shadow-sm border border-border'
-              }
+                }
             `}
             >
               {theme === 'dark' ? (

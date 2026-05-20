@@ -40,11 +40,25 @@ export const IPC = {
     /** main → main-window renderer: mirror window was closed */
     windowClosed: 'mirror:window-closed'
   },
+  record: {
+    start: 'record:start',
+    stop: 'record:stop',
+  },
   toolkit: {
     status: 'toolkit:status',
   },
   log: {
     getPath: 'log:get-path'
+  },
+  dialog: {
+    /** renderer → main: 打开文件夹选择器，返回路径或 null */
+    openFolder: 'dialog:open-folder',
+  },
+  settings: {
+    /** renderer → main: 获取导出目录 */
+    getExportDir: 'settings:get-export-dir',
+    /** renderer → main: 设置导出目录 */
+    setExportDir: 'settings:set-export-dir',
   },
   updater: {
     /** renderer → main: 手动检查更新 */

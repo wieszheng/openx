@@ -8,6 +8,7 @@ import type {
 } from '../shared/device-app'
 import type { UnifiedDevice } from '../shared/unified-device'
 import type { MirrorActionResult, MirrorMetadata, MirrorOptions, FramePacket } from '../shared/mirror'
+import type { RecordStartResult, RecordStopResult } from '../shared/record'
 
 interface WindowAPI {
   minimize: () => void
@@ -55,6 +56,15 @@ interface LogAPI {
   getPath: () => Promise<string>
 }
 
+interface DialogAPI {
+  openFolder: () => Promise<string | null>
+}
+
+interface SettingsAPI {
+  getExportDir: () => Promise<string | null>
+  setExportDir: (dir: string) => Promise<void>
+}
+
 interface UpdaterAPI {
   check: () => void
   download: () => void
@@ -65,6 +75,11 @@ interface UpdaterAPI {
   onProgress: (cb: (info: { percent: number }) => void) => () => void
   onDownloaded: (cb: () => void) => () => void
   onError: (cb: (info: { message: string }) => void) => () => void
+}
+
+interface RecordAPI {
+  start: (deviceId: string) => Promise<RecordStartResult>
+  stop: (deviceId: string) => Promise<RecordStopResult>
 }
 
 declare global {
@@ -79,6 +94,9 @@ declare global {
       toolkit: ToolkitAPI
       log: LogAPI
       updater: UpdaterAPI
+      dialog: DialogAPI
+      settings: SettingsAPI
+      record: RecordAPI
     }
   }
 }

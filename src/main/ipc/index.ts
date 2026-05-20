@@ -16,6 +16,8 @@ import {
 import { handleScreencap } from './handlers/screencap'
 import { handleMirrorStart, handleMirrorStop, handleOpenMirrorWindow } from './handlers/mirror'
 import { getToolkitStatus } from './handlers/toolkit'
+import { handleOpenFolder, handleGetExportDir, handleSetExportDir } from './handlers/settings'
+import { handleRecordStart, handleRecordStop } from './handlers/record'
 
 const logger = createLogger('ipc')
 
@@ -72,12 +74,23 @@ export function registerIpc({ getMainWindow }: RegisterIpcOptions): void {
   ipcMain.handle(IPC.mirror.openWindow, handleOpenMirrorWindow)
   ipcMain.handle(IPC.mirror.start, handleMirrorStart)
   ipcMain.handle(IPC.mirror.stop, handleMirrorStop)
+  
+  // ── Record ──────────────────────────────────────────────────────────────
+  ipcMain.handle(IPC.record.start, handleRecordStart)
+  ipcMain.handle(IPC.record.stop, handleRecordStop)
 
   // ── Toolkit ─────────────────────────────────────────────────────────────
   ipcMain.handle(IPC.toolkit.status, () => getToolkitStatus())
 
   // ── Log ─────────────────────────────────────────────────────────────────
   ipcMain.handle(IPC.log.getPath, () => getLogPath())
+
+  // ── Dialog ───────────────────────────────────────────────────────────────
+  ipcMain.handle(IPC.dialog.openFolder, () => handleOpenFolder(getMainWindow))
+
+  // ── Settings ─────────────────────────────────────────────────────────────
+  ipcMain.handle(IPC.settings.getExportDir, handleGetExportDir)
+  ipcMain.handle(IPC.settings.setExportDir, handleSetExportDir)
 
   // ── Debug ───────────────────────────────────────────────────────────────
   ipcMain.on(IPC.debug.ping, () => logger.debug('pong'))

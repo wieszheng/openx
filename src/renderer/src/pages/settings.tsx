@@ -12,7 +12,8 @@ import {
   Heart,
   Loader2,
   Server,
-  Copy
+  Copy,
+  Video
 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -89,6 +90,7 @@ export function SettingsPage(): React.JSX.Element {
   // } | null>(null)
 
   const [logPath, setLogPath] = useState<string | null>(null)
+  const [exportDir, setExportDir] = useState<string | null>(null)
   const [toolkit, setToolkit] = useState<ToolkitStatusResult | null>(null)
   const [toolkitLoading, setToolkitLoading] = useState(false)
   const [copiedLog, setCopiedLog] = useState(false)
@@ -116,6 +118,7 @@ export function SettingsPage(): React.JSX.Element {
 
   useEffect(() => {
     void window.api.log.getPath().then(setLogPath)
+    void window.api.settings.getExportDir().then(setExportDir)
     void loadToolkit()
   }, [loadToolkit])
 
@@ -198,6 +201,20 @@ export function SettingsPage(): React.JSX.Element {
     setTimeout(() => setCopiedLog(false), 2000)
   }
 
+  const handlePickExportDir = async () => {
+    const dir = await window.api.dialog.openFolder()
+    if (!dir) return
+    await window.api.settings.setExportDir(dir)
+    setExportDir(dir)
+    toast.success('导出目录已保存')
+  }
+
+  const handleResetExportDir = async () => {
+    await window.api.settings.setExportDir('')
+    setExportDir(null)
+    toast.success('已恢复默认导出目录')
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* 垂直 Tabs 布局 */}
@@ -221,7 +238,7 @@ export function SettingsPage(): React.JSX.Element {
         {/* 内容区域 */}
         <div className="flex-1 min-h-0 overflow-y-auto pr-2 ml-3">
           {/* 基础设置 */}
-          <TabsContent value="general" className="mt-0 space-y-6">
+          <TabsContent value="general">
             {/* 外观 */}
             <Card>
               <CardHeader>
@@ -345,6 +362,43 @@ export function SettingsPage(): React.JSX.Element {
                     )}
                   </div>
                 </div>
+              {/* 录制导出目录 */}
+              <div className="flex flex-col gap-3 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="text-muted-foreground shrink-0">
+                    <Video className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium">录制导出目录</h3>
+                    <p className="text-xs text-muted-foreground">截图与录屏的保存位置</p>
+                  </div>
+                </div>
+                <div className="pl-7 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-xs bg-muted rounded-lg px-3 py-2 break-all font-mono min-h-[2.25rem] flex items-center">
+                      {exportDir ?? <span className="text-muted-foreground">默认（视频/OpenX）</span>}
+                    </code>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="shrink-0 h-8 w-8"
+                          onClick={() => void handlePickExportDir()}
+                        >
+                          <FolderOpen className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>选择目录</TooltipContent>
+                    </Tooltip>
+                  </div>
+                  {/* {exportDir && (
+                    <Button size="sm" variant="ghost" onClick={() => void handleResetExportDir()}>
+                      恢复默认
+                    </Button>
+                  )} */}
+                </div>
+              </div>
               </CardContent>
             </Card>
           </TabsContent>
