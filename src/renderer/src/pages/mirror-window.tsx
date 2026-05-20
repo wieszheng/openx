@@ -185,24 +185,47 @@ export function MirrorWindowPage(): React.JSX.Element {
   }, [deviceId, disposeDecoder])
 
   return (
-    <div className="w-screen h-screen bg-black flex items-center justify-center overflow-hidden">
-      {status === 'connecting' && (
-        <div className="flex flex-col items-center gap-2 text-white/50">
-          <Loader2 className="w-8 h-8 animate-spin" />
-          <span className="text-sm">正在连接 scrcpy…</span>
+    <div className="w-screen h-screen flex items-center justify-center overflow-hidden">
+      {/* 手机外壳 */}
+      <div
+        className="relative flex flex-col rounded-[32px] shadow-2xl shadow-black/60 overflow-hidden"
+        style={{
+          background: 'linear-gradient(145deg, #3a3a3c, #1c1c1e)',
+          padding: '6px',
+          maxWidth: 'calc(100vh * 9 / 19.5 - 24px)',
+          width: '100%',
+          height: '100%'
+        }}
+      >
+        {/* 屏幕 */}
+        <div className="relative flex-1 rounded-[28px] overflow-hidden bg-black">
+          {/* 状态指示 */}
+          {status === 'connecting' && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 text-white/50 bg-black/80">
+              <Loader2 className="w-8 h-8 animate-spin" />
+              <span className="text-sm">正在连接…</span>
+            </div>
+          )}
+          {status === 'error' && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 text-red-400 bg-black/80 px-8">
+              <AlertCircle className="w-8 h-8 shrink-0" />
+              <span className="text-sm text-center">{errorMsg}</span>
+            </div>
+          )}
+
+          {/* 画面 */}
+          <canvas
+            ref={canvasRef}
+            className="w-full h-full object-contain"
+            style={{ display: status === 'streaming' ? 'block' : 'none' }}
+          />
         </div>
-      )}
-      {status === 'error' && (
-        <div className="flex flex-col items-center gap-2 text-red-400">
-          <AlertCircle className="w-8 h-8" />
-          <span className="text-sm max-w-xs text-center">{errorMsg}</span>
+
+        {/* 底部横条（Home 指示器） */}
+        <div className="flex justify-center pt-2">
+          <div className="w-1/3 h-1 rounded-full bg-white/30" />
         </div>
-      )}
-      <canvas
-        ref={canvasRef}
-        className="max-w-full max-h-full object-contain"
-        style={{ display: status === 'streaming' ? 'block' : 'none' }}
-      />
+      </div>
     </div>
   )
 }
