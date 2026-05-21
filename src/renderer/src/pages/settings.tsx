@@ -498,7 +498,8 @@ export function SettingsPage(): React.JSX.Element {
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <svg
+                    <svg viewBox="0 0 100 100" width="58" height="58" xmlns="http://www.w3.org/2000/svg"><svg x="0" y="0" width="100" height="100"><svg viewBox="0 0 100 100" fill="none" stroke="oklch(0.508 0.118 165.612)" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><ellipse cx="50" cy="50" rx="42" ry="16" transform="rotate(45 50 50)" stroke-width="8"></ellipse><ellipse cx="50" cy="50" rx="42" ry="16" transform="rotate(-45 50 50)" stroke-width="8"></ellipse></svg></svg></svg>
+                    {/* <svg
                       width="48"
                       height="48"
                       viewBox="0 0 100 100"
@@ -514,7 +515,7 @@ export function SettingsPage(): React.JSX.Element {
                         stroke-linejoin="round"
                       ></path>
                       <path d="M 32 80 L 68 20" stroke-width="10.8"></path>
-                    </svg>
+                    </svg> */}
                   </div>
                   <div>
                     <p className="text-lg font-semibold">
