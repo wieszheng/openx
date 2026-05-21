@@ -1,6 +1,6 @@
 import type { IpcMainInvokeEvent } from 'electron'
 import { parseDeviceRef, logErr } from '../../devices/device-ref'
-// import { startAndroidRecord, stopAndroidRecord } from '../../devices/android/record'
+import { startAndroidRecord, stopAndroidRecord } from '../../devices/android/record'
 import { startHarmonyRecord, stopHarmonyRecord } from '../../devices/harmony/record'
 import { createLogger } from '../../log'
 import type { RecordStartResult, RecordStopResult } from '../../../shared/record'
@@ -16,7 +16,7 @@ export async function handleRecordStart(
 
   try {
     if (ref.platform === 'android') {
-      // await startAndroidRecord(ref.key)
+      await startAndroidRecord(ref.key)
     } else {
       await startHarmonyRecord(ref.key)
     }
@@ -36,7 +36,7 @@ export async function handleRecordStop(
 
   try {
     const result = ref.platform === 'android'
-      ?  await stopHarmonyRecord(ref.key)
+      ?  await stopAndroidRecord(ref.key)
       : await stopHarmonyRecord(ref.key)
     return { ok: true, ...result }
   } catch (e) {
