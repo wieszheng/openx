@@ -247,10 +247,10 @@ export function Header(): React.JSX.Element {
 
 
 
-  const headerPrimary = selectedDevice?.displayName ?? '未检测到设备'
+  const headerPrimary = selectedDevice?.displayName ?? 'None Devices'
   const headerSecondary = selectedDevice
     ? [versionSummary(selectedDevice), selectedDevice.connectionKey].filter(Boolean).join(' · ')
-    : ''
+    : '未知数据描述'
   const headerTitle = selectedDevice?.label ?? headerPrimary
   const installTooltip =
     selectedDevice?.platform === 'harmony' ? '安装 HAP 应用包到设备' : '安装 APK 到设备'
@@ -279,7 +279,7 @@ export function Header(): React.JSX.Element {
         {isDropdownOpen && (
           <div className="absolute top-full left-0 mt-1 min-w-56 max-w-[min(100vw-8rem,24rem)] bg-background border border-border rounded-lg shadow-lg py-1 z-50">
             {devices.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-muted-foreground">未连接设备</div>
+              <div className="px-3 py-2 text-sm text-muted-foreground">None Devices</div>
             ) : (
               devices.map((device) => (
                 <button

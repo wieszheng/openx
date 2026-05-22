@@ -14,9 +14,10 @@ import {
   handleAppsEnable
 } from './handlers/apps'
 import { handleScreencap } from './handlers/screencap'
+import { handleFilesList, handleFilesDownload, handleFilesUpload, handleFilesDelete, handleFilesCreateDir } from './handlers/files'
 import { handleMirrorStart, handleMirrorStop, handleOpenMirrorWindow } from './handlers/mirror'
 import { getToolkitStatus } from './handlers/toolkit'
-import { handleOpenFolder, handleGetExportDir, handleSetExportDir } from './handlers/settings'
+import { handleOpenFolder, handleOpenFile, handleGetExportDir, handleSetExportDir } from './handlers/settings'
 import { handleRecordStart, handleRecordStop } from './handlers/record'
 
 const logger = createLogger('ipc')
@@ -66,6 +67,13 @@ export function registerIpc({ getMainWindow }: RegisterIpcOptions): void {
   ipcMain.handle(IPC.apps.disable, handleAppsDisable)
   ipcMain.handle(IPC.apps.enable, handleAppsEnable)
   
+  // ── Files ───────────────────────────────────────────────────────────────
+  ipcMain.handle(IPC.files.list, handleFilesList)
+  ipcMain.handle(IPC.files.download, handleFilesDownload)
+  ipcMain.handle(IPC.files.upload, handleFilesUpload)
+  ipcMain.handle(IPC.files.delete, handleFilesDelete)
+  ipcMain.handle(IPC.files.mkdir, handleFilesCreateDir)
+
 
   // ── Screencap ───────────────────────────────────────────────────────────
   ipcMain.handle(IPC.screencap.capture, handleScreencap)
@@ -87,6 +95,7 @@ export function registerIpc({ getMainWindow }: RegisterIpcOptions): void {
 
   // ── Dialog ───────────────────────────────────────────────────────────────
   ipcMain.handle(IPC.dialog.openFolder, () => handleOpenFolder(getMainWindow))
+  ipcMain.handle(IPC.dialog.openFile, () => handleOpenFile(getMainWindow))
 
   // ── Settings ─────────────────────────────────────────────────────────────
   ipcMain.handle(IPC.settings.getExportDir, handleGetExportDir)

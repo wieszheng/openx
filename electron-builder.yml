@@ -26,6 +26,11 @@ nsis:
   allowToChangeInstallationDirectory: true
   oneClick: false
 mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
   entitlementsInherit: build/entitlements.mac.plist
   icon: resources/icon.icns
   extendInfo:
@@ -37,15 +42,6 @@ mac:
   hardenedRuntime: false
   gatekeeperAssess: false
   identity: '-'
-  target:
-    - target: dmg
-      arch:
-        - arm64
-        - x64
-    - target: zip
-      arch:
-        - arm64
-        - x64
 dmg:
   artifactName: ${name}-${version}-${arch}.${ext}
 linux:

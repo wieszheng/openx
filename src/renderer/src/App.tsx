@@ -9,6 +9,7 @@ import { AppsPage } from '@/pages/apps'
 import { MirrorPage } from '@/pages/mirror'
 import { ScreenshotPage } from '@/pages/screenshot'
 import { SettingsPage } from '@/pages/settings'
+import { FilesPage } from '@/pages/files'
 
 function App(): React.JSX.Element {
   const [activeMenu, setActiveMenu] = useState('home')
@@ -23,6 +24,8 @@ function App(): React.JSX.Element {
         return <MirrorPage />
       case 'screenshot':
         return <ScreenshotPage />
+      case 'files':
+        return <FilesPage />
       case 'settings':
         return <SettingsPage />
       case 'home':

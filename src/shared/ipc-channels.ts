@@ -44,6 +44,13 @@ export const IPC = {
     start: 'record:start',
     stop: 'record:stop',
   },
+  files: {
+    list: 'files:list',
+    download: 'files:download',
+    upload: 'files:upload',
+    delete: 'files:delete',
+    mkdir: 'files:mkdir',
+  },
   toolkit: {
     status: 'toolkit:status',
   },
@@ -53,6 +60,8 @@ export const IPC = {
   dialog: {
     /** renderer → main: 打开文件夹选择器，返回路径或 null */
     openFolder: 'dialog:open-folder',
+    /** renderer → main: 打开文件选择器，返回路径或 null */
+    openFile: 'dialog:open-file',
   },
   settings: {
     /** renderer → main: 获取导出目录 */

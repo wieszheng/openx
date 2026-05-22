@@ -7,7 +7,18 @@ export async function handleOpenFolder(
   const win = getMainWindow()
   const result = await dialog.showOpenDialog(win ?? undefined!, {
     properties: ['openDirectory', 'createDirectory'],
-    title: '选择导出目录',
+    title: '选择目录',
+  })
+  return result.canceled ? null : (result.filePaths[0] ?? null)
+}
+
+export async function handleOpenFile(
+  getMainWindow: () => BrowserWindow | null,
+): Promise<string | null> {
+  const win = getMainWindow()
+  const result = await dialog.showOpenDialog(win ?? undefined!, {
+    properties: ['openFile'],
+    title: '选择文件',
   })
   return result.canceled ? null : (result.filePaths[0] ?? null)
 }

@@ -9,6 +9,8 @@ import type {
 import type { UnifiedDevice } from '../shared/unified-device'
 import type { MirrorActionResult, MirrorMetadata, MirrorOptions, FramePacket } from '../shared/mirror'
 import type { RecordStartResult, RecordStopResult } from '../shared/record'
+import type { FileListResult, FileDownloadResult, FileUploadResult, FileDeleteResult, FileMkdirResult } from '../shared/files'
+
 
 interface WindowAPI {
   minimize: () => void
@@ -82,6 +84,14 @@ interface RecordAPI {
   stop: (deviceId: string) => Promise<RecordStopResult>
 }
 
+interface FilesAPI {
+  list: (deviceId: string, path: string) => Promise<FileListResult>
+  download: (deviceId: string, remotePath: string) => Promise<FileDownloadResult>
+  upload: (deviceId: string, remotePath: string) => Promise<FileUploadResult>
+  delete: (deviceId: string, remotePath: string) => Promise<FileDeleteResult>
+  mkdir: (deviceId: string, remotePath: string) => Promise<FileMkdirResult>
+}
+
 declare global {
   interface Window {
     electron: ElectronAPI
@@ -91,6 +101,7 @@ declare global {
       apps: AppsAPI
       screencap: ScreencapAPI
       mirror: MirrorAPI
+      files: FilesAPI
       toolkit: ToolkitAPI
       log: LogAPI
       updater: UpdaterAPI

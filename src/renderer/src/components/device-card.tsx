@@ -65,7 +65,7 @@ export function DeviceCard({ device }: DeviceCardProps): React.JSX.Element {
     <div
       className={cn(
         'relative overflow-hidden rounded-2xl w-42 bg-card',
-        'ring-1 ring-black/5 shadow-lg shadow-black/5',
+        'ring-1 ring-black/5 shadow-black/5',
       )}
 
     >

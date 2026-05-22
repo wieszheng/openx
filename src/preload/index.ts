@@ -12,6 +12,8 @@ import type { UnifiedDevice } from '../shared/unified-device'
 import type { MirrorActionResult, MirrorMetadata, MirrorOptions, FramePacket } from '../shared/mirror'
 import { ToolkitStatusResult } from '../shared/toolkit-status'
 import { RecordStartResult, RecordStopResult } from '../shared/record'
+import type { FileListResult, FileDownloadResult, FileUploadResult, FileDeleteResult, FileMkdirResult } from '../shared/files'
+
 
 // Custom APIs for renderer
 const api = {
@@ -86,6 +88,18 @@ const api = {
       return () => ipcRenderer.removeListener(IPC.mirror.windowClosed, listener)
     },
   },
+  files: {
+    list: (deviceId: string, path: string): Promise<FileListResult> =>
+      ipcRenderer.invoke(IPC.files.list, deviceId, path),
+    download: (deviceId: string, remotePath: string): Promise<FileDownloadResult> =>
+      ipcRenderer.invoke(IPC.files.download, deviceId, remotePath),
+    upload: (deviceId: string, remotePath: string): Promise<FileUploadResult> =>
+      ipcRenderer.invoke(IPC.files.upload, deviceId, remotePath),
+    delete: (deviceId: string, remotePath: string): Promise<FileDeleteResult> =>
+      ipcRenderer.invoke(IPC.files.delete, deviceId, remotePath),
+    mkdir: (deviceId: string, remotePath: string): Promise<FileMkdirResult> =>
+      ipcRenderer.invoke(IPC.files.mkdir, deviceId, remotePath),
+  },
   record: {
     start: (deviceId: string): Promise<RecordStartResult> =>
       ipcRenderer.invoke(IPC.record.start, deviceId),
@@ -100,6 +114,7 @@ const api = {
   },
   dialog: {
     openFolder: (): Promise<string | null> => ipcRenderer.invoke(IPC.dialog.openFolder),
+    openFile: (): Promise<string | null> => ipcRenderer.invoke(IPC.dialog.openFile),
   },
   settings: {
     getExportDir: (): Promise<string | null> => ipcRenderer.invoke(IPC.settings.getExportDir),
