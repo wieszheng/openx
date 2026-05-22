@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Usb, Activity, Cpu, Code2, Terminal, CheckCircle2, XCircle, PackageOpen, Layers } from 'lucide-react'
+import { Usb, Activity, Code2, Terminal, CheckCircle2, XCircle, PackageOpen, Layers } from 'lucide-react'
 import { DeviceCard } from '@/components/device-card'
 import { useDevicesStore } from '@/stores/devices'
 import type { ToolkitStatusResult } from '../../../shared/toolkit-status'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 
 export function DashboardPage(): React.JSX.Element {
   // 设备列表
