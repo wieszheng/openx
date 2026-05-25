@@ -24,6 +24,9 @@ import { AnimatedShinyText } from '@/components/ui/animated-shiny-text'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
+// macOS 下使用原生 Traffic Light，隐藏自定义窗口控制按钮
+const isMac = typeof window !== 'undefined' && window.electron?.process?.platform === 'darwin'
+
 /**
  * 获取设备版本摘要信息
  *
@@ -453,32 +456,37 @@ export function Header(): React.JSX.Element {
           </Tooltip>
         )}
 
-        <button
-          type="button"
-          onClick={handleMinimize}
-          className="w-8 h-8 flex items-center justify-center hover:bg-accent transition-colors rounded-lg"
-          aria-label="最小化"
-        >
-          <Minus className="w-4 h-4" />
-        </button>
+        {/* macOS 使用原生 Traffic Light，非 macOS 显示自定义窗口控制按钮 */}
+        {!isMac && (
+          <>
+            <button
+              type="button"
+              onClick={handleMinimize}
+              className="w-8 h-8 flex items-center justify-center hover:bg-accent transition-colors rounded-lg"
+              aria-label="最小化"
+            >
+              <Minus className="w-4 h-4" />
+            </button>
 
-        <button
-          type="button"
-          onClick={handleMaximize}
-          className="w-8 h-8 flex items-center justify-center hover:bg-accent transition-colors rounded-lg"
-          aria-label={isMaximized ? '还原' : '最大化'}
-        >
-          {isMaximized ? <Square className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-        </button>
+            <button
+              type="button"
+              onClick={handleMaximize}
+              className="w-8 h-8 flex items-center justify-center hover:bg-accent transition-colors rounded-lg"
+              aria-label={isMaximized ? '还原' : '最大化'}
+            >
+              {isMaximized ? <Square className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            </button>
 
-        <button
-          type="button"
-          onClick={handleClose}
-          className="w-8.5 h-8 flex items-center justify-center hover:bg-destructive transition-colors rounded-lg"
-          aria-label="关闭"
-        >
-          <X className="w-4 h-4 group-hover:text-destructive-foreground" />
-        </button>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="w-8.5 h-8 flex items-center justify-center hover:bg-destructive transition-colors rounded-lg"
+              aria-label="关闭"
+            >
+              <X className="w-4 h-4 group-hover:text-destructive-foreground" />
+            </button>
+          </>
+        )}
       </div>
     </header>
   )

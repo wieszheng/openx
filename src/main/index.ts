@@ -29,7 +29,16 @@ function createWindow(): void {
     minHeight: 654,
     show: false,
     autoHideMenuBar: true,
-    frame: false, // 无边框窗口
+    center: true,
+    // macOS: 使用原生 Traffic Light 按钮（hiddenInset 模式），定位在左侧边栏内
+    // 其他平台: 无边框 + 自定义控制按钮
+    ...(process.platform === 'darwin'
+      ? {
+        // titleBarStyle: 'hiddenInset',
+        titleBarStyle: 'hidden',
+        trafficLightPosition: { x: 3, y: 4 }
+      }
+      : { frame: false }),
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
