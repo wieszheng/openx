@@ -55,7 +55,8 @@ export const IPC = {
     status: 'toolkit:status',
   },
   log: {
-    getPath: 'log:get-path'
+    getPath: 'log:get-path',
+    read: 'log:read',
   },
   dialog: {
     /** renderer → main: 打开文件夹选择器，返回路径或 null */

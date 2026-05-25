@@ -264,13 +264,14 @@ export function Header(): React.JSX.Element {
         <button
           type="button"
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="flex items-center gap-2 px-3 mt-2 transition-colors max-w-[min(100vw-12rem,22rem)] text-left"
+          className="flex items-center gap-2 px-3 mt-0.5 transition-colors text-left"
         >
           <ChevronsUpDown className="w-4.5 h-4.5 text-muted-foreground shrink-0 self-center" />
-          <span className="min-w-0 flex flex-col gap-0.5" title={headerTitle}>
-            <AnimatedGradientText className="text-sm font-bold leading-tight truncate">
+          <span className="min-w-0 flex flex-col" title={headerTitle}>
+            {/* <AnimatedGradientText className="text-sm font-bold leading-tight truncate">
               {headerPrimary}
-            </AnimatedGradientText>
+            </AnimatedGradientText> */}
+            <span className="text-sm font-bold text-primary">{headerPrimary}</span>
             {headerSecondary ? (
               <AnimatedShinyText className="text-[11px] text-muted-foreground leading-tight truncate">
                 {headerSecondary}

@@ -19,6 +19,7 @@ import { handleMirrorStart, handleMirrorStop, handleOpenMirrorWindow } from './h
 import { getToolkitStatus } from './handlers/toolkit'
 import { handleOpenFolder, handleOpenFile, handleGetExportDir, handleSetExportDir } from './handlers/settings'
 import { handleRecordStart, handleRecordStop } from './handlers/record'
+import { handleLogRead } from './handlers/log'
 
 const logger = createLogger('ipc')
 
@@ -92,6 +93,7 @@ export function registerIpc({ getMainWindow }: RegisterIpcOptions): void {
 
   // ── Log ─────────────────────────────────────────────────────────────────
   ipcMain.handle(IPC.log.getPath, () => getLogPath())
+  ipcMain.handle(IPC.log.read, handleLogRead)
 
   // ── Dialog ───────────────────────────────────────────────────────────────
   ipcMain.handle(IPC.dialog.openFolder, () => handleOpenFolder(getMainWindow))

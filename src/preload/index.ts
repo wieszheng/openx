@@ -110,7 +110,8 @@ const api = {
     status: (): Promise<ToolkitStatusResult> => ipcRenderer.invoke(IPC.toolkit.status),
   },
   log: {
-    getPath: (): Promise<string> => ipcRenderer.invoke(IPC.log.getPath)
+    getPath: (): Promise<string> => ipcRenderer.invoke(IPC.log.getPath),
+    read: (): Promise<string> => ipcRenderer.invoke(IPC.log.read),
   },
   dialog: {
     openFolder: (): Promise<string | null> => ipcRenderer.invoke(IPC.dialog.openFolder),

@@ -56,6 +56,7 @@ interface ToolkitAPI {
 
 interface LogAPI {
   getPath: () => Promise<string>
+  read: () => Promise<string>
 }
 
 interface DialogAPI {

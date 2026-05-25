@@ -39,7 +39,7 @@ function App(): React.JSX.Element {
       <div className="h-screen w-screen flex bg-card overflow-hidden text-foreground">
         <Sidebar activeMenu={activeMenu} onMenuChange={setActiveMenu} />
 
-        <div className="flex-1 flex flex-col bg-background border border-border/50 rounded-xl shadow-sm overflow-hidden min-w-0">
+        <div className="flex-1 flex flex-col bg-background rounded-xl shadow-sm overflow-hidden min-w-0">
           <Header />
 
           <main className="flex-1 p-4 overflow-hidden relative flex flex-col">

@@ -36,7 +36,7 @@ function createWindow(): void {
       ? {
         // titleBarStyle: 'hiddenInset',
         titleBarStyle: 'hidden',
-        trafficLightPosition: { x: 3, y: 4 }
+        // trafficLightPosition: { x: 3, y: 4 }
       }
       : { frame: false }),
     ...(process.platform === 'linux' ? { icon } : {}),
