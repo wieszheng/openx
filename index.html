@@ -918,6 +918,38 @@
 
 <hr class="section-divider" />
 
+<!-- ── FAQ ── -->
+<section id="faq" style="background: rgba(255,255,255,0.01);">
+  <div class="container">
+    <div class="reveal">
+      <span class="section-label">常见问题</span>
+      <h2 class="section-title">常见问题解答 (FAQ)</h2>
+      <p class="section-desc">在使用 OpenX 过程中可能遇到的一些疑问与解答。</p>
+    </div>
+
+    <div class="env-grid reveal" style="margin-top: 2.5rem;">
+      <div class="env-row" style="grid-template-columns: 1fr;">
+        <h3 style="font-size: 1.05rem; margin-bottom: 0.5rem; color: var(--text);">Q: OpenX 支持哪些操作系统运行？</h3>
+        <p class="env-desc">OpenX 采用 Electron 构建，支持 <strong>macOS</strong> (Intel & Apple Silicon)、<strong>Windows</strong> (64-bit) 和 <strong>Linux</strong> (AppImage/deb)。您可以一键打包出对应平台的安装文件。</p>
+      </div>
+      <div class="env-row" style="grid-template-columns: 1fr;">
+        <h3 style="font-size: 1.05rem; margin-bottom: 0.5rem; color: var(--text);">Q: 为什么找不到我的鸿蒙 (HarmonyOS) 设备？</h3>
+        <p class="env-desc">请确保您已正确安装 DevEco Studio 及其 SDK，并且 <code class="env-key">hdc</code> 命令可用。如果系统环境变量中未配置 <code class="env-key">hdc</code>，您可以在设置中通过 <strong>OPENX_HDC_PATH</strong> 环境变量手动指定工具路径。</p>
+      </div>
+      <div class="env-row" style="grid-template-columns: 1fr;">
+        <h3 style="font-size: 1.05rem; margin-bottom: 0.5rem; color: var(--text);">Q: 屏幕镜像时的 scrcpy-server 报错怎么办？</h3>
+        <p class="env-desc">如果您遇到版本不匹配的问题，可能是因为您的设备中残留了旧版 scrcpy-server。尝试在应用管理中重启镜像，或在系统设置里自定义 <strong>OPENX_SCRCPY_SERVER_PATH</strong> 的包路径。</p>
+      </div>
+      <div class="env-row" style="grid-template-columns: 1fr;">
+        <h3 style="font-size: 1.05rem; margin-bottom: 0.5rem; color: var(--text);">Q: 截图和录屏的文件默认保存在哪里？</h3>
+        <p class="env-desc">默认保存在系统图片和视频目录下。您可以在顶部标题栏点击齿轮图标（设置），在“基本设置”中自定义全局的导出目录。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider" />
+
 <!-- ── Install ── -->
 <section id="install">
   <div class="container">
