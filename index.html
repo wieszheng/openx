@@ -14,7 +14,7 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
+    :root, html[data-theme='dark'] {
       --primary: #2d9e70;
       --primary-light: #3bbf87;
       --primary-dark: #1f7a54;
@@ -29,6 +29,39 @@
       --text-dim: #4a6354;
       --radius: 16px;
       --radius-sm: 10px;
+      --nav-bg: rgba(10, 15, 13, 0.85);
+      --nav-bg-scrolled: rgba(10, 15, 13, 0.96);
+      --hover-bg: rgba(255,255,255,0.05);
+      --btn-sec-bg: rgba(255,255,255,0.05);
+      --btn-sec-hover: rgba(255,255,255,0.09);
+      --btn-sec-border-hover: rgba(255,255,255,0.15);
+      --code-bg: rgba(0,0,0,0.4);
+      --noise-opacity: 0.04;
+    }
+
+    html[data-theme='light'] {
+      --primary: #228b5e;
+      --primary-light: #2d9e70;
+      --primary-dark: #196645;
+      --primary-glow: rgba(45, 158, 112, 0.15);
+      --bg: #f8faf9;
+      --bg-card: #ffffff;
+      --bg-card2: #f1f5f3;
+      --border: rgba(0,0,0,0.08);
+      --border-active: rgba(45,158,112,0.4);
+      --text: #111814;
+      --text-muted: #5b7565;
+      --text-dim: #8ba394;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --nav-bg: rgba(248, 250, 249, 0.85);
+      --nav-bg-scrolled: rgba(248, 250, 249, 0.96);
+      --hover-bg: rgba(0,0,0,0.05);
+      --btn-sec-bg: rgba(0,0,0,0.03);
+      --btn-sec-hover: rgba(0,0,0,0.06);
+      --btn-sec-border-hover: rgba(0,0,0,0.15);
+      --code-bg: rgba(0,0,0,0.03);
+      --noise-opacity: 0.02;
     }
 
     html { scroll-behavior: smooth; }
@@ -46,7 +79,8 @@
       content: '';
       position: fixed;
       inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+      opacity: var(--noise-opacity);
       pointer-events: none;
       z-index: 0;
     }
@@ -61,7 +95,7 @@
       justify-content: space-between;
       padding: 0 2rem;
       height: 60px;
-      background: rgba(10, 15, 13, 0.85);
+      background: var(--nav-bg);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
       transition: background 0.3s;
@@ -99,7 +133,12 @@
       transition: color 0.2s, background 0.2s;
     }
 
-    .nav-links a:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+    .nav-links a:hover, #theme-toggle:hover { color: var(--text); background: var(--hover-bg); }
+    #theme-toggle {
+      background: transparent; border: none; cursor: pointer; color: var(--text-muted);
+      display: flex; align-items: center; justify-content: center;
+      padding: 6px 10px; border-radius: 8px; transition: color 0.2s, background 0.2s;
+    }
 
     .btn-nav {
       background: var(--primary);
@@ -227,7 +266,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(255,255,255,0.05);
+      background: var(--btn-sec-bg);
       border: 1px solid var(--border);
       color: var(--text);
       text-decoration: none;
@@ -239,8 +278,8 @@
     }
 
     .btn-secondary:hover {
-      background: rgba(255,255,255,0.09);
-      border-color: rgba(255,255,255,0.15);
+      background: var(--btn-sec-hover);
+      border-color: var(--btn-sec-border-hover);
       transform: translateY(-2px);
     }
 
@@ -482,7 +521,7 @@
 
     .compat-table tr:last-child td { border-bottom: none; }
 
-    .compat-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .compat-table tr:hover td { background: var(--hover-bg); }
 
     .ck { color: var(--primary-light); font-size: 1.1rem; }
     .cx { color: var(--text-dim); font-size: 1.1rem; }
@@ -524,7 +563,7 @@
     .install-content.active { display: block; }
 
     .code-block {
-      background: rgba(0,0,0,0.4);
+      background: var(--code-bg);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       padding: 1.25rem 1.5rem;
@@ -628,6 +667,10 @@
       .env-row { grid-template-columns: 1fr; }
     }
   </style>
+  <script>
+    const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  </script>
 </head>
 <body>
 
@@ -645,6 +688,7 @@
     <a href="#features" class="hide-mobile">功能</a>
     <a href="#screenshots" class="hide-mobile">截图</a>
     <a href="#install">安装</a>
+    <button id="theme-toggle" aria-label="切换主题"></button>
     <a href="https://github.com/wieszheng/openx" class="btn-nav" target="_blank" rel="noopener">GitHub ↗</a>
   </div>
 </nav>
@@ -1085,9 +1129,22 @@
   const navEl = document.querySelector('nav');
   window.addEventListener('scroll', () => {
     navEl.style.background = window.scrollY > 20
-      ? 'rgba(10,15,13,0.96)'
-      : 'rgba(10,15,13,0.85)';
+      ? 'var(--nav-bg-scrolled)'
+      : 'var(--nav-bg)';
   });
+
+  // ── Theme toggle ──
+  const themeBtn = document.getElementById('theme-toggle');
+  const getTheme = () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  const setTheme = (theme) => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    themeBtn.innerHTML = theme === 'dark'
+      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
+  };
+  setTheme(getTheme());
+  themeBtn.addEventListener('click', () => setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
 </script>
 
 </body>
