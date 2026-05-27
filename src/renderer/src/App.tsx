@@ -10,12 +10,16 @@ import { MirrorPage } from '@/pages/mirror'
 import { ScreenshotPage } from '@/pages/screenshot'
 import { SettingsPage } from '@/pages/settings'
 import { FilesPage } from '@/pages/files'
+import { WorkflowPage } from '@/pages/workflow'
+import { ReactFlowProvider } from '@xyflow/react'
 
 function App(): React.JSX.Element {
   const [activeMenu, setActiveMenu] = useState('home')
 
   const renderContent = () => {
     switch (activeMenu) {
+      case 'workflow':
+        return <ReactFlowProvider><WorkflowPage /></ReactFlowProvider>
       case 'global-variables':
         return <GlobalVariablesPage />
       case 'apps':

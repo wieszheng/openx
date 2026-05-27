@@ -1,4 +1,4 @@
-import { Home, Settings, Key, LayoutPanelLeft, Camera, Monitor, FolderOpen } from 'lucide-react'
+import { Home, Settings, Key, LayoutPanelLeft, Camera, Monitor, FolderOpen, GitBranch } from 'lucide-react'
 import React from 'react'
 import { LogViewerDialog } from '@/components/log-viewer-dialog'
 
@@ -17,6 +17,7 @@ const menuItems: MenuItem[] = [
   { id: 'screenshot', icon: <Camera className="w-5 h-5" />, label: '截图' },
   { id: 'mirror', icon: <Monitor className="w-5 h-5" />, label: '屏幕镜像' },
   { id: 'files', icon: <FolderOpen className="w-5 h-5" />, label: '文件管理' },
+  { id: 'workflow', icon: <GitBranch className="w-5 h-5" />, label: '工作流' },
   { id: 'global-variables', icon: <Key className="w-5 h-5" />, label: '全局变量' }
 ]
 

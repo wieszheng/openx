@@ -20,6 +20,7 @@ import { getToolkitStatus } from './handlers/toolkit'
 import { handleOpenFolder, handleOpenFile, handleGetExportDir, handleSetExportDir } from './handlers/settings'
 import { handleRecordStart, handleRecordStop } from './handlers/record'
 import { handleLogRead } from './handlers/log'
+import { createWorkflowHandlers } from './handlers/workflow'
 
 const logger = createLogger('ipc')
 
@@ -102,6 +103,11 @@ export function registerIpc({ getMainWindow }: RegisterIpcOptions): void {
   // ── Settings ─────────────────────────────────────────────────────────────
   ipcMain.handle(IPC.settings.getExportDir, handleGetExportDir)
   ipcMain.handle(IPC.settings.setExportDir, handleSetExportDir)
+
+  // ── Workflow ───────────────────────────────────────────────────
+  const { handleWorkflowRun, handleWorkflowStop } = createWorkflowHandlers(getMainWindow)
+  ipcMain.handle(IPC.workflow.run, handleWorkflowRun)
+  ipcMain.on(IPC.workflow.stop, handleWorkflowStop)
 
   // ── Debug ───────────────────────────────────────────────────────────────
   ipcMain.on(IPC.debug.ping, () => logger.debug('pong'))

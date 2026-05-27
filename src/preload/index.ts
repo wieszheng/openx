@@ -155,6 +155,21 @@ const api = {
       ipcRenderer.on(IPC.updater.error, listener)
       return () => ipcRenderer.removeListener(IPC.updater.error, listener)
     },
+  },
+  workflow: {
+    run: (payload: import('../shared/workflow').WorkflowRunPayload): Promise<import('../shared/workflow').WorkflowRunResult> =>
+      ipcRenderer.invoke(IPC.workflow.run, payload),
+    stop: (): void => ipcRenderer.send(IPC.workflow.stop),
+    onLog: (cb: (log: import('../shared/workflow').ExecutionLog) => void): (() => void) => {
+      const listener = (_e: Electron.IpcRendererEvent, log: import('../shared/workflow').ExecutionLog): void => cb(log)
+      ipcRenderer.on(IPC.workflow.log, listener)
+      return () => ipcRenderer.removeListener(IPC.workflow.log, listener)
+    },
+    onDone: (cb: (result: { status: 'done' | 'error' | 'stopped'; error?: string }) => void): (() => void) => {
+      const listener = (_e: Electron.IpcRendererEvent, result: { status: 'done' | 'error' | 'stopped'; error?: string }): void => cb(result)
+      ipcRenderer.on(IPC.workflow.done, listener)
+      return () => ipcRenderer.removeListener(IPC.workflow.done, listener)
+    },
   }
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "openx",
-  "version": "1.0.22",
+  "version": "1.0.21",
   "description": "OpenX - A modern Electron application",
   "main": "./out/main/index.js",
   "author": "openx.com",
@@ -25,6 +25,7 @@
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "@tailwindcss/vite": "^4.2.1",
+    "@xyflow/react": "^12.10.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

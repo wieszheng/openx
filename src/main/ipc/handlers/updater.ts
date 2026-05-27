@@ -10,6 +10,13 @@ export function initUpdater(getMainWindow: () => BrowserWindow | null): void {
   autoUpdater.logger = logger
   autoUpdater.autoDownload = false
   autoUpdater.autoInstallOnAppQuit = true
+  
+  // ✅ 新增：禁用签名验证，适用于无 Apple 证书的构建
+  // ✅ 跳过 macOS Squirrel 签名验证（无 Apple 证书时必须）
+  if (process.platform === 'darwin') {
+    ;(autoUpdater as any).verifyUpdateCodeSignature = false
+  }
+
 
   const send = (channel: string, payload?: unknown): void => {
     getMainWindow()?.webContents.send(channel, payload)

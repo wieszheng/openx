@@ -92,5 +92,15 @@ export const IPC = {
   },
   debug: {
     ping: 'ping'
+  },
+  workflow: {
+    /** renderer → main: 开始执行工作流，参数 WorkflowRunPayload */
+    run: 'workflow:run',
+    /** renderer → main: 停止当前执行 */
+    stop: 'workflow:stop',
+    /** main → renderer: 推送执行日志 ExecutionLog */
+    log: 'workflow:log',
+    /** main → renderer: 执行完成 { status: 'done' | 'error' | 'stopped', error?: string } */
+    done: 'workflow:done',
   }
 } as const

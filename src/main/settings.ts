@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 
 interface AppSettings {
   exportDir?: string
+  globalVars?: Record<string, string>
 }
 
 function settingsPath(): string {
@@ -44,4 +45,25 @@ export function getExportDir(): string | null {
 
 export function setExportDir(dir: string): void {
   set({ exportDir: dir || undefined })
+}
+
+// ── Global Variables ──────────────────────────────────────────────────────
+
+export function getAllGlobalVars(): Record<string, string> {
+  return { ...(get().globalVars ?? {}) }
+}
+
+export function getGlobalVar(key: string): string | undefined {
+  return get().globalVars?.[key]
+}
+
+export function setGlobalVar(key: string, value: string): void {
+  const vars = get().globalVars ?? {}
+  set({ globalVars: { ...vars, [key]: value } })
+}
+
+export function deleteGlobalVar(key: string): void {
+  const vars = { ...(get().globalVars ?? {}) }
+  delete vars[key]
+  set({ globalVars: vars })
 }

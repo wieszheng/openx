@@ -45,7 +45,6 @@ mac:
   notarize: false
   hardenedRuntime: false
   gatekeeperAssess: false
-  identity: '-'
 dmg:
   artifactName: ${name}-${version}-${arch}.${ext}
 linux:

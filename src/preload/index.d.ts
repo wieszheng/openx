@@ -10,6 +10,7 @@ import type { UnifiedDevice } from '../shared/unified-device'
 import type { MirrorActionResult, MirrorMetadata, MirrorOptions, FramePacket } from '../shared/mirror'
 import type { RecordStartResult, RecordStopResult } from '../shared/record'
 import type { FileListResult, FileDownloadResult, FileUploadResult, FileDeleteResult, FileMkdirResult } from '../shared/files'
+import type { WorkflowRunPayload, WorkflowRunResult, ExecutionLog } from '../shared/workflow'
 
 
 interface WindowAPI {
@@ -93,6 +94,13 @@ interface FilesAPI {
   mkdir: (deviceId: string, remotePath: string) => Promise<FileMkdirResult>
 }
 
+interface WorkflowAPI {
+  run: (payload: WorkflowRunPayload) => Promise<WorkflowRunResult>
+  stop: () => void
+  onLog: (cb: (log: ExecutionLog) => void) => () => void
+  onDone: (cb: (result: { status: 'done' | 'error' | 'stopped'; error?: string }) => void) => () => void
+}
+
 declare global {
   interface Window {
     electron: ElectronAPI
@@ -109,6 +117,7 @@ declare global {
       dialog: DialogAPI
       settings: SettingsAPI
       record: RecordAPI
+      workflow: WorkflowAPI
     }
   }
 }
