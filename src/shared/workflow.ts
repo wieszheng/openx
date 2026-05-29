@@ -143,7 +143,7 @@ export interface ExecutionLog {
 
 export interface WorkflowRunPayload {
   workflow: Workflow
-  deviceId: string
+  deviceId?: string
 }
 
 export interface WorkflowRunResult {

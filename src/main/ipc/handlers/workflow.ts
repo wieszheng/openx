@@ -20,8 +20,8 @@ export function createWorkflowHandlers(getMainWindow: () => BrowserWindow | null
     }
 
     const { workflow, deviceId } = payload
-    if (!workflow || !deviceId) {
-      return { ok: false, error: '参数缺失: workflow 或 deviceId' }
+    if (!workflow) {
+      return { ok: false, error: '参数缺失: workflow' }
     }
 
     logger.info('workflow run requested', { id: workflow.id, deviceId })

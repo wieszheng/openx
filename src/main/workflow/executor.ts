@@ -92,12 +92,12 @@ function buildAdj(edges: WorkflowEdge[]): Map<string, AdjEntry[]> {
 
 async function executeNode(
   node: WorkflowNode,
-  deviceId: string,
+  deviceId: string | undefined,
   ctx: Record<string, string>
 ): Promise<{ ok: boolean; output?: string; branchHandle?: string }> {
   const platform = getDevicesSnapshot().find((d) => d.id === deviceId)?.platform ?? 'android'
   const isAndroid = platform === 'android'
-  const serial = getDevicesSnapshot().find((d) => d.id === deviceId)?.connectionKey ?? deviceId
+  const serial = getDevicesSnapshot().find((d) => d.id === deviceId)?.connectionKey ?? deviceId ?? 'default'
 
   const p = node.params as Record<string, unknown>
 
@@ -230,7 +230,7 @@ async function traverseFrom(
   nodeId: string,
   nodes: Map<string, WorkflowNode>,
   adj: Map<string, AdjEntry[]>,
-  deviceId: string,
+  deviceId: string | undefined,
   ctx: Record<string, string>,
   win: BrowserWindow,
   loopCount?: number // 上层传递的剩余循环次数（undefined 表示普通执行）
@@ -309,7 +309,7 @@ async function traverseFrom(
 
 export async function runWorkflow(
   workflow: Workflow,
-  deviceId: string,
+  deviceId: string | undefined,
   win: BrowserWindow
 ): Promise<void> {
   if (running) {

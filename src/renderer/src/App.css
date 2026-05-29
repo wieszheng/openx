@@ -46,6 +46,10 @@
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
     --animate-gradient: gradient 8s linear infinite;
+  @keyframes shimmer-bar {
+  0% { left: -50%; }
+  100% { left: 100%; }
+    }
     --shiny-width: 0.15em;
     --bg-size: 300%;
   @keyframes gradient {
@@ -53,6 +57,12 @@
     background-position: var(--bg-size, 300%) 0;
         }
     }
+  @keyframes shimmer-bar {
+  0% {
+    left: -50%;
+        }
+  100% {
+    left: 100%;}}
   --animate-shiny-text: shiny-text 8s infinite
 ;
   @keyframes shiny-text {
