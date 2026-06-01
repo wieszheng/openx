@@ -196,3 +196,73 @@
 .recording-active {
   animation: glow-pulse 2s ease-in-out infinite, island-expand 0.3s ease-out;
 }
+
+/* ── 工作流节点执行状态动画 ─────────────────────────────────────── */
+
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes node-running-glow {
+  0%, 100% { box-shadow: 0 0 0 1.5px rgba(59,130,246,0.5), 0 0 10px rgba(59,130,246,0.15); }
+  50%       { box-shadow: 0 0 0 2px   rgba(59,130,246,0.9), 0 0 20px rgba(59,130,246,0.35); }
+}
+
+@keyframes node-border-spin {
+  to { --border-angle: 360deg; }
+}
+
+.node-border-running {
+  background: conic-gradient(
+    from var(--border-angle),
+    rgba(59,130,246,0.08) 0%,
+    rgba(59,130,246,0.08) 65%,
+    rgba(96,165,250,0.6)  80%,
+    rgba(147,197,253,1)   88%,
+    rgba(96,165,250,0.6)  95%,
+    rgba(59,130,246,0.08) 100%
+  );
+  animation: node-border-spin 2s linear infinite;
+  box-shadow: 0 0 14px rgba(59,130,246,0.2);
+}
+
+@keyframes node-scan {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+@keyframes node-success-flash {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes node-error-shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-4px); }
+  40%       { transform: translateX(4px); }
+  60%       { transform: translateX(-3px); }
+  80%       { transform: translateX(3px); }
+}
+
+@keyframes node-error-glow {
+  0%, 100% { box-shadow: 0 0 0 1.5px rgba(239,68,68,0.5), 0 0 10px rgba(239,68,68,0.15); }
+  50%       { box-shadow: 0 0 0 2px   rgba(239,68,68,0.9), 0 0 18px rgba(239,68,68,0.3); }
+}
+
+.node-running {
+  animation: node-running-glow 1.4s ease-in-out infinite;
+}
+
+.node-error {
+  animation: node-error-glow 1.6s ease-in-out infinite, node-error-shake 0.4s ease-in-out;
+}
+
+.node-scan-bar {
+  animation: node-scan 1.4s cubic-bezier(0.4,0,0.6,1) infinite;
+}
+
+.node-success-flash {
+  animation: node-success-flash 0.8s ease-out forwards;
+}

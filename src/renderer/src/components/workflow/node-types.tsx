@@ -64,13 +64,14 @@ function BaseNode({
   const status = data.stepStatus
 
   return (
+    <div className={cn('rounded-xl', status === 'running' && 'node-border-running p-px')}>
     <Card
       className={cn(
-        'w-[260px] gap-0 py-0 shadow-sm transition-all duration-150',
-        isSelected && 'ring-primary/50',
-        status === 'running' && 'ring-emerald-500/50 shadow-emerald-500/10 shadow-md',
-        status === 'success' && 'ring-emerald-500/30',
-        status === 'error'   && 'ring-red-500/50 shadow-red-500/10 shadow-md',
+        'w-[260px] gap-0 py-0 shadow-sm transition-all duration-200 overflow-hidden',
+        isSelected && !status && 'ring-primary/50',
+        status === 'running' && 'ring-0',
+        status === 'success' && 'ring-emerald-500/70 shadow-emerald-500/10 shadow-md',
+        status === 'error'   && 'node-error ring-0',
       )}
     >
       {/* Input handle */}
@@ -83,8 +84,18 @@ function BaseNode({
         />
       )}
 
-      {/* Header */}
-      <div className="flex items-center gap-2.5 px-3 py-2.5">
+      {/* Header — tinted by status */}
+      <div className={cn(
+        'relative flex items-center gap-2.5 px-3 py-2.5 transition-colors duration-300',
+        status === 'running' && 'bg-blue-500/5',
+        status === 'success' && 'bg-emerald-500/5',
+        status === 'error'   && 'bg-red-500/5',
+      )}>
+        {/* Success flash overlay */}
+        {status === 'success' && (
+          <div className="node-success-flash absolute inset-0 bg-emerald-500/15 pointer-events-none" />
+        )}
+
         <div
           className="flex items-center justify-center w-6 h-6 rounded-md flex-shrink-0"
           style={{ backgroundColor: meta.bg, color: meta.color }}
@@ -96,7 +107,7 @@ function BaseNode({
           <p className="text-[10px] text-muted-foreground/70 leading-none mt-0.5">{meta.label}</p>
         </div>
         <div className="flex-shrink-0">
-          {status === 'running' && <Loader2 className="w-4 h-4 text-emerald-500 animate-spin" />}
+          {status === 'running' && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
           {status === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
           {status === 'error'   && <AlertCircle className="w-4 h-4 text-red-500" />}
         </div>
@@ -129,6 +140,7 @@ function BaseNode({
         />
       ))}
     </Card>
+    </div>
   )
 }
 

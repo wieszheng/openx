@@ -51,6 +51,8 @@ interface WorkflowStore {
   setRfEdges: (edges: Edge[]) => void
   updateNodeParams: (nodeId: string, params: Record<string, unknown>) => void
   updateNodeLabel: (nodeId: string, label: string) => void
+  updateNodeStepStatus: (nodeId: string, status: 'running' | 'success' | 'error' | null) => void
+  clearNodeStepStatuses: () => void
 
   setSelectedNodeId: (id: string | null) => void
 
@@ -76,7 +78,7 @@ function workflowToRf(workflow: Workflow): { nodes: Node[]; edges: Edge[] } {
     target: e.target,
     sourceHandle: e.sourceHandle,
     targetHandle: e.targetHandle,
-    type: 'smoothstep',
+    type: 'default',
     animated: false,
   }))
   return { nodes, edges }
@@ -195,10 +197,31 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
     set({ rfNodes })
   },
 
+  updateNodeStepStatus: (nodeId, status) => {
+    const rfNodes = get().rfNodes.map((n) =>
+      n.id === nodeId ? { ...n, data: { ...n.data, stepStatus: status ?? undefined } } : n
+    )
+    set({ rfNodes })
+  },
+
+  clearNodeStepStatuses: () => {
+    const rfNodes = get().rfNodes.map((n) => {
+      const { stepStatus: _, ...rest } = n.data as Record<string, unknown>
+      return { ...n, data: rest }
+    })
+    set({ rfNodes })
+  },
+
   setSelectedNodeId: (id) => set({ selectedNodeId: id }),
 
-  startRun: () => set({ runStatus: 'running', logs: [] }),
+  startRun: () => {
+    get().clearNodeStepStatuses()
+    set({ runStatus: 'running', logs: [] })
+  },
   appendLog: (log) => set((s) => ({ logs: [...s.logs, log] })),
-  finishRun: (status) => set({ runStatus: status }),
+  finishRun: (status) => {
+    set({ runStatus: status })
+    setTimeout(() => get().clearNodeStepStatuses(), 3000)
+  },
   clearLogs: () => set({ logs: [] }),
 }))

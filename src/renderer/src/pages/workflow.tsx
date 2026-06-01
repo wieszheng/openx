@@ -37,7 +37,7 @@ function WorkflowHeader() {
   const {
     workflows, activeWorkflowId, runStatus,
     createWorkflow, deleteWorkflow, openWorkflow, renameWorkflow,
-    saveActiveWorkflow, startRun, finishRun,
+    saveActiveWorkflow, startRun, finishRun, updateNodeStepStatus,
     rfNodes, rfEdges,
   } = useWorkflowStore()
 
@@ -99,7 +99,14 @@ function WorkflowHeader() {
 
     startRun()
 
+    const unsubLog = window.api?.workflow?.onLog((log) => {
+      if (log.status === 'running' || log.status === 'success' || log.status === 'error') {
+        updateNodeStepStatus(log.nodeId, log.status)
+      }
+    }) ?? (() => {})
+
     const unsubDone = window.api?.workflow?.onDone((result) => {
+      unsubLog()
       unsubDone()
       finishRun(result.status === 'done' ? 'done' : result.status === 'stopped' ? 'stopped' : 'error')
       if (result.status === 'done') toast.success('工作流执行完成')
@@ -113,6 +120,7 @@ function WorkflowHeader() {
     })
 
     if (!res || !res.ok) {
+      unsubLog()
       unsubDone()
       finishRun('error')
       toast.error(res?.error ?? '启动失败')
