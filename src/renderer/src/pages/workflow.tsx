@@ -18,6 +18,7 @@ import '@xyflow/react/dist/style.css'
 import { nanoid } from 'nanoid'
 import { useWorkflowStore } from '@/stores/workflow'
 import { useReactFlow } from '@xyflow/react'
+import { useDevicesStore } from '@/stores/devices'
 import { nodeTypes } from '@/components/workflow/node-types'
 import { NodePanel } from '@/components/workflow/node-panel'
 import { Card } from '@/components/ui/card'
@@ -39,6 +40,8 @@ function WorkflowHeader() {
     saveActiveWorkflow, startRun, finishRun,
     rfNodes, rfEdges,
   } = useWorkflowStore()
+
+  const selectedId = useDevicesStore((s) => s.selectedId)
 
   const workflow = workflows.find((w) => w.id === activeWorkflowId)
   const isRunning = runStatus === 'running'
@@ -106,7 +109,7 @@ function WorkflowHeader() {
 
     const res = await window.api?.workflow?.run({
       workflow: runWorkflow,
-      deviceId: undefined,
+      deviceId: selectedId ?? undefined,
     })
 
     if (!res || !res.ok) {
@@ -251,7 +254,7 @@ function WorkflowCanvas() {
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      const newEdge: Edge = { ...connection, id: nanoid(), type: 'smoothstep', animated: runStatus === 'running' }
+      const newEdge: Edge = { ...connection, id: nanoid(), type: 'default', animated: runStatus === 'running' }
       setRfEdges(addEdge(newEdge, rfEdges) as Edge[])
     },
     [rfEdges, setRfEdges, runStatus]
@@ -313,7 +316,7 @@ function WorkflowCanvas() {
       onDrop={onDrop}
       fitView
       proOptions={{ hideAttribution: true }}
-      defaultEdgeOptions={{ type: 'smoothstep' }}
+      defaultEdgeOptions={{ type: 'default' }}
     >
       <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
       <Controls />
