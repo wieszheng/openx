@@ -105,7 +105,7 @@ export function DeviceCard({ device }: DeviceCardProps): React.JSX.Element {
         </div>
 
         {/* 设备名称 */}
-        <p className="text-zinc-900 dark:text-white text-sm font-semibold text-center leading-tight line-clamp-2 max-w-full">
+        <p className="text-zinc-900 dark:text-white text-sm font-semibold text-center leading-tight line-clamp-2 max-w-full truncate">
           {device.displayName}
         </p>
 

@@ -270,6 +270,7 @@ export function ScreenshotPage(): React.JSX.Element {
   const [stitching, setStitching] = useState(false)
   const [tool, setTool] = useState<DrawTool>('select')
   const [style, setStyle] = useState<DrawStyle>(DEFAULT_STYLE)
+  const [copyScale, setCopyScale] = useState<0.25 | 0.5 | 0.75 | 1>(0.25)
   const [shapes, setShapes] = useState<Shape[]>([])
   const [shapeStacks, setShapeStacks] = useState<Shape[][]>([[]])
   const [shapeStackIndex, setShapeStackIndex] = useState(0)
@@ -887,39 +888,64 @@ export function ScreenshotPage(): React.JSX.Element {
     return () => window.removeEventListener('mouseup', onWindowMouseUp)
   }, [handleMouseUp])
 
+  const getScaledBlob = useCallback(
+    (mimeType: 'image/png' | 'image/jpeg' = 'image/png'): Promise<Blob | null> => {
+      return new Promise((resolve) => {
+        const canvas = canvasRef.current
+        if (!canvas || !imageReady || canvas.width < 1) { resolve(null); return }
+
+        if (copyScale === 1) {
+          canvas.toBlob(resolve, mimeType)
+          return
+        }
+
+        const w = Math.round(canvas.width * copyScale)
+        const h = Math.round(canvas.height * copyScale)
+        const off = document.createElement('canvas')
+        off.width = w
+        off.height = h
+        const ctx = off.getContext('2d')
+        if (!ctx) { resolve(null); return }
+        ctx.drawImage(canvas, 0, 0, w, h)
+        off.toBlob(resolve, mimeType)
+      })
+    },
+    [imageReady, copyScale]
+  )
+
   const handleCopy = useCallback(async () => {
     const canvas = canvasRef.current
     if (!canvas || !imageReady || canvas.width < 1) {
       toast.error('没有可复制的图片')
       return
     }
-
     try {
-      const blob = await new Promise<Blob | null>((resolve) => {
-        canvas.toBlob((b) => resolve(b), 'image/png')
-      })
-      if (!blob) {
-        throw new Error('生成图片失败')
-      }
+      const blob = await getScaledBlob('image/png')
+      if (!blob) throw new Error('生成图片失败')
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
-      toast.success('已复制到剪贴板')
+      const w = Math.round(canvas.width * copyScale)
+      const h = Math.round(canvas.height * copyScale)
+      toast.success(`已复制到剪贴板（${w} × ${h}）`)
     } catch {
       toast.error('复制失败，请检查系统剪贴板权限')
     }
-  }, [imageReady])
+  }, [imageReady, copyScale, getScaledBlob])
 
-  const handleDownload = useCallback(() => {
-    const dataUrl = exportCanvasSnapshot()
-    if (!dataUrl) {
-      return
-    }
-
+  const handleDownload = useCallback(async () => {
+    const canvas = canvasRef.current
+    if (!canvas || !imageReady || canvas.width < 1) return
+    const blob = await getScaledBlob('image/png')
+    if (!blob) return
+    const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
-    link.href = dataUrl
+    link.href = url
     link.download = `screenshot-${Date.now()}.png`
     link.click()
-    toast.success('保存成功')
-  }, [exportCanvasSnapshot])
+    URL.revokeObjectURL(url)
+    const w = Math.round(canvas.width * copyScale)
+    const h = Math.round(canvas.height * copyScale)
+    toast.success(`已保存（${w} × ${h}）`)
+  }, [imageReady, copyScale, getScaledBlob])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1087,12 +1113,31 @@ export function ScreenshotPage(): React.JSX.Element {
               <Camera className="w-4 h-4" />
             )}
           </Button>
+
+          <div className="flex items-center rounded-md border border-border overflow-hidden">
+            {([0.25, 0.5, 0.75, 1] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                className={cn(
+                  'px-1.5 py-2 text-[12px] leading-none transition-colors',
+                  copyScale === s
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-muted'
+                )}
+                onClick={() => setCopyScale(s)}
+                disabled={!imageReady || busy}
+              >
+                {s === 1 ? '1×' : `${s * 100}%`}
+              </button>
+            ))}
+          </div>
+
           <Button variant="outline" size="sm" onClick={handleCopy} disabled={!imageReady || busy}>
             <Copy className="w-4 h-4" />
           </Button>
-          <Button size="sm" onClick={handleDownload} disabled={!imageReady || busy}>
-            <Download className="w-4 h-4 mr-1" />
-            保存
+          <Button variant="outline" size="sm" onClick={handleDownload} disabled={!imageReady || busy}>
+            <Download className="w-4 h-4" />
           </Button>
         </div>
       </div>
