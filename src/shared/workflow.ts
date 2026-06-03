@@ -6,8 +6,13 @@ export type WorkflowNodeType =
   | 'trigger-manual'
   | 'action-screenshot'
   | 'action-tap'
+  | 'action-double-tap'
+  | 'action-long-click'
   | 'action-swipe'
+  | 'action-drag'
   | 'action-input-text'
+  | 'action-clear-text'
+  | 'action-key-event'
   | 'action-install-app'
   | 'action-uninstall-app'
   | 'action-shell'
@@ -32,7 +37,26 @@ export interface ActionTapParams {
   y: number
 }
 
+export interface ActionDoubleTapParams {
+  x: number
+  y: number
+}
+
+export interface ActionLongClickParams {
+  x: number
+  y: number
+  duration?: number // ms，默认 2000
+}
+
 export interface ActionSwipeParams {
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  duration: number // ms
+}
+
+export interface ActionDragParams {
   x1: number
   y1: number
   x2: number
@@ -42,6 +66,14 @@ export interface ActionSwipeParams {
 
 export interface ActionInputTextParams {
   text: string
+}
+
+export interface ActionClearTextParams {
+  length?: number // 最大删除字符数，默认 100
+}
+
+export interface ActionKeyEventParams {
+  keyCode: number // Android: 4=返回 3=主屏 187=任务; Harmony: 2=返回 1=主屏 3=任务
 }
 
 export interface ActionInstallAppParams {
@@ -83,8 +115,13 @@ export type WorkflowNodeParams =
   | TriggerManualParams
   | ActionScreenshotParams
   | ActionTapParams
+  | ActionDoubleTapParams
+  | ActionLongClickParams
   | ActionSwipeParams
+  | ActionDragParams
   | ActionInputTextParams
+  | ActionClearTextParams
+  | ActionKeyEventParams
   | ActionInstallAppParams
   | ActionUninstallAppParams
   | ActionShellParams
@@ -137,6 +174,7 @@ export interface ExecutionLog {
   status: StepStatus
   message?: string
   output?: string
+  imageData?: string  // data URL，截图节点成功时携带
   timestamp: number
   duration?: number // ms
 }

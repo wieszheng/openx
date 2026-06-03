@@ -37,7 +37,7 @@ function WorkflowHeader() {
   const {
     workflows, activeWorkflowId, runStatus,
     createWorkflow, deleteWorkflow, openWorkflow, renameWorkflow,
-    saveActiveWorkflow, startRun, finishRun, updateNodeStepStatus,
+    saveActiveWorkflow, startRun, finishRun, updateNodeStepStatus, updateNodeImageData,
     rfNodes, rfEdges,
   } = useWorkflowStore()
 
@@ -102,6 +102,9 @@ function WorkflowHeader() {
     const unsubLog = window.api?.workflow?.onLog((log) => {
       if (log.status === 'running' || log.status === 'success' || log.status === 'error') {
         updateNodeStepStatus(log.nodeId, log.status)
+      }
+      if (log.imageData) {
+        updateNodeImageData(log.nodeId, log.imageData)
       }
     }) ?? (() => {})
 

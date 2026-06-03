@@ -9,13 +9,12 @@ import type {
   WorkflowNodeType,
 } from '../../shared/workflow'
 import { shell as adbShell } from '../devices/android/base'
-import { captureAndroidScreenshot } from '../devices/android/screencap'
+import * as adbActions from '../devices/android/actions'
+import * as hdcActions from '../devices/harmony/actions'
+import { shell as hdcShell } from '../devices/harmony/base'
 import { getGlobalVar, setGlobalVar } from '../settings'
 import { getDevicesSnapshot } from '../devices'
-import { exec } from 'node:child_process'
-import { promisify } from 'node:util'
 
-const execAsync = promisify(exec)
 const logger = createLogger('workflow:executor')
 
 // ── State ────────────────────────────────────────────────────────────────
@@ -94,7 +93,7 @@ async function executeNode(
   node: WorkflowNode,
   deviceId: string | undefined,
   ctx: Record<string, string>
-): Promise<{ ok: boolean; output?: string; branchHandle?: string }> {
+): Promise<{ ok: boolean; output?: string; branchHandle?: string; imageData?: string }> {
   const platform = getDevicesSnapshot().find((d) => d.id === deviceId)?.platform ?? 'android'
   const isAndroid = platform === 'android'
   const serial = getDevicesSnapshot().find((d) => d.id === deviceId)?.connectionKey ?? deviceId ?? 'default'
@@ -111,13 +110,34 @@ async function executeNode(
       const x = Number(p.x ?? 0)
       const y = Number(p.y ?? 0)
       if (isAndroid) {
-        await adbShell(serial, `input tap ${x} ${y}`)
+        await adbActions.tap(serial, x, y)
       } else {
-        // HarmonyOS via hdc shell
-        const { execSync } = await import('node:child_process')
-        execSync(`hdc -t ${serial} shell uitest uiInput click ${x} ${y}`)
+        await hdcActions.tap(serial, x, y)
       }
       return { ok: true, output: `点击坐标 (${x}, ${y})` }
+    }
+
+    case 'action-double-tap': {
+      const x = Number(p.x ?? 0)
+      const y = Number(p.y ?? 0)
+      if (isAndroid) {
+        await adbActions.doubleTap(serial, x, y)
+      } else {
+        await hdcActions.doubleTap(serial, x, y)
+      }
+      return { ok: true, output: `双击坐标 (${x}, ${y})` }
+    }
+
+    case 'action-long-click': {
+      const x = Number(p.x ?? 0)
+      const y = Number(p.y ?? 0)
+      const dur = Number(p.duration ?? 2000)
+      if (isAndroid) {
+        await adbActions.longClick(serial, x, y, dur)
+      } else {
+        await hdcActions.longClick(serial, x, y, dur)
+      }
+      return { ok: true, output: `长按坐标 (${x}, ${y}) ${dur}ms` }
     }
 
     case 'action-swipe': {
@@ -125,40 +145,73 @@ async function executeNode(
       const x2 = Number(p.x2 ?? 0), y2 = Number(p.y2 ?? 0)
       const dur = Number(p.duration ?? 300)
       if (isAndroid) {
-        await adbShell(serial, `input swipe ${x1} ${y1} ${x2} ${y2} ${dur}`)
+        await adbActions.swipe(serial, x1, y1, x2, y2, dur)
       } else {
-        const { execSync } = await import('node:child_process')
-        execSync(`hdc -t ${serial} shell uitest uiInput swipe ${x1} ${y1} ${x2} ${y2} ${dur}`)
+        await hdcActions.swipe(serial, x1, y1, x2, y2, dur)
       }
       return { ok: true, output: `滑动 (${x1},${y1}) → (${x2},${y2}) ${dur}ms` }
+    }
+
+    case 'action-drag': {
+      const x1 = Number(p.x1 ?? 0), y1 = Number(p.y1 ?? 0)
+      const x2 = Number(p.x2 ?? 0), y2 = Number(p.y2 ?? 0)
+      const dur = Number(p.duration ?? 500)
+      if (isAndroid) {
+        await adbActions.drag(serial, x1, y1, x2, y2, dur)
+      } else {
+        await hdcActions.drag(serial, x1, y1, x2, y2, dur)
+      }
+      return { ok: true, output: `拖拽 (${x1},${y1}) → (${x2},${y2}) ${dur}ms` }
     }
 
     case 'action-input-text': {
       const text = interpolate(String(p.text ?? ''), ctx)
       if (isAndroid) {
-        await adbShell(serial, `input text "${text.replace(/"/g, '\\"')}"`)
+        await adbActions.inputText(serial, text)
+      } else {
+        await hdcActions.inputText(serial, text)
       }
       return { ok: true, output: `输入文字: ${text}` }
     }
 
+    case 'action-clear-text': {
+      const len = Number(p.length ?? 100)
+      if (isAndroid) {
+        await adbActions.clearText(serial, len)
+      } else {
+        await hdcActions.clearText(serial, len)
+      }
+      return { ok: true, output: `清除文字（最多 ${len} 个字符）` }
+    }
+
+    case 'action-key-event': {
+      const keyCode = Number(p.keyCode ?? 4)
+      if (isAndroid) {
+        await adbActions.keyEvent(serial, keyCode)
+      } else {
+        await hdcActions.keyEvent(serial, keyCode)
+      }
+      return { ok: true, output: `按键事件 keyCode=${keyCode}` }
+    }
+
     case 'action-screenshot': {
-      const base64 = await captureAndroidScreenshot(serial)
+      const base64 = isAndroid
+        ? await adbActions.screenshot(serial)
+        : await hdcActions.screenshot(serial)
+      const mime = isAndroid ? 'image/png' : 'image/jpeg'
+      const imageData = `data:${mime};base64,${base64}`
       const saveToVar = String(p.saveToVar ?? '')
       if (saveToVar) {
         ctx[saveToVar] = base64
       }
-      return { ok: true, output: `截图成功${saveToVar ? `，已存入变量 ${saveToVar}` : ''}` }
+      return { ok: true, output: `截图成功${saveToVar ? `，已存入变量 ${saveToVar}` : ''}`, imageData }
     }
 
     case 'action-shell': {
       const cmd = interpolate(String(p.command ?? ''), ctx)
-      let output: string
-      if (isAndroid) {
-        output = await adbShell(serial, cmd)
-      } else {
-        const res = await execAsync(`hdc -t ${serial} shell ${cmd}`)
-        output = res.stdout.trim()
-      }
+      const output = isAndroid
+        ? await adbShell(serial, cmd)
+        : await hdcShell(serial, cmd)
       const saveToVar = String(p.saveToVar ?? '')
       if (saveToVar) ctx[saveToVar] = output
       return { ok: true, output }
@@ -167,20 +220,19 @@ async function executeNode(
     case 'action-install-app': {
       const packagePath = interpolate(String(p.packagePath ?? ''), ctx)
       if (isAndroid) {
-        const res = await execAsync(`adb -s ${serial} install -r "${packagePath}"`)
-        return { ok: true, output: res.stdout.trim() || res.stderr.trim() }
+        await adbActions.installApp(serial, packagePath)
       } else {
-        const res = await execAsync(`hdc -t ${serial} install "${packagePath}"`)
-        return { ok: true, output: res.stdout.trim() || res.stderr.trim() }
+        await hdcActions.installApp(serial, packagePath)
       }
+      return { ok: true, output: `已安装 ${packagePath}` }
     }
 
     case 'action-uninstall-app': {
       const packageName = interpolate(String(p.packageName ?? ''), ctx)
       if (isAndroid) {
-        await adbShell(serial, `pm uninstall ${packageName}`)
+        await adbActions.uninstallApp(serial, packageName)
       } else {
-        await execAsync(`hdc -t ${serial} uninstall ${packageName}`)
+        await hdcActions.uninstallApp(serial, packageName)
       }
       return { ok: true, output: `已卸载 ${packageName}` }
     }
@@ -251,7 +303,7 @@ async function traverseFrom(
   }
   pushLog(win, logEntry)
 
-  let result: { ok: boolean; output?: string; branchHandle?: string }
+  let result: { ok: boolean; output?: string; branchHandle?: string; imageData?: string }
   try {
     result = await executeNode(node, deviceId, ctx)
   } catch (e) {
@@ -263,6 +315,7 @@ async function traverseFrom(
     ...logEntry,
     status: result.ok ? 'success' : 'error',
     output: result.output,
+    imageData: result.imageData,
     duration,
   }
   pushLog(win, finalLog)

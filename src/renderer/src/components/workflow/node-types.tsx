@@ -11,6 +11,7 @@ import {
   Package, Trash2, Terminal, BookOpen, Pencil,
   GitBranch, Repeat, Timer,
   CheckCircle2, AlertCircle, Loader2,
+  Hand, Move, Delete, Command,
 } from 'lucide-react'
 
 // ── 节点元数据 ─────────────────────────────────────────────────────────────
@@ -22,8 +23,13 @@ const NODE_META: Record<
   'trigger-manual':       { label: '手动触发',   icon: <Play className="w-3.5 h-3.5" />,              color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
   'action-screenshot':    { label: '截图',        icon: <Camera className="w-3.5 h-3.5" />,            color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
   'action-tap':           { label: '点击',        icon: <MousePointerClick className="w-3.5 h-3.5" />, color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  'action-double-tap':    { label: '双击',        icon: <MousePointerClick className="w-3.5 h-3.5" />, color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  'action-long-click':    { label: '长按',        icon: <Hand className="w-3.5 h-3.5" />,              color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
   'action-swipe':         { label: '滑动',        icon: <MoveVertical className="w-3.5 h-3.5" />,      color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  'action-drag':          { label: '拖拽',        icon: <Move className="w-3.5 h-3.5" />,              color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
   'action-input-text':    { label: '输入文字',    icon: <Keyboard className="w-3.5 h-3.5" />,          color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  'action-clear-text':    { label: '清除文字',    icon: <Delete className="w-3.5 h-3.5" />,            color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  'action-key-event':     { label: '按键事件',    icon: <Command className="w-3.5 h-3.5" />,           color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
   'action-install-app':   { label: '安装应用',    icon: <Package className="w-3.5 h-3.5" />,           color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
   'action-uninstall-app': { label: '卸载应用',    icon: <Trash2 className="w-3.5 h-3.5" />,            color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
   'action-shell':         { label: 'Shell 命令',  icon: <Terminal className="w-3.5 h-3.5" />,          color: '#f97316', bg: 'rgba(249,115,22,0.12)' },
@@ -195,9 +201,28 @@ TriggerManualNode.displayName = 'TriggerManualNode'
 export const ActionScreenshotNode = memo(({ id, data }: NodeProps) => {
   const d = data as unknown as WorkflowNodeData
   const p = d.params as { saveToVar?: string }
+  const imageData = useWorkflowStore((s) => s.nodeImages[id])
+  const status = d.stepStatus
+
   return (
     <BaseNode id={id} data={d}>
       <NodeInput id={id} paramKey="saveToVar" label="存入变量" value={p.saveToVar} placeholder="可选" />
+      {(imageData || status === 'running') && (
+        <div className="rounded-md overflow-hidden border border-border/40 bg-muted/20">
+          {imageData ? (
+            <img
+              src={imageData}
+              alt="screenshot"
+              className="w-full object-contain max-h-36 block"
+            />
+          ) : (
+            <div className="flex items-center justify-center gap-1.5 h-14 text-[11px] text-muted-foreground">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              截图中…
+            </div>
+          )}
+        </div>
+      )}
     </BaseNode>
   )
 })
@@ -372,14 +397,120 @@ export const ControlDelayNode = memo(({ id, data }: NodeProps) => {
 })
 ControlDelayNode.displayName = 'ControlDelayNode'
 
+// ── New Action Nodes ──────────────────────────────────────────────────────
+
+export const ActionDoubleTapNode = memo(({ id, data }: NodeProps) => {
+  const d = data as unknown as WorkflowNodeData
+  const p = d.params as { x?: number; y?: number }
+  return (
+    <BaseNode id={id} data={d}>
+      <div className="flex gap-2">
+        <NodeInput id={id} type="number" paramKey="x" label="X 坐标" value={p.x} />
+        <NodeInput id={id} type="number" paramKey="y" label="Y 坐标" value={p.y} />
+      </div>
+    </BaseNode>
+  )
+})
+ActionDoubleTapNode.displayName = 'ActionDoubleTapNode'
+
+export const ActionLongClickNode = memo(({ id, data }: NodeProps) => {
+  const d = data as unknown as WorkflowNodeData
+  const p = d.params as { x?: number; y?: number; duration?: number }
+  return (
+    <BaseNode id={id} data={d}>
+      <div className="flex gap-2">
+        <NodeInput id={id} type="number" paramKey="x" label="X 坐标" value={p.x} />
+        <NodeInput id={id} type="number" paramKey="y" label="Y 坐标" value={p.y} />
+      </div>
+      <NodeInput id={id} type="number" paramKey="duration" label="时长 (ms)" value={p.duration} placeholder="2000" />
+    </BaseNode>
+  )
+})
+ActionLongClickNode.displayName = 'ActionLongClickNode'
+
+export const ActionDragNode = memo(({ id, data }: NodeProps) => {
+  const d = data as unknown as WorkflowNodeData
+  const p = d.params as { x1?: number; y1?: number; x2?: number; y2?: number; duration?: number }
+  return (
+    <BaseNode id={id} data={d}>
+      <div className="flex gap-2">
+        <NodeInput id={id} type="number" paramKey="x1" label="起点 X" value={p.x1} />
+        <NodeInput id={id} type="number" paramKey="y1" label="起点 Y" value={p.y1} />
+      </div>
+      <div className="flex gap-2">
+        <NodeInput id={id} type="number" paramKey="x2" label="终点 X" value={p.x2} />
+        <NodeInput id={id} type="number" paramKey="y2" label="终点 Y" value={p.y2} />
+      </div>
+      <NodeInput id={id} type="number" paramKey="duration" label="时长 (ms)" value={p.duration} />
+    </BaseNode>
+  )
+})
+ActionDragNode.displayName = 'ActionDragNode'
+
+export const ActionClearTextNode = memo(({ id, data }: NodeProps) => {
+  const d = data as unknown as WorkflowNodeData
+  const p = d.params as { length?: number }
+  return (
+    <BaseNode id={id} data={d}>
+      <NodeInput id={id} type="number" paramKey="length" label="最大删除字符数" value={p.length} placeholder="100" />
+    </BaseNode>
+  )
+})
+ActionClearTextNode.displayName = 'ActionClearTextNode'
+
+const KEY_PRESETS = [
+  { label: '返回 (Back)',    android: 4,   harmony: 2 },
+  { label: '主屏幕 (Home)', android: 3,   harmony: 1 },
+  { label: '最近任务',       android: 187, harmony: 3 },
+  { label: '回车 (Enter)',   android: 66,  harmony: 2054 },
+  { label: '删除 (Del)',     android: 67,  harmony: 2055 },
+]
+
+export const ActionKeyEventNode = memo(({ id, data }: NodeProps) => {
+  const d = data as unknown as WorkflowNodeData
+  const p = d.params as { keyCode?: number }
+  const updateNodeParams = useWorkflowStore((s) => s.updateNodeParams)
+  const disabled = useWorkflowStore((s) => s.runStatus === 'running')
+
+  return (
+    <BaseNode id={id} data={d}>
+      <div className="flex flex-col gap-1.5">
+        <Label className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
+          快捷预设
+        </Label>
+        <div className="flex flex-wrap gap-1">
+          {KEY_PRESETS.map((preset) => (
+            <button
+              key={preset.android}
+              type="button"
+              disabled={disabled}
+              className="px-1.5 py-0.5 text-[10px] rounded border border-border hover:bg-accent transition-colors disabled:opacity-40"
+              onClick={() => updateNodeParams(id, { keyCode: preset.android })}
+            >
+              {preset.label.split(' ')[0]}
+            </button>
+          ))}
+        </div>
+      </div>
+      <NodeInput id={id} type="number" paramKey="keyCode" label="KeyCode" value={p.keyCode} placeholder="Android:4 / Harmony:2" />
+    </BaseNode>
+  )
+})
+ActionKeyEventNode.displayName = 'ActionKeyEventNode'
+
 // ── nodeTypes map (pass to ReactFlow) ────────────────────────────────────
 
 export const nodeTypes = {
   'trigger-manual':       TriggerManualNode,
   'action-screenshot':    ActionScreenshotNode,
   'action-tap':           ActionTapNode,
+  'action-double-tap':    ActionDoubleTapNode,
+  'action-long-click':    ActionLongClickNode,
   'action-swipe':         ActionSwipeNode,
+  'action-drag':          ActionDragNode,
   'action-input-text':    ActionInputTextNode,
+  'action-clear-text':    ActionClearTextNode,
+  'action-key-event':     ActionKeyEventNode,
   'action-install-app':   ActionInstallAppNode,
   'action-uninstall-app': ActionUninstallAppNode,
   'action-shell':         ActionShellNode,

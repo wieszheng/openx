@@ -37,6 +37,7 @@ interface WorkflowStore {
   // 执行状态
   runStatus: ExecutionStatus
   logs: ExecutionLog[]
+  nodeImages: Record<string, string>  // nodeId → data URL，截图节点执行后缓存
   // 选中的节点 id（用于配置面板）
   selectedNodeId: string | null
 
@@ -52,6 +53,7 @@ interface WorkflowStore {
   updateNodeParams: (nodeId: string, params: Record<string, unknown>) => void
   updateNodeLabel: (nodeId: string, label: string) => void
   updateNodeStepStatus: (nodeId: string, status: 'running' | 'success' | 'error' | null) => void
+  updateNodeImageData: (nodeId: string, dataUrl: string) => void
   clearNodeStepStatuses: () => void
 
   setSelectedNodeId: (id: string | null) => void
@@ -118,6 +120,7 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
   rfEdges: [],
   runStatus: 'idle',
   logs: [],
+  nodeImages: {},
   selectedNodeId: null,
 
   createWorkflow: (name) => {
@@ -204,6 +207,10 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
     set({ rfNodes })
   },
 
+  updateNodeImageData: (nodeId, dataUrl) => {
+    set((s) => ({ nodeImages: { ...s.nodeImages, [nodeId]: dataUrl } }))
+  },
+
   clearNodeStepStatuses: () => {
     const rfNodes = get().rfNodes.map((n) => {
       const { stepStatus: _, ...rest } = n.data as Record<string, unknown>
@@ -216,7 +223,7 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
 
   startRun: () => {
     get().clearNodeStepStatuses()
-    set({ runStatus: 'running', logs: [] })
+    set({ runStatus: 'running', logs: [], nodeImages: {} })
   },
   appendLog: (log) => set((s) => ({ logs: [...s.logs, log] })),
   finishRun: (status) => {

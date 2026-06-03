@@ -10,6 +10,7 @@ import {
   Package, Trash2, Terminal, BookOpen, Pencil,
   GitBranch, Repeat, Timer,
   GripVertical,
+  Hand, Move, Delete, Command,
 } from 'lucide-react'
 
 // ── 节点模板类型 ──────────────────────────────────────────────────────────────
@@ -51,9 +52,14 @@ const nodeGroups: NodeGroup[] = [
     title: '设备操作',
     items: [
       { type: 'action-tap',        label: '点击',      icon: <MousePointerClick className="w-4 h-4" />, description: '点击屏幕坐标', handleColor: '#3b82f6' },
-      { type: 'action-swipe',      label: '滑动',       icon: <MoveVertical className="w-4 h-4" />, description: '从一点滑动到另一点', handleColor: '#3b82f6' },
-      { type: 'action-input-text', label: '输入文字',   icon: <Keyboard className="w-4 h-4" />, description: '向焦点控件输入文本', handleColor: '#3b82f6' },
-      { type: 'action-screenshot', label: '截图',       icon: <Camera className="w-4 h-4" />, description: '截取当前屏幕', handleColor: '#3b82f6' },
+      { type: 'action-double-tap', label: '双击',      icon: <MousePointerClick className="w-4 h-4" />, description: '双击屏幕坐标', handleColor: '#3b82f6' },
+      { type: 'action-long-click', label: '长按',      icon: <Hand className="w-4 h-4" />,              description: '长按屏幕坐标', handleColor: '#3b82f6' },
+      { type: 'action-swipe',      label: '滑动',       icon: <MoveVertical className="w-4 h-4" />,      description: '从一点滑动到另一点', handleColor: '#3b82f6' },
+      { type: 'action-drag',       label: '拖拽',       icon: <Move className="w-4 h-4" />,              description: '拖拽控件到目标位置', handleColor: '#3b82f6' },
+      { type: 'action-input-text', label: '输入文字',   icon: <Keyboard className="w-4 h-4" />,          description: '向焦点控件输入文本', handleColor: '#3b82f6' },
+      { type: 'action-clear-text', label: '清除文字',   icon: <Delete className="w-4 h-4" />,            description: '清除焦点控件文字', handleColor: '#3b82f6' },
+      { type: 'action-key-event',  label: '按键事件',   icon: <Command className="w-4 h-4" />,           description: '发送系统按键（返回/主屏/任务等）', handleColor: '#3b82f6' },
+      { type: 'action-screenshot', label: '截图',       icon: <Camera className="w-4 h-4" />,            description: '截取当前屏幕', handleColor: '#3b82f6' },
     ],
   },
   {
@@ -85,8 +91,13 @@ const nodeGroups: NodeGroup[] = [
 
 const DEFAULT_PARAMS: Partial<Record<WorkflowNodeType, Record<string, unknown>>> = {
   'action-tap':          { x: 0, y: 0 },
+  'action-double-tap':   { x: 0, y: 0 },
+  'action-long-click':   { x: 0, y: 0, duration: 2000 },
   'action-swipe':        { x1: 0, y1: 0, x2: 0, y2: 500, duration: 300 },
+  'action-drag':         { x1: 0, y1: 0, x2: 0, y2: 300, duration: 500 },
   'action-input-text':   { text: '' },
+  'action-clear-text':   { length: 100 },
+  'action-key-event':    { keyCode: 4 },
   'action-screenshot':   { saveToVar: '' },
   'action-install-app':  { packagePath: '' },
   'action-uninstall-app':{ packageName: '' },
