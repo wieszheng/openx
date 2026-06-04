@@ -88,7 +88,7 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
               ref={imgRef}
               src={imgSrc}
               alt="device screenshot"
-              className="w-full object-contain cursor-crosshair max-h-[60vh] block"
+              className="w-auto max-w-full max-h-[60vh] cursor-crosshair block mx-auto"
               onMouseMove={handleMouseMove}
               onMouseLeave={() => setHoverPos(null)}
               onClick={handleClick}
