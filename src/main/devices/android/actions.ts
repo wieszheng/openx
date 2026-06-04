@@ -1,7 +1,7 @@
 import { createLogger } from '../../log'
 import { shell } from './base'
 import { captureAndroidScreenshot } from './screencap'
-import { installAndroidApp, uninstallAndroidApp } from './app-control'
+import { startAndroidApp, stopAndroidApp, installAndroidApp, uninstallAndroidApp } from './app-control'
 
 const logger = createLogger('adbActions')
 
@@ -119,6 +119,17 @@ export async function getScreenSize(
 }
 
 // ── Re-exports ────────────────────────────────────────────────────────────
+
+export async function launchApp(serial: string, packageName: string, cold = false): Promise<void> {
+  logger.debug('launchApp', { serial, packageName, cold })
+  if (cold) await stopAndroidApp(serial, packageName)
+  await startAndroidApp(serial, packageName)
+}
+
+export async function closeApp(serial: string, packageName: string): Promise<void> {
+  logger.debug('closeApp', { serial, packageName })
+  await stopAndroidApp(serial, packageName)
+}
 
 export { captureAndroidScreenshot as screenshot }
 export { installAndroidApp as installApp }

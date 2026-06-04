@@ -237,6 +237,28 @@ async function executeNode(
       return { ok: true, output: `已卸载 ${packageName}` }
     }
 
+    case 'action-launch-app': {
+      const packageName = interpolate(String(p.packageName ?? ''), ctx)
+      const activity = p.activity ? String(p.activity) : undefined
+      const cold = Boolean(p.cold ?? false)
+      if (isAndroid) {
+        await adbActions.launchApp(serial, packageName, cold)
+      } else {
+        await hdcActions.launchApp(serial, packageName, activity, cold)
+      }
+      return { ok: true, output: `${cold ? '冷启动' : '热启动'}应用 ${packageName}` }
+    }
+
+    case 'action-close-app': {
+      const packageName = interpolate(String(p.packageName ?? ''), ctx)
+      if (isAndroid) {
+        await adbActions.closeApp(serial, packageName)
+      } else {
+        await hdcActions.closeApp(serial, packageName)
+      }
+      return { ok: true, output: `已关闭应用 ${packageName}` }
+    }
+
     case 'action-get-var': {
       const key = String(p.key ?? '')
       const saveToVar = String(p.saveToVar ?? key)

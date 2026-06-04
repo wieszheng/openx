@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Play, Camera, MousePointerClick, MoveVertical, Keyboard,
-  Package, Trash2, Terminal, BookOpen, Pencil,
+  Package, Trash2, Terminal, BookOpen, Pencil, Square,
   GitBranch, Repeat, Timer,
   GripVertical,
   Hand, Move, Delete, Command,
@@ -67,6 +67,8 @@ const nodeGroups: NodeGroup[] = [
     items: [
       { type: 'action-install-app',   label: '安装应用',  icon: <Package className="w-4 h-4" />, description: '安装 APK 或 HAP 包', handleColor: '#8b5cf6' },
       { type: 'action-uninstall-app', label: '卸载应用',  icon: <Trash2 className="w-4 h-4" />, description: '卸载指定包名的应用', handleColor: '#8b5cf6' },
+      { type: 'action-launch-app',    label: '启动应用',  icon: <Play className="w-4 h-4" />,   description: '热启动或冷启动应用', handleColor: '#8b5cf6' },
+      { type: 'action-close-app',     label: '关闭应用',  icon: <Square className="w-4 h-4" />, description: '强制停止应用进程',   handleColor: '#8b5cf6' },
       { type: 'action-shell',         label: 'Shell 命令', icon: <Terminal className="w-4 h-4" />, description: '在设备上执行 Shell 命令', handleColor: '#f97316' },
     ],
   },
@@ -101,6 +103,8 @@ const DEFAULT_PARAMS: Partial<Record<WorkflowNodeType, Record<string, unknown>>>
   'action-screenshot':   { saveToVar: '' },
   'action-install-app':  { packagePath: '' },
   'action-uninstall-app':{ packageName: '' },
+  'action-launch-app':   { packageName: '', activity: '', cold: false },
+  'action-close-app':    { packageName: '' },
   'action-shell':        { command: '', saveToVar: '' },
   'action-get-var':      { key: '', saveToVar: '' },
   'action-set-var':      { key: '', value: '' },

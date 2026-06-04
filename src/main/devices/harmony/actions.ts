@@ -1,7 +1,7 @@
 import { createLogger } from '../../log'
 import { shell } from './base'
 import { captureHarmonyScreenshot } from './screencap'
-import { installHarmonyApp, uninstallHarmonyApp } from './app-control'
+import { startHarmonyApp, stopHarmonyApp, installHarmonyApp, uninstallHarmonyApp } from './app-control'
 
 const logger = createLogger('hdcActions')
 
@@ -115,6 +115,18 @@ export async function dumpLayout(connectKey: string): Promise<string> {
 }
 
 // ── Re-exports ────────────────────────────────────────────────────────────
+
+export async function launchApp(connectKey: string, packageName: string, ability?: string, cold = false): Promise<void> {
+  logger.debug('launchApp', { connectKey, packageName, cold })
+  if (cold) await stopHarmonyApp(connectKey, packageName)
+  const abilityName = ability?.trim() || `${packageName}.MainAbility`
+  await startHarmonyApp(connectKey, packageName, abilityName)
+}
+
+export async function closeApp(connectKey: string, packageName: string): Promise<void> {
+  logger.debug('closeApp', { connectKey, packageName })
+  await stopHarmonyApp(connectKey, packageName)
+}
 
 export { captureHarmonyScreenshot as screenshot }
 export { installHarmonyApp as installApp }

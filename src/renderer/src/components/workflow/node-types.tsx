@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Play, Camera, MousePointerClick, MoveVertical, Keyboard,
-  Package, Trash2, Terminal, BookOpen, Pencil,
+  Package, Trash2, Terminal, BookOpen, Pencil, Square,
   GitBranch, Repeat, Timer,
   CheckCircle2, AlertCircle, Loader2,
   Hand, Move, Delete, Command,
@@ -32,6 +32,8 @@ const NODE_META: Record<
   'action-key-event':     { label: '按键事件',    icon: <Command className="w-3.5 h-3.5" />,           color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
   'action-install-app':   { label: '安装应用',    icon: <Package className="w-3.5 h-3.5" />,           color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
   'action-uninstall-app': { label: '卸载应用',    icon: <Trash2 className="w-3.5 h-3.5" />,            color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+  'action-launch-app':    { label: '启动应用',    icon: <Play className="w-3.5 h-3.5" />,              color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+  'action-close-app':     { label: '关闭应用',    icon: <Square className="w-3.5 h-3.5" />,            color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
   'action-shell':         { label: 'Shell 命令',  icon: <Terminal className="w-3.5 h-3.5" />,          color: '#f97316', bg: 'rgba(249,115,22,0.12)' },
   'action-get-var':       { label: '读取变量',    icon: <BookOpen className="w-3.5 h-3.5" />,          color: '#eab308', bg: 'rgba(234,179,8,0.12)' },
   'action-set-var':       { label: '写入变量',    icon: <Pencil className="w-3.5 h-3.5" />,            color: '#eab308', bg: 'rgba(234,179,8,0.12)' },
@@ -294,6 +296,45 @@ export const ActionUninstallAppNode = memo(({ id, data }: NodeProps) => {
 })
 ActionUninstallAppNode.displayName = 'ActionUninstallAppNode'
 
+export const ActionLaunchAppNode = memo(({ id, data }: NodeProps) => {
+  const d = data as unknown as WorkflowNodeData
+  const p = d.params as { packageName?: string; activity?: string; cold?: boolean }
+  const { updateNodeParams } = useWorkflowStore()
+  return (
+    <BaseNode id={id} data={d}>
+      <NodeInput id={id} paramKey="packageName" label="包名" value={p.packageName} placeholder="com.example.app" />
+      <NodeInput id={id} paramKey="activity" label="Ability（鸿蒙可选）" value={p.activity} placeholder="自动探测" />
+      <div className="flex items-center gap-2 pt-0.5 nodrag">
+        <button
+          type="button"
+          onClick={() => updateNodeParams(id, { cold: !p.cold })}
+          className={cn(
+            'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors border',
+            p.cold
+              ? 'bg-amber-500/10 text-amber-600 border-amber-400/40'
+              : 'bg-emerald-500/10 text-emerald-600 border-emerald-400/40'
+          )}
+        >
+          {p.cold ? '冷启动' : '热启动'}
+        </button>
+        <span className="text-[10px] text-muted-foreground">{p.cold ? '先 force-stop 再启动' : '直接拉起前台'}</span>
+      </div>
+    </BaseNode>
+  )
+})
+ActionLaunchAppNode.displayName = 'ActionLaunchAppNode'
+
+export const ActionCloseAppNode = memo(({ id, data }: NodeProps) => {
+  const d = data as unknown as WorkflowNodeData
+  const p = d.params as { packageName?: string }
+  return (
+    <BaseNode id={id} data={d}>
+      <NodeInput id={id} paramKey="packageName" label="包名" value={p.packageName} placeholder="com.example.app" />
+    </BaseNode>
+  )
+})
+ActionCloseAppNode.displayName = 'ActionCloseAppNode'
+
 export const ActionShellNode = memo(({ id, data }: NodeProps) => {
   const d = data as unknown as WorkflowNodeData
   const p = d.params as { command?: string; saveToVar?: string }
@@ -513,6 +554,8 @@ export const nodeTypes = {
   'action-key-event':     ActionKeyEventNode,
   'action-install-app':   ActionInstallAppNode,
   'action-uninstall-app': ActionUninstallAppNode,
+  'action-launch-app':    ActionLaunchAppNode,
+  'action-close-app':     ActionCloseAppNode,
   'action-shell':         ActionShellNode,
   'action-get-var':       ActionGetVarNode,
   'action-set-var':       ActionSetVarNode,

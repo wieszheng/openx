@@ -15,6 +15,8 @@ export type WorkflowNodeType =
   | 'action-key-event'
   | 'action-install-app'
   | 'action-uninstall-app'
+  | 'action-launch-app'
+  | 'action-close-app'
   | 'action-shell'
   | 'action-get-var'
   | 'action-set-var'
@@ -84,6 +86,16 @@ export interface ActionUninstallAppParams {
   packageName: string
 }
 
+export interface ActionLaunchAppParams {
+  packageName: string
+  activity?: string  // Harmony 的 mainAbility，Android 可省略（自动探测）
+  cold?: boolean     // true=冷启动（先 force-stop），false/undefined=热启动
+}
+
+export interface ActionCloseAppParams {
+  packageName: string
+}
+
 export interface ActionShellParams {
   command: string
   saveToVar?: string // 将命令输出存到变量
@@ -124,6 +136,8 @@ export type WorkflowNodeParams =
   | ActionKeyEventParams
   | ActionInstallAppParams
   | ActionUninstallAppParams
+  | ActionLaunchAppParams
+  | ActionCloseAppParams
   | ActionShellParams
   | ActionGetVarParams
   | ActionSetVarParams
