@@ -1,6 +1,5 @@
 import { createLogger } from '../../log'
 import { shell } from './base'
-import { getAdbClient } from './client'
 import { captureAndroidScreenshot } from './screencap'
 import { installAndroidApp, uninstallAndroidApp } from './app-control'
 
@@ -72,7 +71,9 @@ export async function inputText(serial: string, text: string): Promise<void> {
 /** 清除当前焦点文本框，length 为最大删除字符数，默认 100 */
 export async function clearText(serial: string, length = 100): Promise<void> {
   logger.debug('clearText', { serial, length })
-  await getAdbClient().getDevice(serial).clearTextField(length)
+  // 连续发送 DEL 键（KEYCODE_DEL = 67）模拟清除
+  const keys = Array(length).fill('67').join(' ')
+  await shell(serial, `input keyevent ${keys}`)
 }
 
 // ── 按键事件 ──────────────────────────────────────────────────────────────
