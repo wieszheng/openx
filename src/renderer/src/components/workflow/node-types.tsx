@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { cn } from '@/lib/utils'
+import { PickButton } from './screen-picker'
 import { useWorkflowStore } from '@/stores/workflow'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -233,11 +234,15 @@ ActionScreenshotNode.displayName = 'ActionScreenshotNode'
 export const ActionTapNode = memo(({ id, data }: NodeProps) => {
   const d = data as unknown as WorkflowNodeData
   const p = d.params as { x?: number; y?: number }
+  const { updateNodeParams } = useWorkflowStore()
   return (
     <BaseNode id={id} data={d}>
-      <div className="flex gap-2">
-        <NodeInput id={id} type="number" paramKey="x" label="X 坐标" value={p.x} />
-        <NodeInput id={id} type="number" paramKey="y" label="Y 坐标" value={p.y} />
+      <div className="flex items-end gap-1">
+        <div className="flex gap-2 flex-1">
+          <NodeInput id={id} type="number" paramKey="x" label="X 坐标" value={p.x} />
+          <NodeInput id={id} type="number" paramKey="y" label="Y 坐标" value={p.y} />
+        </div>
+        <PickButton mode="single" onPick={([pt]) => updateNodeParams(id, { x: pt.x, y: pt.y })} />
       </div>
     </BaseNode>
   )
@@ -247,15 +252,21 @@ ActionTapNode.displayName = 'ActionTapNode'
 export const ActionSwipeNode = memo(({ id, data }: NodeProps) => {
   const d = data as unknown as WorkflowNodeData
   const p = d.params as { x1?: number; y1?: number; x2?: number; y2?: number; duration?: number }
+  const { updateNodeParams } = useWorkflowStore()
   return (
     <BaseNode id={id} data={d}>
-      <div className="flex gap-2">
-        <NodeInput id={id} type="number" paramKey="x1" label="起点 X" value={p.x1} />
-        <NodeInput id={id} type="number" paramKey="y1" label="起点 Y" value={p.y1} />
-      </div>
-      <div className="flex gap-2">
-        <NodeInput id={id} type="number" paramKey="x2" label="终点 X" value={p.x2} />
-        <NodeInput id={id} type="number" paramKey="y2" label="终点 Y" value={p.y2} />
+      <div className="flex items-end gap-1">
+        <div className="flex flex-col gap-2 flex-1">
+          <div className="flex gap-2">
+            <NodeInput id={id} type="number" paramKey="x1" label="起点 X" value={p.x1} />
+            <NodeInput id={id} type="number" paramKey="y1" label="起点 Y" value={p.y1} />
+          </div>
+          <div className="flex gap-2">
+            <NodeInput id={id} type="number" paramKey="x2" label="终点 X" value={p.x2} />
+            <NodeInput id={id} type="number" paramKey="y2" label="终点 Y" value={p.y2} />
+          </div>
+        </div>
+        <PickButton mode="dual" onPick={([a, b]) => updateNodeParams(id, { x1: a.x, y1: a.y, x2: b.x, y2: b.y })} />
       </div>
       <NodeInput id={id} type="number" paramKey="duration" label="时长 (ms)" value={p.duration} />
     </BaseNode>
@@ -443,11 +454,15 @@ ControlDelayNode.displayName = 'ControlDelayNode'
 export const ActionDoubleTapNode = memo(({ id, data }: NodeProps) => {
   const d = data as unknown as WorkflowNodeData
   const p = d.params as { x?: number; y?: number }
+  const { updateNodeParams } = useWorkflowStore()
   return (
     <BaseNode id={id} data={d}>
-      <div className="flex gap-2">
-        <NodeInput id={id} type="number" paramKey="x" label="X 坐标" value={p.x} />
-        <NodeInput id={id} type="number" paramKey="y" label="Y 坐标" value={p.y} />
+      <div className="flex items-end gap-1">
+        <div className="flex gap-2 flex-1">
+          <NodeInput id={id} type="number" paramKey="x" label="X 坐标" value={p.x} />
+          <NodeInput id={id} type="number" paramKey="y" label="Y 坐标" value={p.y} />
+        </div>
+        <PickButton mode="single" onPick={([pt]) => updateNodeParams(id, { x: pt.x, y: pt.y })} />
       </div>
     </BaseNode>
   )
@@ -457,11 +472,15 @@ ActionDoubleTapNode.displayName = 'ActionDoubleTapNode'
 export const ActionLongClickNode = memo(({ id, data }: NodeProps) => {
   const d = data as unknown as WorkflowNodeData
   const p = d.params as { x?: number; y?: number; duration?: number }
+  const { updateNodeParams } = useWorkflowStore()
   return (
     <BaseNode id={id} data={d}>
-      <div className="flex gap-2">
-        <NodeInput id={id} type="number" paramKey="x" label="X 坐标" value={p.x} />
-        <NodeInput id={id} type="number" paramKey="y" label="Y 坐标" value={p.y} />
+      <div className="flex items-end gap-1">
+        <div className="flex gap-2 flex-1">
+          <NodeInput id={id} type="number" paramKey="x" label="X 坐标" value={p.x} />
+          <NodeInput id={id} type="number" paramKey="y" label="Y 坐标" value={p.y} />
+        </div>
+        <PickButton mode="single" onPick={([pt]) => updateNodeParams(id, { x: pt.x, y: pt.y })} />
       </div>
       <NodeInput id={id} type="number" paramKey="duration" label="时长 (ms)" value={p.duration} placeholder="2000" />
     </BaseNode>
@@ -472,15 +491,21 @@ ActionLongClickNode.displayName = 'ActionLongClickNode'
 export const ActionDragNode = memo(({ id, data }: NodeProps) => {
   const d = data as unknown as WorkflowNodeData
   const p = d.params as { x1?: number; y1?: number; x2?: number; y2?: number; duration?: number }
+  const { updateNodeParams } = useWorkflowStore()
   return (
     <BaseNode id={id} data={d}>
-      <div className="flex gap-2">
-        <NodeInput id={id} type="number" paramKey="x1" label="起点 X" value={p.x1} />
-        <NodeInput id={id} type="number" paramKey="y1" label="起点 Y" value={p.y1} />
-      </div>
-      <div className="flex gap-2">
-        <NodeInput id={id} type="number" paramKey="x2" label="终点 X" value={p.x2} />
-        <NodeInput id={id} type="number" paramKey="y2" label="终点 Y" value={p.y2} />
+      <div className="flex items-end gap-1">
+        <div className="flex flex-col gap-2 flex-1">
+          <div className="flex gap-2">
+            <NodeInput id={id} type="number" paramKey="x1" label="起点 X" value={p.x1} />
+            <NodeInput id={id} type="number" paramKey="y1" label="起点 Y" value={p.y1} />
+          </div>
+          <div className="flex gap-2">
+            <NodeInput id={id} type="number" paramKey="x2" label="终点 X" value={p.x2} />
+            <NodeInput id={id} type="number" paramKey="y2" label="终点 Y" value={p.y2} />
+          </div>
+        </div>
+        <PickButton mode="dual" onPick={([a, b]) => updateNodeParams(id, { x1: a.x, y1: a.y, x2: b.x, y2: b.y })} />
       </div>
       <NodeInput id={id} type="number" paramKey="duration" label="时长 (ms)" value={p.duration} />
     </BaseNode>
