@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   ReactFlow,
   Background,
@@ -253,6 +253,22 @@ function WorkflowCanvas() {
     selected: node.id === selectedNodeId,
   }))
 
+  // Derive per-edge styles from target node's stepStatus
+  const edgesWithStatus = useMemo(() => {
+    const statusMap = new Map<string, string>()
+    rfNodes.forEach((n) => {
+      const s = (n.data as Record<string, unknown>).stepStatus as string | undefined
+      if (s) statusMap.set(n.id, s)
+    })
+    return rfEdges.map((e) => {
+      const ts = statusMap.get(e.target)
+      if (ts === 'running') return { ...e, animated: true, style: { stroke: '#6366f1', strokeWidth: 2.5 } }
+      if (ts === 'success') return { ...e, animated: false, style: { stroke: '#10b981', strokeWidth: 2 } }
+      if (ts === 'error')   return { ...e, animated: false, style: { stroke: '#ef4444', strokeWidth: 2 } }
+      return { ...e, animated: false, style: { stroke: '#94a3b8', strokeWidth: 1.5, strokeDasharray: '5 4' } }
+    })
+  }, [rfNodes, rfEdges])
+
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => setRfNodes(applyNodeChanges(changes, rfNodes) as Node[]),
     [rfNodes, setRfNodes]
@@ -316,7 +332,7 @@ function WorkflowCanvas() {
   return (
     <ReactFlow
       nodes={nodesWithStatus}
-      edges={rfEdges.map((e) => ({ ...e, animated: runStatus === 'running' }))}
+      edges={edgesWithStatus}
       nodeTypes={nodeTypes}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
