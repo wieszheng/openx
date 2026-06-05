@@ -73,7 +73,9 @@ export function Header(): React.JSX.Element {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [installing, setInstalling] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
+  const [isStopping, setIsStopping] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
+  const [isStopHovered, setIsStopHovered] = useState(false)
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -207,23 +209,25 @@ export function Header(): React.JSX.Element {
   }
 
   const handleStopRecording = async () => {
+    if (!selectedId || !isRecording || isStopping) return
+    setIsStopping(true)
+    setIsStopHovered(false)
     try {
-      if (!selectedId) return
-      if (isRecording) {
-        const result = await window.api.record.stop(selectedId)
-        if (recordingIntervalRef.current) {
-          clearInterval(recordingIntervalRef.current)
-          recordingIntervalRef.current = null
-        }
-        setIsRecording(false)
-        setRecordingTime(0)
-        if (result.ok) {
-          toast.success(`录制完成（${result.durationSec}s）已保存至 ${result.filePath}`)
-        } else {
-          toast.error(result.error)
-        }
+      const result = await window.api.record.stop(selectedId)
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current)
+        recordingIntervalRef.current = null
+      }
+      setIsRecording(false)
+      setIsStopping(false)
+      setRecordingTime(0)
+      if (result.ok) {
+        toast.success(`录制完成（${result.durationSec}s）已保存至 ${result.filePath}`)
+      } else {
+        toast.error(result.error)
       }
     } catch (err) {
+      setIsStopping(false)
       toast.error(String(err))
     }
   }
@@ -258,7 +262,7 @@ export function Header(): React.JSX.Element {
     selectedDevice?.platform === 'harmony' ? '安装 HAP 应用包到设备' : '安装 APK 到设备'
 
   return (
-    <header className="drag-region min-h-10 flex items-center select-none py-1">
+    <header className="drag-region min-h-10 flex items-center select-none py-1 relative">
       <div className="no-drag relative flex items-center" ref={dropdownRef}>
         <button
           type="button"
@@ -402,43 +406,8 @@ export function Header(): React.JSX.Element {
           </TooltipContent>
         </Tooltip>
 
-        {/* 灵动岛风格录制按钮 */}
-        {isRecording ? (
-          // 录制中 - 灵动岛风格
-          <div
-            className={cn(
-              'relative flex items-center gap-2 mx-1 px-3 h-8 rounded-full cursor-pointer',
-              'bg-black/90 hover:bg-black/80 transition-all duration-300',
-              'animate-[glow-pulse_2s_ease-in-out_infinite]'
-            )}
-            onClick={handleStopRecording}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                handleStopRecording()
-              }
-            }}
-          >
-            {/* 闪烁的录制指示灯 */}
-            <div className="relative flex items-center justify-center">
-              <Circle
-                className={cn(
-                  'w-2.5 h-2.5 fill-red-500 text-red-500',
-                  'animate-[recording-blink_1s_ease-in-out_infinite]'
-                )}
-              />
-            </div>
-            {/* 录制时间 */}
-            <span className="text-white text-xs font-medium tabular-nums">
-              {formatRecordingTime(recordingTime)}
-            </span>
-            {/* 停止图标 */}
-            <div className="w-2 h-2 bg-white rounded-sm" />
-          </div>
-        ) : (
-          // 非录制状态 - 录制按钮
+        {/* 非录制状态 - 录制按钮 */}
+        {!isRecording && (
           <Tooltip>
             <TooltipTrigger asChild>
               <button
@@ -488,6 +457,63 @@ export function Header(): React.JSX.Element {
           </>
         )}
       </div>
+      {/* 灵动岛风格录制指示器 - 绝对居中 */}
+      {isRecording && (
+        <div
+          className={cn(
+            'no-drag absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2',
+            'flex items-center gap-2 px-3.5 h-8 rounded-full',
+            'transition-all duration-300 ease-in-out',
+            isStopping
+              ? 'bg-black/80 cursor-not-allowed'
+              : isStopHovered
+                ? 'bg-red-600/95 shadow-[0_0_12px_rgba(239,68,68,0.6)] cursor-pointer'
+                : 'bg-black/90 shadow-[0_0_8px_rgba(239,68,68,0.35)] animate-[glow-pulse_2s_ease-in-out_infinite] cursor-pointer'
+          )}
+          onClick={() => !isStopping && void handleStopRecording()}
+          role="button"
+          tabIndex={0}
+          onMouseEnter={() => !isStopping && setIsStopHovered(true)}
+          onMouseLeave={() => setIsStopHovered(false)}
+          onKeyDown={(e) => {
+            if (!isStopping && (e.key === 'Enter' || e.key === ' ')) {
+              e.preventDefault()
+              void handleStopRecording()
+            }
+          }}
+        >
+          {/* 左侧：停止中 spinner / hover 停止方块 / 默认红点 */}
+          <div className="relative flex items-center justify-center w-4 h-4">
+            {isStopping ? (
+              <Loader2 className="w-3.5 h-3.5 text-white/80 animate-spin" />
+            ) : isStopHovered ? (
+              <Square className="w-3 h-3 fill-white text-white" />
+            ) : (
+              <Circle
+                className={cn(
+                  'w-2.5 h-2.5 fill-red-500 text-red-500',
+                  'animate-[recording-blink_1s_ease-in-out_infinite]'
+                )}
+              />
+            )}
+          </div>
+
+          {/* 中间文字：停止中 / hover 停止提示 / 计时 */}
+          <span
+            className={cn(
+              'text-xs font-medium tabular-nums transition-all duration-200',
+              isStopping ? 'text-white/60' : isStopHovered ? 'text-white/90' : 'text-white'
+            )}
+          >
+            {isStopping ? '正在停止…' : isStopHovered ? '停止录制' : formatRecordingTime(recordingTime)}
+          </span>
+
+          {/* 右侧小方块：仅正常录制中显示 */}
+          {!isStopping && !isStopHovered && (
+            <div className="w-2 h-2 bg-white/70 rounded-sm shrink-0" />
+          )}
+        </div>
+      )}
     </header>
   )
 }

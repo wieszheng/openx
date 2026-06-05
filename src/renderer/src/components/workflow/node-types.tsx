@@ -21,26 +21,26 @@ const NODE_META: Record<
   string,
   { label: string; icon: React.ReactNode; color: string; bg: string }
 > = {
-  'trigger-manual':       { label: '手动触发',   icon: <Play className="w-3.5 h-3.5" />,              color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
-  'action-screenshot':    { label: '截图',        icon: <Camera className="w-3.5 h-3.5" />,            color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
-  'action-tap':           { label: '点击',        icon: <MousePointerClick className="w-3.5 h-3.5" />, color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
-  'action-double-tap':    { label: '双击',        icon: <MousePointerClick className="w-3.5 h-3.5" />, color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
-  'action-long-click':    { label: '长按',        icon: <Hand className="w-3.5 h-3.5" />,              color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
-  'action-swipe':         { label: '滑动',        icon: <MoveVertical className="w-3.5 h-3.5" />,      color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
-  'action-drag':          { label: '拖拽',        icon: <Move className="w-3.5 h-3.5" />,              color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
-  'action-input-text':    { label: '输入文字',    icon: <Keyboard className="w-3.5 h-3.5" />,          color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
-  'action-clear-text':    { label: '清除文字',    icon: <Delete className="w-3.5 h-3.5" />,            color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
-  'action-key-event':     { label: '按键事件',    icon: <Command className="w-3.5 h-3.5" />,           color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
-  'action-install-app':   { label: '安装应用',    icon: <Package className="w-3.5 h-3.5" />,           color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
-  'action-uninstall-app': { label: '卸载应用',    icon: <Trash2 className="w-3.5 h-3.5" />,            color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
-  'action-launch-app':    { label: '启动应用',    icon: <Play className="w-3.5 h-3.5" />,              color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
-  'action-close-app':     { label: '关闭应用',    icon: <Square className="w-3.5 h-3.5" />,            color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
-  'action-shell':         { label: 'Shell 命令',  icon: <Terminal className="w-3.5 h-3.5" />,          color: '#f97316', bg: 'rgba(249,115,22,0.12)' },
-  'action-get-var':       { label: '读取变量',    icon: <BookOpen className="w-3.5 h-3.5" />,          color: '#eab308', bg: 'rgba(234,179,8,0.12)' },
-  'action-set-var':       { label: '写入变量',    icon: <Pencil className="w-3.5 h-3.5" />,            color: '#eab308', bg: 'rgba(234,179,8,0.12)' },
-  'control-if':           { label: '条件判断',    icon: <GitBranch className="w-3.5 h-3.5" />,         color: '#ec4899', bg: 'rgba(236,72,153,0.12)' },
-  'control-loop':         { label: '循环',        icon: <Repeat className="w-3.5 h-3.5" />,            color: '#ec4899', bg: 'rgba(236,72,153,0.12)' },
-  'control-delay':        { label: '延迟等待',    icon: <Timer className="w-3.5 h-3.5" />,             color: '#ec4899', bg: 'rgba(236,72,153,0.12)' },
+  'trigger-manual': { label: '手动触发', icon: <Play className="w-3.5 h-3.5" />, color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+  'action-screenshot': { label: '截图', icon: <Camera className="w-3.5 h-3.5" />, color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  'action-tap': { label: '点击', icon: <MousePointerClick className="w-3.5 h-3.5" />, color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  'action-double-tap': { label: '双击', icon: <MousePointerClick className="w-3.5 h-3.5" />, color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  'action-long-click': { label: '长按', icon: <Hand className="w-3.5 h-3.5" />, color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  'action-swipe': { label: '滑动', icon: <MoveVertical className="w-3.5 h-3.5" />, color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  'action-drag': { label: '拖拽', icon: <Move className="w-3.5 h-3.5" />, color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  'action-input-text': { label: '输入文字', icon: <Keyboard className="w-3.5 h-3.5" />, color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  'action-clear-text': { label: '清除文字', icon: <Delete className="w-3.5 h-3.5" />, color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  'action-key-event': { label: '按键事件', icon: <Command className="w-3.5 h-3.5" />, color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+  'action-install-app': { label: '安装应用', icon: <Package className="w-3.5 h-3.5" />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+  'action-uninstall-app': { label: '卸载应用', icon: <Trash2 className="w-3.5 h-3.5" />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+  'action-launch-app': { label: '启动应用', icon: <Play className="w-3.5 h-3.5" />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+  'action-close-app': { label: '关闭应用', icon: <Square className="w-3.5 h-3.5" />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+  'action-shell': { label: 'Shell 命令', icon: <Terminal className="w-3.5 h-3.5" />, color: '#f97316', bg: 'rgba(249,115,22,0.12)' },
+  'action-get-var': { label: '读取变量', icon: <BookOpen className="w-3.5 h-3.5" />, color: '#eab308', bg: 'rgba(234,179,8,0.12)' },
+  'action-set-var': { label: '写入变量', icon: <Pencil className="w-3.5 h-3.5" />, color: '#eab308', bg: 'rgba(234,179,8,0.12)' },
+  'control-if': { label: '条件判断', icon: <GitBranch className="w-3.5 h-3.5" />, color: '#ec4899', bg: 'rgba(236,72,153,0.12)' },
+  'control-loop': { label: '循环', icon: <Repeat className="w-3.5 h-3.5" />, color: '#ec4899', bg: 'rgba(236,72,153,0.12)' },
+  'control-delay': { label: '延迟等待', icon: <Timer className="w-3.5 h-3.5" />, color: '#ec4899', bg: 'rgba(236,72,153,0.12)' },
 }
 
 // ── Base Node Component ───────────────────────────────────────────────────
@@ -74,81 +74,74 @@ function BaseNode({
 
   return (
     <div className={cn('rounded-xl', status === 'running' && 'node-border-running p-px')}>
-    <Card
-      className={cn(
-        'w-[260px] gap-0 py-0 shadow-sm transition-all duration-200 overflow-hidden',
-        isSelected && !status && 'ring-primary/50',
-        status === 'running' && 'ring-0',
-        status === 'success' && 'ring-emerald-500/70 shadow-emerald-500/10 shadow-md',
-        status === 'error'   && 'node-error ring-0',
-      )}
-    >
-      {/* Input handle */}
-      {hasInput && (
-        <Handle
-          type="target"
-          position={Position.Top}
-          className="!w-3 !h-3 !rounded-full !border-2 !border-background hover:!scale-125 transition-transform z-10"
-          style={{ backgroundColor: meta.color }}
-        />
-      )}
-
-      {/* Header — tinted by status */}
-      <div className={cn(
-        'relative flex items-center gap-2.5 px-3 py-2.5 transition-colors duration-300',
-        status === 'running' && 'bg-blue-500/5',
-        status === 'success' && 'bg-emerald-500/5',
-        status === 'error'   && 'bg-red-500/5',
-      )}>
-        {/* Success flash overlay */}
-        {status === 'success' && (
-          <div className="node-success-flash absolute inset-0 bg-emerald-500/15 pointer-events-none" />
+      <Card
+        className={cn(
+          'w-[260px] gap-0 py-0 shadow-sm transition-all duration-200 overflow-hidden',
+          isSelected && !status && 'ring-primary/50',
+          status === 'running' && 'ring-0',
+          status === 'success' && 'ring-emerald-500/70 shadow-emerald-500/10 shadow-md',
+          status === 'error' && 'node-error ring-0',
+        )}
+      >
+        {/* Input handle */}
+        {hasInput && (
+          <Handle
+            type="target"
+            position={Position.Top}
+            className="!w-3 !h-3 !rounded-full !border-2 !border-background hover:!scale-125 transition-transform z-10"
+            style={{ backgroundColor: meta.color }}
+          />
         )}
 
-        <div
-          className="flex items-center justify-center w-6 h-6 rounded-md flex-shrink-0"
-          style={{ backgroundColor: meta.bg, color: meta.color }}
-        >
-          {meta.icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-medium leading-tight truncate">{data.label}</p>
-          <p className="text-[10px] text-muted-foreground/70 leading-none mt-0.5">{meta.label}</p>
-        </div>
-        <div className="flex-shrink-0">
-          {status === 'running' && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
-          {status === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-          {status === 'error'   && <AlertCircle className="w-4 h-4 text-red-500" />}
-        </div>
-      </div>
+        {/* Header — tinted by status */}
+        <div className={cn(
+          'relative flex items-center gap-2.5 px-3 py-2.5 transition-colors duration-300'
+        )}>
 
-      {/* Params area */}
-      {children && (
-        <div className="px-3 pb-3 flex flex-col gap-2.5 border-t border-border/40 pt-2.5 bg-muted/20">
-          {children}
+          <div
+            className="flex items-center justify-center w-6 h-6 rounded-md flex-shrink-0"
+            style={{ backgroundColor: meta.bg, color: meta.color }}
+          >
+            {meta.icon}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-medium leading-tight truncate">{data.label}</p>
+            <p className="text-[10px] text-muted-foreground/70 leading-none mt-0.5">{meta.label}</p>
+          </div>
+          <div className="flex-shrink-0">
+            {status === 'running' && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
+            {status === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+            {status === 'error' && <AlertCircle className="w-4 h-4 text-red-500" />}
+          </div>
         </div>
-      )}
 
-      {/* Output handle(s) */}
-      {hasOutput && !outputHandles && (
-        <Handle
-          type="source"
-          position={Position.Bottom}
-          className="!w-3 !h-3 !rounded-full !border-2 !border-background hover:!scale-125 transition-transform z-10"
-          style={{ backgroundColor: meta.color }}
-        />
-      )}
-      {outputHandles?.map((h) => (
-        <Handle
-          key={h.id}
-          id={h.id}
-          type="source"
-          position={Position.Bottom}
-          className="!w-3 !h-3 !rounded-full !border-2 !border-background hover:!scale-125 transition-transform z-10"
-          style={{ backgroundColor: meta.color, ...h.style }}
-        />
-      ))}
-    </Card>
+        {/* Params area */}
+        {children && (
+          <div className="px-3 pb-3 flex flex-col gap-2.5 border-t border-border/40 pt-2.5 bg-muted/20">
+            {children}
+          </div>
+        )}
+
+        {/* Output handle(s) */}
+        {hasOutput && !outputHandles && (
+          <Handle
+            type="source"
+            position={Position.Bottom}
+            className="!w-3 !h-3 !rounded-full !border-2 !border-background hover:!scale-125 transition-transform z-10"
+            style={{ backgroundColor: meta.color }}
+          />
+        )}
+        {outputHandles?.map((h) => (
+          <Handle
+            key={h.id}
+            id={h.id}
+            type="source"
+            position={Position.Bottom}
+            className="!w-3 !h-3 !rounded-full !border-2 !border-background hover:!scale-125 transition-transform z-10"
+            style={{ backgroundColor: meta.color, ...h.style }}
+          />
+        ))}
+      </Card>
     </div>
   )
 }
@@ -399,7 +392,7 @@ export const ControlIfNode = memo(({ id, data }: NodeProps) => {
       data={d}
       outputHandles={[
         { id: 'yes', label: '是', style: { left: '30%' } },
-        { id: 'no',  label: '否', style: { left: '70%' } },
+        { id: 'no', label: '否', style: { left: '70%' } },
       ]}
     >
       <NodeInput id={id} paramKey="condition" label="JS 条件表达式" multiline value={p.condition} placeholder="ctx.result === 'ok'" />
@@ -427,7 +420,7 @@ export const ControlLoopNode = memo(({ id, data }: NodeProps) => {
       data={d}
       outputHandles={[
         { id: 'loop-body', label: '循环体', style: { left: '30%' } },
-        { id: 'loop-done', label: '完成',   style: { left: '70%' } },
+        { id: 'loop-done', label: '完成', style: { left: '70%' } },
       ]}
     >
       <NodeInput id={id} type="number" paramKey="count" label="循环次数" value={p.count} />
@@ -533,11 +526,11 @@ export const ActionClearTextNode = memo(({ id, data }: NodeProps) => {
 ActionClearTextNode.displayName = 'ActionClearTextNode'
 
 const KEY_PRESETS = [
-  { label: '返回 (Back)',    android: 4,   harmony: 2 },
-  { label: '主屏幕 (Home)', android: 3,   harmony: 1 },
-  { label: '最近任务',       android: 187, harmony: 3 },
-  { label: '回车 (Enter)',   android: 66,  harmony: 2054 },
-  { label: '删除 (Del)',     android: 67,  harmony: 2055 },
+  { label: '返回 (Back)', android: 4, harmony: 2 },
+  { label: '主屏幕 (Home)', android: 3, harmony: 1 },
+  { label: '最近任务', android: 187, harmony: 3 },
+  { label: '回车 (Enter)', android: 66, harmony: 2054 },
+  { label: '删除 (Del)', android: 67, harmony: 2055 },
 ]
 
 export const ActionKeyEventNode = memo(({ id, data }: NodeProps) => {
@@ -575,24 +568,24 @@ ActionKeyEventNode.displayName = 'ActionKeyEventNode'
 // ── nodeTypes map (pass to ReactFlow) ────────────────────────────────────
 
 export const nodeTypes = {
-  'trigger-manual':       TriggerManualNode,
-  'action-screenshot':    ActionScreenshotNode,
-  'action-tap':           ActionTapNode,
-  'action-double-tap':    ActionDoubleTapNode,
-  'action-long-click':    ActionLongClickNode,
-  'action-swipe':         ActionSwipeNode,
-  'action-drag':          ActionDragNode,
-  'action-input-text':    ActionInputTextNode,
-  'action-clear-text':    ActionClearTextNode,
-  'action-key-event':     ActionKeyEventNode,
-  'action-install-app':   ActionInstallAppNode,
+  'trigger-manual': TriggerManualNode,
+  'action-screenshot': ActionScreenshotNode,
+  'action-tap': ActionTapNode,
+  'action-double-tap': ActionDoubleTapNode,
+  'action-long-click': ActionLongClickNode,
+  'action-swipe': ActionSwipeNode,
+  'action-drag': ActionDragNode,
+  'action-input-text': ActionInputTextNode,
+  'action-clear-text': ActionClearTextNode,
+  'action-key-event': ActionKeyEventNode,
+  'action-install-app': ActionInstallAppNode,
   'action-uninstall-app': ActionUninstallAppNode,
-  'action-launch-app':    ActionLaunchAppNode,
-  'action-close-app':     ActionCloseAppNode,
-  'action-shell':         ActionShellNode,
-  'action-get-var':       ActionGetVarNode,
-  'action-set-var':       ActionSetVarNode,
-  'control-if':           ControlIfNode,
-  'control-loop':         ControlLoopNode,
-  'control-delay':        ControlDelayNode,
+  'action-launch-app': ActionLaunchAppNode,
+  'action-close-app': ActionCloseAppNode,
+  'action-shell': ActionShellNode,
+  'action-get-var': ActionGetVarNode,
+  'action-set-var': ActionSetVarNode,
+  'control-if': ControlIfNode,
+  'control-loop': ControlLoopNode,
+  'control-delay': ControlDelayNode,
 }
