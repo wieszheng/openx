@@ -260,12 +260,31 @@ function WorkflowCanvas() {
       const s = (n.data as Record<string, unknown>).stepStatus as string | undefined
       if (s) statusMap.set(n.id, s)
     })
+
+    // 条件/循环分支边的静态标签配置
+    const HANDLE_LABEL: Record<string, { text: string; color: string; bg: string }> = {
+      'yes':       { text: '是',    color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+      'no':        { text: '否',    color: '#f43f5e', bg: 'rgba(244,63,94,0.10)' },
+      'loop-body': { text: '循环体', color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
+      'loop-done': { text: '完成',  color: '#94a3b8', bg: 'rgba(148,163,184,0.12)' },
+    }
+
     return rfEdges.map((e) => {
       const ts = statusMap.get(e.target)
-      if (ts === 'running') return { ...e, animated: true, style: { stroke: '#6366f1', strokeWidth: 2.5 } }
-      if (ts === 'success') return { ...e, animated: false, style: { stroke: '#10b981', strokeWidth: 2 } }
-      if (ts === 'error')   return { ...e, animated: false, style: { stroke: '#ef4444', strokeWidth: 2 } }
-      return { ...e, animated: false, style: { stroke: '#94a3b8', strokeWidth: 1.5, strokeDasharray: '5 4' } }
+      const hl = e.sourceHandle ? HANDLE_LABEL[e.sourceHandle] : null
+
+      const labelProps = hl ? {
+        label: hl.text,
+        labelStyle: { fontSize: 10, fontWeight: 700, fill: hl.color },
+        labelBgStyle: { fill: hl.bg, stroke: hl.color, strokeOpacity: 0.3 },
+        labelBgPadding: [5, 2] as [number, number],
+        labelBgBorderRadius: 4,
+      } : {}
+
+      if (ts === 'running') return { ...e, ...labelProps, animated: true,  style: { stroke: '#6366f1', strokeWidth: 2.5 } }
+      if (ts === 'success') return { ...e, ...labelProps, animated: false, style: { stroke: '#10b981', strokeWidth: 2 } }
+      if (ts === 'error')   return { ...e, ...labelProps, animated: false, style: { stroke: '#ef4444', strokeWidth: 2 } }
+      return { ...e, ...labelProps, animated: false, style: { stroke: hl?.color ?? '#94a3b8', strokeWidth: 1.5, strokeDasharray: '5 4' } }
     })
   }, [rfNodes, rfEdges])
 
