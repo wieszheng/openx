@@ -68,13 +68,13 @@ export async function drag(
 // ── 文字输入 ──────────────────────────────────────────────────────────────
 
 /**
- * 向当前聚焦的文本框输入文字。
- * uitest inputText 需要控件坐标；传 (0,0) 时以当前焦点控件为目标。
+ * 向指定坐标的文本框输入文字。
+ * uitest inputText 需要控件坐标；x/y 默认 0 时以当前焦点控件为目标。
  */
-export async function inputText(connectKey: string, text: string): Promise<void> {
-  logger.debug('inputText', { connectKey, text })
+export async function inputText(connectKey: string, text: string, x = 0, y = 0): Promise<void> {
+  logger.debug('inputText', { connectKey, text, x, y })
   const escaped = text.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
-  await shell(connectKey, `uitest uiInput inputText 0 0 "${escaped}"`)
+  await shell(connectKey, `uitest uiInput inputText ${x} ${y} "${escaped}"`)
 }
 
 /** 清除当前焦点文本框内容，length 为最大清除字符数，默认 100 */

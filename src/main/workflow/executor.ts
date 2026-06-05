@@ -168,16 +168,15 @@ async function executeNode(
       const text = interpolate(String(p.text ?? ''), ctx)
       const x = p.x != null ? Number(p.x) : null
       const y = p.y != null ? Number(p.y) : null
-      if (x !== null && y !== null) {
-        if (isAndroid) { await adbActions.tap(serial, x, y) }
-        else { await hdcActions.tap(serial, x, y) }
-      }
       if (isAndroid) {
+        // Android：先 tap 聚焦，再 inputText
+        if (x !== null && y !== null) await adbActions.tap(serial, x, y)
         await adbActions.inputText(serial, text)
       } else {
-        await hdcActions.inputText(serial, text)
+        // 鸿蒙：坐标直接作为 uitest inputText 的参数
+        await hdcActions.inputText(serial, text, x ?? 0, y ?? 0)
       }
-      return { ok: true, output: `输入文字: ${text}${x !== null ? ` (先点击 ${x},${y})` : ''}` }
+      return { ok: true, output: `输入文字: ${text}${x !== null ? ` (${x},${y})` : ''}` }
     }
 
     case 'action-clear-text': {
