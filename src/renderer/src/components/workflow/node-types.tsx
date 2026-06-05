@@ -276,10 +276,18 @@ ActionSwipeNode.displayName = 'ActionSwipeNode'
 
 export const ActionInputTextNode = memo(({ id, data }: NodeProps) => {
   const d = data as unknown as WorkflowNodeData
-  const p = d.params as { text?: string }
+  const p = d.params as { text?: string; x?: number; y?: number }
+  const { updateNodeParams } = useWorkflowStore()
   return (
     <BaseNode id={id} data={d}>
       <NodeInput id={id} paramKey="text" label="输入文字" value={p.text} placeholder="支持 {{var}} 模板" />
+      <div className="flex items-end gap-1">
+        <div className="flex gap-2 flex-1">
+          <NodeInput id={id} type="number" paramKey="x" label="点击 X（可选）" value={p.x} placeholder="聚焦坐标" />
+          <NodeInput id={id} type="number" paramKey="y" label="点击 Y（可选）" value={p.y} placeholder="聚焦坐标" />
+        </div>
+        <PickButton mode="single" onPick={([pt]) => updateNodeParams(id, { x: pt.x, y: pt.y })} />
+      </div>
     </BaseNode>
   )
 })

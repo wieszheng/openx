@@ -68,6 +68,8 @@ export interface ActionDragParams {
 
 export interface ActionInputTextParams {
   text: string
+  x?: number  // 可选：输入前先点击该坐标（聚焦输入框）
+  y?: number
 }
 
 export interface ActionClearTextParams {

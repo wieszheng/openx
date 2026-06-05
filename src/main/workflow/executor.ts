@@ -166,12 +166,18 @@ async function executeNode(
 
     case 'action-input-text': {
       const text = interpolate(String(p.text ?? ''), ctx)
+      const x = p.x != null ? Number(p.x) : null
+      const y = p.y != null ? Number(p.y) : null
+      if (x !== null && y !== null) {
+        if (isAndroid) { await adbActions.tap(serial, x, y) }
+        else { await hdcActions.tap(serial, x, y) }
+      }
       if (isAndroid) {
         await adbActions.inputText(serial, text)
       } else {
         await hdcActions.inputText(serial, text)
       }
-      return { ok: true, output: `输入文字: ${text}` }
+      return { ok: true, output: `输入文字: ${text}${x !== null ? ` (先点击 ${x},${y})` : ''}` }
     }
 
     case 'action-clear-text': {
