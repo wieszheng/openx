@@ -37,6 +37,7 @@ const COLOR_STYLES: Record<string, { iconBg: string; iconText: string }> = {
   '#f97316': { iconBg: 'bg-orange-100 dark:bg-orange-500/10', iconText: 'text-orange-600 dark:text-orange-400' },
   '#eab308': { iconBg: 'bg-yellow-100 dark:bg-yellow-500/10', iconText: 'text-yellow-600 dark:text-yellow-400' },
   '#ec4899': { iconBg: 'bg-pink-100 dark:bg-pink-500/10',    iconText: 'text-pink-600 dark:text-pink-400' },
+  '#06b6d4': { iconBg: 'bg-cyan-100 dark:bg-cyan-500/10',   iconText: 'text-cyan-600 dark:text-cyan-400' },
 }
 
 // ── 节点分组数据 ──────────────────────────────────────────────────────────────

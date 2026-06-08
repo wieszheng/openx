@@ -1,7 +1,7 @@
-import { memo } from 'react'
+import { memo, useRef, useState } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { cn } from '@/lib/utils'
-import { PickButton } from './screen-picker'
+import { PickButton, OcrPickButton } from './screen-picker'
 import { useWorkflowStore } from '@/stores/workflow'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -156,6 +156,10 @@ function NodeInput({
 }) {
   const updateNodeParams = useWorkflowStore((s) => s.updateNodeParams)
   const disabled = useWorkflowStore((s) => s.runStatus === 'running')
+  // 中文输入法合成期间暂存值，避免 onChange 截断未确认字符
+  const composing = useRef(false)
+  const [localValue, setLocalValue] = useState<string | number | undefined>(undefined)
+  const displayValue = composing.current ? (localValue ?? value ?? '') : (value ?? '')
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -165,20 +169,36 @@ function NodeInput({
       {multiline ? (
         <Textarea
           className="nodrag nowheel text-xs font-mono min-h-0 resize-y"
-          value={String(value ?? '')}
+          value={String(displayValue)}
           disabled={disabled}
           rows={2}
           placeholder={placeholder}
-          onChange={(e) => updateNodeParams(id, { [paramKey]: e.target.value })}
+          onCompositionStart={() => { composing.current = true }}
+          onCompositionEnd={(e) => {
+            composing.current = false
+            setLocalValue(undefined)
+            updateNodeParams(id, { [paramKey]: (e.target as HTMLTextAreaElement).value })
+          }}
+          onChange={(e) => {
+            if (composing.current) { setLocalValue(e.target.value); return }
+            updateNodeParams(id, { [paramKey]: e.target.value })
+          }}
         />
       ) : (
         <Input
           type={type}
           className="nodrag h-7 text-xs font-mono"
-          value={value ?? ''}
+          value={displayValue}
           disabled={disabled}
           placeholder={placeholder}
+          onCompositionStart={() => { composing.current = true }}
+          onCompositionEnd={(e) => {
+            composing.current = false
+            setLocalValue(undefined)
+            updateNodeParams(id, { [paramKey]: (e.target as HTMLInputElement).value })
+          }}
           onChange={(e) => {
+            if (composing.current) { setLocalValue(e.target.value); return }
             const val = type === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value
             updateNodeParams(id, { [paramKey]: val })
           }}
@@ -354,7 +374,12 @@ export const ActionFindAndTapNode = memo(({ id, data }: NodeProps) => {
   const { updateNodeParams } = useWorkflowStore()
   return (
     <BaseNode id={id} data={d}>
-      <NodeInput id={id} paramKey="targetText" label="目标文字" value={p.targetText} placeholder="要查找的文字（部分匹配）" />
+      <div className="flex items-end gap-1">
+        <div className="flex-1">
+          <NodeInput id={id} paramKey="targetText" label="目标文字" value={p.targetText} placeholder="要查找的文字（部分匹配）" />
+        </div>
+        <OcrPickButton onPick={(text) => updateNodeParams(id, { targetText: text })} />
+      </div>
       <div className="flex items-center gap-2 nodrag">
         <span className="text-[10px] text-muted-foreground shrink-0">找到后</span>
         <button

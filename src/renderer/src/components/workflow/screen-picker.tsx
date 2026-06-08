@@ -21,8 +21,8 @@ interface OcrBox {
 }
 
 interface ScreenPickerProps {
-  mode: 'single' | 'dual'
-  onPick: (points: Point[]) => void
+  mode: 'single' | 'dual' | 'text'
+  onPick: (points: Point[], text?: string) => void
   onClose: () => void
 }
 
@@ -122,7 +122,7 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
     }
   }, [ocrBoxes, firstPoint])
 
-  // ── 加载截图 ─────────────────────────────────────────────────────────────
+  // ── 加载截图（text 模式自动触发 OCR） ────────────────────────────────────
   useEffect(() => {
     if (!selectedId) { setEmpty(true); setLoading(false); return }
     window.api.screencap.capture(selectedId).then((res) => {
@@ -142,20 +142,24 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
         const ctx = canvas.getContext('2d')!
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
         setLoading(false)
+        if (mode === 'text') {
+          // text 模式：截图加载完后自动触发 OCR
+          void runOcr(res.data)
+        }
       }
       img.src = `data:${res.mimeType};base64,${res.data}`
     })
   }, [selectedId])
 
   // ── OCR 识别 ─────────────────────────────────────────────────────────────
-  async function handleOcr() {
-    if (!b64Ref || ocrLoading) return
+  async function runOcr(b64: string) {
+    if (ocrLoading) return
     setOcrLoading(true)
     try {
       const res = await fetch(`${getBaseUrl()}/api/v1/ocr/base64`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: b64Ref, use_cls: true, use_det: true, use_rec: true }),
+        body: JSON.stringify({ image: b64, use_cls: true, use_det: true, use_rec: true }),
         signal: AbortSignal.timeout(15000),
       })
       const json = await res.json()
@@ -210,12 +214,16 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
 
   function handleClick(e: React.MouseEvent<HTMLCanvasElement>) {
     const pt = getCoords(e)
-    // 如果点在 OCR 框内，用框中心坐标
     const hit = hitOcrBox(pt.cx, pt.cy)
     const finalPt = hit
       ? { dx: Math.round(hit.x + hit.w / 2), dy: Math.round(hit.y + hit.h / 2), cx: Math.round(hit.cx + hit.cw / 2), cy: Math.round(hit.cy + hit.ch / 2) }
       : pt
 
+    if (mode === 'text') {
+      // text 模式：点击 OCR 框填入识别文字，无框则忽略
+      if (hit) onPick([{ x: finalPt.dx, y: finalPt.dy }], hit.text)
+      return
+    }
     if (mode === 'single') {
       onPick([{ x: finalPt.dx, y: finalPt.dy }])
       return
@@ -228,7 +236,9 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
     }
   }
 
-  const title = mode === 'single'
+  const title = mode === 'text'
+    ? (ocrBoxes.length > 0 ? '点击文字框填入识别文字' : '先点击「OCR 识别」，再点击文字框')
+    : mode === 'single'
     ? '点击选择坐标'
     : firstPoint
       ? `点击终点（起点 ${firstPoint.dx}, ${firstPoint.dy}）`
@@ -242,7 +252,7 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
             <DialogTitle className="text-sm">{title}</DialogTitle>
             <button
               type="button"
-              onClick={handleOcr}
+              onClick={() => void runOcr(b64Ref)}
               disabled={ocrLoading || loading || empty}
               className={cn(
                 'flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium transition-colors',
@@ -315,6 +325,35 @@ export function PickButton({ mode, onPick }: PickButtonProps) {
         <ScreenPicker
           mode={mode}
           onPick={(pts) => { onPick(pts); setOpen(false) }}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </>
+  )
+}
+
+// ── OCR 文字选择按钮 ───────────────────────────────────────────────────────
+
+interface OcrPickButtonProps {
+  onPick: (text: string) => void
+}
+
+export function OcrPickButton({ onPick }: OcrPickButtonProps) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button
+        type="button"
+        title="截图选择文字"
+        className="nodrag shrink-0 p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+        onClick={() => setOpen(true)}
+      >
+        <ScanText className="w-3.5 h-3.5" />
+      </button>
+      {open && (
+        <ScreenPicker
+          mode="text"
+          onPick={(_, text) => { if (text) { onPick(text); setOpen(false) } }}
           onClose={() => setOpen(false)}
         />
       )}
