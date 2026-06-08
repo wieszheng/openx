@@ -1,5 +1,5 @@
 import { dialog, type BrowserWindow } from 'electron'
-import { getExportDir, setExportDir } from '../../settings'
+import { getExportDir, setExportDir, getOcrBaseUrl, setOcrBaseUrl } from '../../settings'
 
 export async function handleOpenFolder(
   getMainWindow: () => BrowserWindow | null,
@@ -29,4 +29,12 @@ export function handleGetExportDir(): string | null {
 
 export function handleSetExportDir(_: unknown, dir: string): void {
   setExportDir(dir)
+}
+
+export function handleGetOcrBaseUrl(): string {
+  return getOcrBaseUrl()
+}
+
+export function handleSetOcrBaseUrl(_: unknown, url: string): void {
+  setOcrBaseUrl(url)
 }

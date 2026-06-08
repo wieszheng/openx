@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Play, Camera, MousePointerClick, MoveVertical, Keyboard,
-  Package, Trash2, Terminal, BookOpen, Pencil, Square,
+  Package, Trash2, Terminal, BookOpen, Pencil, Square, ScanText,
   GitBranch, Repeat, Timer,
   CheckCircle2, AlertCircle, Loader2,
   Hand, Move, Delete, Command,
@@ -35,6 +35,7 @@ const NODE_META: Record<
   'action-uninstall-app': { label: '卸载应用', icon: <Trash2 className="w-3.5 h-3.5" />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
   'action-launch-app': { label: '启动应用', icon: <Play className="w-3.5 h-3.5" />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
   'action-close-app': { label: '关闭应用', icon: <Square className="w-3.5 h-3.5" />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+  'action-find-and-tap': { label: 'OCR 文字定位', icon: <ScanText className="w-3.5 h-3.5" />, color: '#06b6d4', bg: 'rgba(6,182,212,0.12)' },
   'action-shell': { label: 'Shell 命令', icon: <Terminal className="w-3.5 h-3.5" />, color: '#f97316', bg: 'rgba(249,115,22,0.12)' },
   'action-get-var': { label: '读取变量', icon: <BookOpen className="w-3.5 h-3.5" />, color: '#eab308', bg: 'rgba(234,179,8,0.12)' },
   'action-set-var': { label: '写入变量', icon: <Pencil className="w-3.5 h-3.5" />, color: '#eab308', bg: 'rgba(234,179,8,0.12)' },
@@ -347,6 +348,37 @@ export const ActionCloseAppNode = memo(({ id, data }: NodeProps) => {
 })
 ActionCloseAppNode.displayName = 'ActionCloseAppNode'
 
+export const ActionFindAndTapNode = memo(({ id, data }: NodeProps) => {
+  const d = data as unknown as WorkflowNodeData
+  const p = d.params as { targetText?: string; action?: 'tap' | 'input'; text?: string; saveToVar?: string }
+  const { updateNodeParams } = useWorkflowStore()
+  return (
+    <BaseNode id={id} data={d}>
+      <NodeInput id={id} paramKey="targetText" label="目标文字" value={p.targetText} placeholder="要查找的文字（部分匹配）" />
+      <div className="flex items-center gap-2 nodrag">
+        <span className="text-[10px] text-muted-foreground shrink-0">找到后</span>
+        <button
+          type="button"
+          onClick={() => updateNodeParams(id, { action: p.action === 'input' ? 'tap' : 'input' })}
+          className={cn(
+            'flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border transition-colors',
+            p.action === 'input'
+              ? 'bg-blue-500/10 text-blue-600 border-blue-400/40'
+              : 'bg-emerald-500/10 text-emerald-600 border-emerald-400/40'
+          )}
+        >
+          {p.action === 'input' ? '输入文字' : '点击'}
+        </button>
+      </div>
+      {p.action === 'input' && (
+        <NodeInput id={id} paramKey="text" label="输入内容" value={p.text} placeholder="支持 {{var}} 模板" />
+      )}
+      <NodeInput id={id} paramKey="saveToVar" label="存入变量（坐标）" value={p.saveToVar} placeholder="可选" />
+    </BaseNode>
+  )
+})
+ActionFindAndTapNode.displayName = 'ActionFindAndTapNode'
+
 export const ActionShellNode = memo(({ id, data }: NodeProps) => {
   const d = data as unknown as WorkflowNodeData
   const p = d.params as { command?: string; saveToVar?: string }
@@ -582,6 +614,7 @@ export const nodeTypes = {
   'action-uninstall-app': ActionUninstallAppNode,
   'action-launch-app': ActionLaunchAppNode,
   'action-close-app': ActionCloseAppNode,
+  'action-find-and-tap': ActionFindAndTapNode,
   'action-shell': ActionShellNode,
   'action-get-var': ActionGetVarNode,
   'action-set-var': ActionSetVarNode,

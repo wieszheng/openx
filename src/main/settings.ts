@@ -5,6 +5,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 interface AppSettings {
   exportDir?: string
   globalVars?: Record<string, string>
+  ocrBaseUrl?: string
 }
 
 function settingsPath(): string {
@@ -66,4 +67,14 @@ export function deleteGlobalVar(key: string): void {
   const vars = { ...(get().globalVars ?? {}) }
   delete vars[key]
   set({ globalVars: vars })
+}
+
+// ── OCR Base URL ──────────────────────────────────────────────────────────
+
+export function getOcrBaseUrl(): string {
+  return get().ocrBaseUrl ?? 'http://127.0.0.1:8000'
+}
+
+export function setOcrBaseUrl(url: string): void {
+  set({ ocrBaseUrl: url || undefined })
 }

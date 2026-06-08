@@ -12,7 +12,7 @@ import { shell as adbShell } from '../devices/android/base'
 import * as adbActions from '../devices/android/actions'
 import * as hdcActions from '../devices/harmony/actions'
 import { shell as hdcShell } from '../devices/harmony/base'
-import { getGlobalVar, setGlobalVar } from '../settings'
+import { getGlobalVar, setGlobalVar, getOcrBaseUrl } from '../settings'
 import { getDevicesSnapshot } from '../devices'
 
 const logger = createLogger('workflow:executor')
@@ -262,6 +262,53 @@ async function executeNode(
         await hdcActions.closeApp(serial, packageName)
       }
       return { ok: true, output: `已关闭应用 ${packageName}` }
+    }
+
+    case 'action-find-and-tap': {
+      const targetText = interpolate(String(p.targetText ?? ''), ctx)
+      const action = String(p.action ?? 'tap') as 'tap' | 'input'
+      const inputText = p.text ? interpolate(String(p.text), ctx) : ''
+
+      // 1. 截图（返回 base64 string）
+      const b64 = isAndroid
+        ? await adbActions.screenshot(serial)
+        : await hdcActions.screenshot(serial)
+
+      // 2. OCR
+      const ocrUrl = getOcrBaseUrl()
+      const ocrRes = await fetch(`${ocrUrl}/api/v1/ocr/base64`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: b64, use_cls: true, use_det: true, use_rec: true }),
+        signal: AbortSignal.timeout(15000),
+      })
+      const ocrJson = (await ocrRes.json()) as { data?: { text: string; box: [[number,number],[number,number],[number,number],[number,number]] }[] }
+
+      // 3. 匹配文字
+      const items = ocrJson.data ?? []
+      const match = items.find((item) => item.text.includes(targetText))
+      if (!match) {
+        return { ok: false, output: `OCR 未找到文字「${targetText}」` }
+      }
+
+      // 4. 取框中心坐标
+      const xs = match.box.map((pt) => pt[0])
+      const ys = match.box.map((pt) => pt[1])
+      const cx = Math.round((Math.min(...xs) + Math.max(...xs)) / 2)
+      const cy = Math.round((Math.min(...ys) + Math.max(...ys)) / 2)
+
+      if (p.saveToVar) ctx[String(p.saveToVar)] = `${cx},${cy}`
+
+      // 5. 执行操作
+      if (action === 'tap') {
+        if (isAndroid) { await adbActions.tap(serial, cx, cy) }
+        else { await hdcActions.tap(serial, cx, cy) }
+        return { ok: true, output: `OCR 找到「${match.text}」@ (${cx},${cy})，已点击` }
+      } else {
+        if (isAndroid) { await adbActions.inputText(serial, inputText) }
+        else { await hdcActions.inputText(serial, inputText, cx, cy) }
+        return { ok: true, output: `OCR 找到「${match.text}」@ (${cx},${cy})，已输入: ${inputText}` }
+      }
     }
 
     case 'action-get-var': {

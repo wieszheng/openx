@@ -120,6 +120,8 @@ const api = {
   settings: {
     getExportDir: (): Promise<string | null> => ipcRenderer.invoke(IPC.settings.getExportDir),
     setExportDir: (dir: string): Promise<void> => ipcRenderer.invoke(IPC.settings.setExportDir, dir),
+    getOcrBaseUrl: (): Promise<string> => ipcRenderer.invoke(IPC.settings.getOcrBaseUrl),
+    setOcrBaseUrl: (url: string): Promise<void> => ipcRenderer.invoke(IPC.settings.setOcrBaseUrl, url),
   },
   updater: {
     check: (): void => ipcRenderer.send(IPC.updater.check),

@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Play, Camera, MousePointerClick, MoveVertical, Keyboard,
-  Package, Trash2, Terminal, BookOpen, Pencil, Square,
+  Package, Trash2, Terminal, BookOpen, Pencil, Square, ScanText,
   GitBranch, Repeat, Timer,
   GripVertical,
   Hand, Move, Delete, Command,
@@ -68,7 +68,8 @@ const nodeGroups: NodeGroup[] = [
       { type: 'action-install-app',   label: '安装应用',  icon: <Package className="w-4 h-4" />, description: '安装 APK 或 HAP 包', handleColor: '#8b5cf6' },
       { type: 'action-uninstall-app', label: '卸载应用',  icon: <Trash2 className="w-4 h-4" />, description: '卸载指定包名的应用', handleColor: '#8b5cf6' },
       { type: 'action-launch-app',    label: '启动应用',  icon: <Play className="w-4 h-4" />,   description: '热启动或冷启动应用', handleColor: '#8b5cf6' },
-      { type: 'action-close-app',     label: '关闭应用',  icon: <Square className="w-4 h-4" />, description: '强制停止应用进程',   handleColor: '#8b5cf6' },
+      { type: 'action-close-app',     label: '关闭应用',    icon: <Square className="w-4 h-4" />,   description: '强制停止应用进程',    handleColor: '#8b5cf6' },
+      { type: 'action-find-and-tap',  label: 'OCR 文字定位', icon: <ScanText className="w-4 h-4" />, description: '识别屏幕文字并点击或输入', handleColor: '#06b6d4' },
       { type: 'action-shell',         label: 'Shell 命令', icon: <Terminal className="w-4 h-4" />, description: '在设备上执行 Shell 命令', handleColor: '#f97316' },
     ],
   },
@@ -104,7 +105,8 @@ const DEFAULT_PARAMS: Partial<Record<WorkflowNodeType, Record<string, unknown>>>
   'action-install-app':  { packagePath: '' },
   'action-uninstall-app':{ packageName: '' },
   'action-launch-app':   { packageName: '', activity: '', cold: false },
-  'action-close-app':    { packageName: '' },
+  'action-close-app':     { packageName: '' },
+  'action-find-and-tap':  { targetText: '', action: 'tap' },
   'action-shell':        { command: '', saveToVar: '' },
   'action-get-var':      { key: '', saveToVar: '' },
   'action-set-var':      { key: '', value: '' },
@@ -158,13 +160,13 @@ export function NodePanel() {
   return (
     <div className="flex h-full w-42 shrink-0 flex-col border-r">
       {/* 头部 */}
-      <div className="flex items-center justify-between px-4 py-3 border-b">
+      <div className="flex items-center justify-between px-3 py-2 border-b">
         <span className="text-sm font-semibold">节点操作</span>
         <span className="text-xs text-muted-foreground">{totalNodeCount} 个节点</span>
       </div>
 
       {/* 节点分组 */}
-      <ScrollArea className="flex-1 min-h-0 mr-0.5">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="py-2">
           {nodeGroups.map((group) => (
             <div key={group.title} className="mb-1">

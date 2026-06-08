@@ -20,6 +20,7 @@ export type WorkflowNodeType =
   | 'action-shell'
   | 'action-get-var'
   | 'action-set-var'
+  | 'action-find-and-tap'
   | 'control-if'
   | 'control-loop'
   | 'control-delay'
@@ -98,6 +99,13 @@ export interface ActionCloseAppParams {
   packageName: string
 }
 
+export interface ActionFindAndTapParams {
+  targetText: string        // 要查找的文字（支持部分匹配）
+  action: 'tap' | 'input'  // 找到后执行的操作
+  text?: string             // action=input 时的输入内容
+  saveToVar?: string        // 将找到的坐标存入变量（可选）
+}
+
 export interface ActionShellParams {
   command: string
   saveToVar?: string // 将命令输出存到变量
@@ -140,6 +148,7 @@ export type WorkflowNodeParams =
   | ActionUninstallAppParams
   | ActionLaunchAppParams
   | ActionCloseAppParams
+  | ActionFindAndTapParams
   | ActionShellParams
   | ActionGetVarParams
   | ActionSetVarParams
