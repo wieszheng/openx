@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Loader2, Crosshair } from 'lucide-react'
+import { Loader2, Crosshair, ScanText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useDevicesStore } from '@/stores/devices'
+import { getBaseUrl } from '@/lib/settings'
 import {
   Dialog,
   DialogContent,
@@ -11,6 +12,13 @@ import {
 
 interface Point { x: number; y: number }
 interface CanvasPoint { dx: number; dy: number; cx: number; cy: number }
+interface OcrBox {
+  text: string
+  // device coords
+  x: number; y: number; w: number; h: number
+  // canvas coords
+  cx: number; cy: number; cw: number; ch: number
+}
 
 interface ScreenPickerProps {
   mode: 'single' | 'dual'
@@ -24,6 +32,9 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
   const [empty, setEmpty] = useState(false)
   const [hoverPos, setHoverPos] = useState<Point | null>(null)
   const [firstPoint, setFirstPoint] = useState<CanvasPoint | null>(null)
+  const [ocrBoxes, setOcrBoxes] = useState<OcrBox[]>([])
+  const [ocrLoading, setOcrLoading] = useState(false)
+  const [b64Ref, setB64Ref] = useState<string>('')
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -34,6 +45,7 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
   const redraw = useCallback((
     mx?: number, my?: number,
     fp?: CanvasPoint | null,
+    boxes?: OcrBox[],
   ) => {
     const canvas = canvasRef.current
     const img = imgElRef.current
@@ -41,10 +53,31 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
     const ctx = canvas.getContext('2d')!
     const { width: w, height: h } = canvas
 
-    // 1. 底图
     ctx.drawImage(img, 0, 0, w, h)
 
-    // 2. 十字准线
+    // OCR 文字框
+    const bxs = boxes ?? ocrBoxes
+    for (const b of bxs) {
+      ctx.save()
+      ctx.strokeStyle = 'rgba(99,102,241,0.85)'
+      ctx.lineWidth = 1.5
+      ctx.fillStyle = 'rgba(99,102,241,0.10)'
+      ctx.beginPath()
+      ctx.roundRect(b.cx, b.cy, b.cw, b.ch, 3)
+      ctx.fill()
+      ctx.stroke()
+      ctx.restore()
+      // 文字
+      ctx.save()
+      ctx.font = `bold ${Math.max(10, b.ch * 0.55)}px ui-sans-serif, sans-serif`
+      ctx.fillStyle = '#fff'
+      ctx.shadowColor = 'rgba(0,0,0,0.8)'
+      ctx.shadowBlur = 4
+      ctx.fillText(b.text, b.cx + 3, b.cy + b.ch - 3, b.cw - 4)
+      ctx.restore()
+    }
+
+    // 十字准线
     if (mx !== undefined && my !== undefined) {
       ctx.save()
       ctx.strokeStyle = 'rgba(255,255,255,0.7)'
@@ -59,36 +92,34 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
       ctx.restore()
     }
 
-    // 3. 起点标记 + 连线（双点模式）
-    if (fp) {
-      // 连线到当前鼠标
+    // 起点（双点模式）
+    const f = fp ?? firstPoint
+    if (f) {
       if (mx !== undefined && my !== undefined) {
         ctx.save()
         ctx.strokeStyle = 'rgba(99,102,241,0.65)'
         ctx.lineWidth = 1.5
         ctx.setLineDash([5, 3])
         ctx.beginPath()
-        ctx.moveTo(fp.cx, fp.cy)
+        ctx.moveTo(f.cx, f.cy)
         ctx.lineTo(mx, my)
         ctx.stroke()
         ctx.restore()
       }
-      // 圆点
       ctx.save()
       ctx.fillStyle = 'rgba(99,102,241,0.3)'
       ctx.strokeStyle = '#6366f1'
       ctx.lineWidth = 2
       ctx.beginPath()
-      ctx.arc(fp.cx, fp.cy, 6, 0, Math.PI * 2)
+      ctx.arc(f.cx, f.cy, 6, 0, Math.PI * 2)
       ctx.fill()
       ctx.stroke()
       ctx.restore()
-      // 标签
       ctx.save()
       ctx.font = 'bold 11px ui-monospace, monospace'
-      const label = `起 ${fp.dx},${fp.dy}`
+      const label = `起 ${f.dx},${f.dy}`
       const tw = ctx.measureText(label).width
-      const lx = fp.cx + 10, ly = fp.cy - 8
+      const lx = f.cx + 10, ly = f.cy - 8
       ctx.fillStyle = 'rgba(99,102,241,0.85)'
       ctx.beginPath()
       ctx.roundRect(lx - 3, ly - 11, tw + 6, 16, 3)
@@ -97,19 +128,20 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
       ctx.fillText(label, lx, ly)
       ctx.restore()
     }
-  }, [])
+  }, [ocrBoxes, firstPoint])
 
   // ── 加载截图 ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!selectedId) { setEmpty(true); setLoading(false); return }
     window.api.screencap.capture(selectedId).then((res) => {
       if (!res.ok) { setEmpty(true); setLoading(false); return }
+      setB64Ref(res.data)
       const img = new Image()
       img.onload = () => {
         const canvas = canvasRef.current
         if (!canvas) return
         const maxW = containerRef.current?.clientWidth ?? 340
-        const maxH = Math.floor(window.innerHeight * 0.62)
+        const maxH = Math.floor(window.innerHeight * 0.55)
         const scale = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight)
         scaleRef.current = scale
         canvas.width = Math.round(img.naturalWidth * scale)
@@ -123,15 +155,54 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
     })
   }, [selectedId])
 
+  // ── OCR 识别 ─────────────────────────────────────────────────────────────
+  async function handleOcr() {
+    if (!b64Ref || ocrLoading) return
+    setOcrLoading(true)
+    try {
+      const res = await fetch(`${getBaseUrl()}/api/v1/ocr/base64`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: b64Ref, use_cls: true, use_det: true, use_rec: true }),
+        signal: AbortSignal.timeout(15000),
+      })
+      const json = await res.json()
+      // 响应格式: { data: [ { text, box: [[x1,y1],[x2,y1],[x2,y2],[x1,y2]] } ] }
+      const s = scaleRef.current
+      const boxes: OcrBox[] = (json?.data ?? []).map((item: {
+        text: string
+        box: [[number, number], [number, number], [number, number], [number, number]]
+      }) => {
+        const xs = item.box.map((p) => p[0])
+        const ys = item.box.map((p) => p[1])
+        const x = Math.min(...xs), y = Math.min(...ys)
+        const w = Math.max(...xs) - x, h = Math.max(...ys) - y
+        return { text: item.text, x, y, w, h, cx: x * s, cy: y * s, cw: w * s, ch: h * s }
+      })
+      setOcrBoxes(boxes)
+      redraw(undefined, undefined, null, boxes)
+    } catch {
+      // silent fail
+    } finally {
+      setOcrLoading(false)
+    }
+  }
+
   // ── 坐标换算 ─────────────────────────────────────────────────────────────
   function getCoords(e: React.MouseEvent<HTMLCanvasElement>): CanvasPoint {
     const canvas = canvasRef.current!
     const rect = canvas.getBoundingClientRect()
-    // canvas CSS 尺寸可能被 max-w 压缩，需再乘以比例
     const cx = Math.round((e.clientX - rect.left) * (canvas.width / rect.width))
     const cy = Math.round((e.clientY - rect.top) * (canvas.height / rect.height))
     const s = scaleRef.current
     return { dx: Math.round(cx / s), dy: Math.round(cy / s), cx, cy }
+  }
+
+  function hitOcrBox(cx: number, cy: number): OcrBox | null {
+    for (const b of ocrBoxes) {
+      if (cx >= b.cx && cx <= b.cx + b.cw && cy >= b.cy && cy <= b.cy + b.ch) return b
+    }
+    return null
   }
 
   function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
@@ -147,15 +218,21 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
 
   function handleClick(e: React.MouseEvent<HTMLCanvasElement>) {
     const pt = getCoords(e)
+    // 如果点在 OCR 框内，用框中心坐标
+    const hit = hitOcrBox(pt.cx, pt.cy)
+    const finalPt = hit
+      ? { dx: Math.round(hit.x + hit.w / 2), dy: Math.round(hit.y + hit.h / 2), cx: Math.round(hit.cx + hit.cw / 2), cy: Math.round(hit.cy + hit.ch / 2) }
+      : pt
+
     if (mode === 'single') {
-      onPick([{ x: pt.dx, y: pt.dy }])
+      onPick([{ x: finalPt.dx, y: finalPt.dy }])
       return
     }
     if (!firstPoint) {
-      setFirstPoint(pt)
-      redraw(pt.cx, pt.cy, pt)
+      setFirstPoint(finalPt)
+      redraw(finalPt.cx, finalPt.cy, finalPt)
     } else {
-      onPick([{ x: firstPoint.dx, y: firstPoint.dy }, { x: pt.dx, y: pt.dy }])
+      onPick([{ x: firstPoint.dx, y: firstPoint.dy }, { x: finalPt.dx, y: finalPt.dy }])
     }
   }
 
@@ -169,7 +246,25 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-sm p-4 gap-3">
         <DialogHeader>
-          <DialogTitle className="text-sm">{title}</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-sm">{title}</DialogTitle>
+            <button
+              type="button"
+              onClick={handleOcr}
+              disabled={ocrLoading || loading || empty}
+              className={cn(
+                'flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium transition-colors',
+                'border border-border hover:bg-accent disabled:opacity-40',
+                ocrBoxes.length > 0 && 'border-indigo-400/60 text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10',
+              )}
+            >
+              {ocrLoading
+                ? <Loader2 className="w-3 h-3 animate-spin" />
+                : <ScanText className="w-3 h-3" />
+              }
+              OCR 识别
+            </button>
+          </div>
         </DialogHeader>
 
         <div ref={containerRef} className="relative">
@@ -178,14 +273,12 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>
           )}
-
           {!loading && empty && (
             <div className="flex flex-col items-center justify-center gap-2 h-40 text-muted-foreground">
               <Crosshair className="w-8 h-8 opacity-30" />
               <p className="text-xs">无法获取截图，请先连接设备</p>
             </div>
           )}
-
           <canvas
             ref={canvasRef}
             className={cn(
@@ -196,7 +289,6 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
             onMouseLeave={handleMouseLeave}
             onClick={handleClick}
           />
-
           {hoverPos && (
             <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[11px] px-2 py-0.5 rounded font-mono pointer-events-none">
               {hoverPos.x}, {hoverPos.y}
