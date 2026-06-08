@@ -67,14 +67,6 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
       ctx.fill()
       ctx.stroke()
       ctx.restore()
-      // 文字
-      ctx.save()
-      ctx.font = `bold ${Math.max(10, b.ch * 0.55)}px ui-sans-serif, sans-serif`
-      ctx.fillStyle = '#fff'
-      ctx.shadowColor = 'rgba(0,0,0,0.8)'
-      ctx.shadowBlur = 4
-      ctx.fillText(b.text, b.cx + 3, b.cy + b.ch - 3, b.cw - 4)
-      ctx.restore()
     }
 
     // 十字准线
