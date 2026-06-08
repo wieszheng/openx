@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { getBaseUrl } from '@/lib/settings'
 import {
   ReactFlow,
   Background,
@@ -120,6 +121,7 @@ function WorkflowHeader() {
     const res = await window.api?.workflow?.run({
       workflow: runWorkflow,
       deviceId: selectedId ?? undefined,
+      baseUrl: getBaseUrl(),
     })
 
     if (!res || !res.ok) {
@@ -383,7 +385,7 @@ function WorkflowCanvas() {
 
 export function WorkflowPage() {
   return (
-    <div className="flex h-full flex-col space-y-4">
+    <div className="flex h-full flex-col space-y-2">
       {/* Top: Workflow list & actions (Card style, matching automation-page) */}
       <WorkflowHeader />
 

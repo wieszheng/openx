@@ -12,7 +12,7 @@ import { shell as adbShell } from '../devices/android/base'
 import * as adbActions from '../devices/android/actions'
 import * as hdcActions from '../devices/harmony/actions'
 import { shell as hdcShell } from '../devices/harmony/base'
-import { getGlobalVar, setGlobalVar, getOcrBaseUrl } from '../settings'
+import { getGlobalVar, setGlobalVar } from '../settings'
 import { getDevicesSnapshot } from '../devices'
 
 const logger = createLogger('workflow:executor')
@@ -275,7 +275,7 @@ async function executeNode(
         : await hdcActions.screenshot(serial)
 
       // 2. OCR
-      const ocrUrl = getOcrBaseUrl()
+      const ocrUrl = ctx['__baseUrl'] ?? 'http://127.0.0.1:8000'
       const ocrRes = await fetch(`${ocrUrl}/api/v1/ocr/base64`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -437,7 +437,8 @@ async function traverseFrom(
 export async function runWorkflow(
   workflow: Workflow,
   deviceId: string | undefined,
-  win: BrowserWindow
+  win: BrowserWindow,
+  baseUrl = 'http://127.0.0.1:8000'
 ): Promise<void> {
   if (running) {
     logger.warn('workflow already running')
@@ -454,7 +455,7 @@ export async function runWorkflow(
   const adj = buildAdj(workflow.edges)
 
   // 运行时上下文变量
-  const ctx: Record<string, string> = {}
+  const ctx: Record<string, string> = { __baseUrl: baseUrl }
 
   // 找到 trigger 节点作为入口
   const triggers = workflow.nodes.filter((n) => n.type.startsWith('trigger-'))

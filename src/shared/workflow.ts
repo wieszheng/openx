@@ -207,6 +207,7 @@ export interface ExecutionLog {
 export interface WorkflowRunPayload {
   workflow: Workflow
   deviceId?: string
+  baseUrl?: string
 }
 
 export interface WorkflowRunResult {

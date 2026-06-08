@@ -13,8 +13,7 @@ import {
   Loader2,
   Server,
   Copy,
-  Video,
-  ScanText
+  Video
 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -37,41 +36,6 @@ import {
   testBackendConnection
 } from '@/lib/settings'
 import { ToolkitItemStatus, ToolkitStatusResult } from 'src/shared/toolkit-status'
-
-function OcrBaseUrlSetting() {
-  const [url, setUrl] = useState('')
-  const [saved, setSaved] = useState(false)
-  useEffect(() => { void window.api.settings.getOcrBaseUrl().then(setUrl) }, [])
-  const handleSave = async () => {
-    await window.api.settings.setOcrBaseUrl(url)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 1500)
-  }
-  return (
-    <div className="flex flex-col gap-3 py-3 border-t border-border/40">
-      <div className="flex items-center gap-3">
-        <div className="text-muted-foreground shrink-0">
-          <ScanText className="w-4 h-4 text-primary" />
-        </div>
-        <div>
-          <h3 className="text-sm font-medium">OCR 服务地址</h3>
-          <p className="text-xs text-muted-foreground">用于「OCR 文字定位」节点的后端服务</p>
-        </div>
-      </div>
-      <div className="pl-7 flex gap-2">
-        <Input
-          className="flex-1 h-8 text-xs font-mono"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="http://127.0.0.1:8000"
-        />
-        <Button size="sm" variant="outline" className="h-8 shrink-0" onClick={() => void handleSave()}>
-          {saved ? '已保存' : '保存'}
-        </Button>
-      </div>
-    </div>
-  )
-}
 
 // 设置项接口
 interface SettingItemProps {
@@ -429,9 +393,6 @@ export function SettingsPage(): React.JSX.Element {
                   )} */}
                 </div>
               </div>
-
-              {/* OCR 服务地址 */}
-              <OcrBaseUrlSetting />
 
               </CardContent>
             </Card>

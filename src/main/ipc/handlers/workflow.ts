@@ -19,15 +19,14 @@ export function createWorkflowHandlers(getMainWindow: () => BrowserWindow | null
       return { ok: false, error: '主窗口不可用' }
     }
 
-    const { workflow, deviceId } = payload
+    const { workflow, deviceId, baseUrl } = payload
     if (!workflow) {
       return { ok: false, error: '参数缺失: workflow' }
     }
 
     logger.info('workflow run requested', { id: workflow.id, deviceId })
 
-    // 异步执行，立即返回 ok
-    void runWorkflow(workflow, deviceId, win)
+    void runWorkflow(workflow, deviceId, win, baseUrl)
 
     return { ok: true }
   }

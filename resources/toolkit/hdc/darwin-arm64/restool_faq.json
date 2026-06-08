@@ -1,0 +1,13 @@
+{
+    "default": {
+        "cn": "https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/restool",
+        "en": "https://developer.huawei.com/consumer/en/doc/harmonyos-guides/restool"
+    },
+    "faqs": [
+        {
+            "code": 11201001,
+            "cn": "https://developer.huawei.com/consumer/cn/doc/harmonyos-faqs/faqs-compiling-and-building-181",
+            "en": "https://developer.huawei.com/consumer/en/doc/harmonyos-faqs/faqs-compiling-and-building-181"
+        }
+    ]
+}

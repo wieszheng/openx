@@ -69,10 +69,6 @@ export const IPC = {
     getExportDir: 'settings:get-export-dir',
     /** renderer → main: 设置导出目录 */
     setExportDir: 'settings:set-export-dir',
-    /** renderer → main: 获取 OCR 服务地址 */
-    getOcrBaseUrl: 'settings:get-ocr-base-url',
-    /** renderer → main: 设置 OCR 服务地址 */
-    setOcrBaseUrl: 'settings:set-ocr-base-url',
   },
   updater: {
     /** renderer → main: 手动检查更新 */

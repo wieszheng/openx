@@ -17,7 +17,7 @@ import { handleScreencap } from './handlers/screencap'
 import { handleFilesList, handleFilesDownload, handleFilesUpload, handleFilesDelete, handleFilesCreateDir } from './handlers/files'
 import { handleMirrorStart, handleMirrorStop, handleOpenMirrorWindow } from './handlers/mirror'
 import { getToolkitStatus } from './handlers/toolkit'
-import { handleOpenFolder, handleOpenFile, handleGetExportDir, handleSetExportDir, handleGetOcrBaseUrl, handleSetOcrBaseUrl } from './handlers/settings'
+import { handleOpenFolder, handleOpenFile, handleGetExportDir, handleSetExportDir } from './handlers/settings'
 import { handleRecordStart, handleRecordStop } from './handlers/record'
 import { handleLogRead } from './handlers/log'
 import { createWorkflowHandlers } from './handlers/workflow'
@@ -103,8 +103,6 @@ export function registerIpc({ getMainWindow }: RegisterIpcOptions): void {
   // ── Settings ─────────────────────────────────────────────────────────────
   ipcMain.handle(IPC.settings.getExportDir, handleGetExportDir)
   ipcMain.handle(IPC.settings.setExportDir, handleSetExportDir)
-  ipcMain.handle(IPC.settings.getOcrBaseUrl, handleGetOcrBaseUrl)
-  ipcMain.handle(IPC.settings.setOcrBaseUrl, handleSetOcrBaseUrl)
 
   // ── Workflow ───────────────────────────────────────────────────
   const { handleWorkflowRun, handleWorkflowStop } = createWorkflowHandlers(getMainWindow)

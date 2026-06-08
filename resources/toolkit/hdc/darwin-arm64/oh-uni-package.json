@@ -1,0 +1,10 @@
+{
+  "apiVersion": "21",
+  "displayName": "Toolchains",
+  "meta": {
+    "metaVersion": "3.0.0"
+  },
+  "path": "toolchains",
+  "releaseType": "Release",
+  "version": "6.0.1.112"
+}
