@@ -2,7 +2,10 @@ import { memo, useRef, useState } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { cn } from '@/lib/utils'
 import { PickButton, OcrPickButton } from './screen-picker'
+import type { WorkflowNode } from '../../../../shared/workflow'
 import { useWorkflowStore } from '@/stores/workflow'
+import { useDevicesStore } from '@/stores/devices'
+import { getBaseUrl } from '@/lib/settings'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -46,11 +49,94 @@ const NODE_META: Record<
 
 // ── Base Node Component ───────────────────────────────────────────────────
 
+function PostDelayInput({ id, value }: { id: string; value?: number }) {
+  const updateNodePostDelay = useWorkflowStore((s) => s.updateNodePostDelay)
+  const disabled = useWorkflowStore((s) => s.runStatus === 'running')
+  const [local, setLocal] = useState(value != null ? String(value) : '')
+  const prevRef = useRef(value)
+  if (value !== prevRef.current) { prevRef.current = value; setLocal(value != null ? String(value) : '') }
+
+  return (
+    <div className="px-3 pb-2 border-t border-border/30 pt-1.5 bg-muted/10">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-muted-foreground/60 shrink-0">执行后延迟</span>
+        <input
+          type="number"
+          min={0}
+          step={100}
+          disabled={disabled}
+          value={local}
+          placeholder="0"
+          className="nodrag h-6 w-full rounded px-1.5 text-[11px] font-mono bg-transparent border border-border/40 focus:outline-none focus:border-border text-right"
+          onChange={(e) => setLocal(e.target.value)}
+          onBlur={() => {
+            const ms = local === '' ? undefined : Math.max(0, Number(local))
+            updateNodePostDelay(id, ms)
+          }}
+        />
+        <span className="text-[10px] text-muted-foreground/60 shrink-0">ms</span>
+      </div>
+    </div>
+  )
+}
+
 interface WorkflowNodeData {
   label: string
   nodeType: string
   params: Record<string, unknown>
   stepStatus?: 'running' | 'success' | 'error'
+  postDelayMs?: number
+}
+
+function DebugRunButton({ id }: { id: string }) {
+  const selectedId = useDevicesStore((s) => s.selectedId)
+  const { rfNodes, updateNodeStepStatus, updateNodeImageData } = useWorkflowStore()
+
+  async function run() {
+    const rfNode = rfNodes.find((n) => n.id === id)
+    if (!rfNode) return
+    const node = {
+      id: rfNode.id,
+      type: rfNode.type as string,
+      label: (rfNode.data.label as string) ?? rfNode.type ?? '',
+      params: (rfNode.data.params ?? {}) as Record<string, unknown>,
+      position: rfNode.position,
+      postDelayMs: rfNode.data.postDelayMs as number | undefined,
+    }
+    updateNodeStepStatus(id, 'running')
+
+    // 订阅单次日志回调
+    const unsub = window.api?.workflow?.onLog((log) => {
+      if (log.nodeId === id) {
+        if (log.imageData) updateNodeImageData(id, log.imageData)
+        if (log.status === 'success' || log.status === 'error') {
+          updateNodeStepStatus(id, log.status)
+          unsub?.()
+        }
+      }
+    })
+
+    const res = await window.api?.workflow?.runNode({
+      node: node as WorkflowNode,
+      deviceId: selectedId ?? undefined,
+      baseUrl: getBaseUrl(),
+    })
+    if (!res?.ok) {
+      updateNodeStepStatus(id, 'error')
+      unsub?.()
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      title="单节点调试"
+      className="nodrag p-0.5 rounded opacity-0 group-hover/node:opacity-100 hover:bg-accent text-muted-foreground hover:text-foreground transition-all"
+      onClick={(e) => { e.stopPropagation(); void run() }}
+    >
+      <Play className="w-4 h-4" />
+    </button>
+  )
 }
 
 function BaseNode({
@@ -74,7 +160,7 @@ function BaseNode({
   const status = data.stepStatus
 
   return (
-    <div className={cn('rounded-xl', status === 'running' && 'node-border-running p-px')}>
+    <div className={cn('group/node rounded-xl', status === 'running' && 'node-border-running p-px')}>
       <Card
         className={cn(
           'w-[260px] gap-0 py-0 shadow-sm transition-all duration-200 overflow-hidden',
@@ -109,7 +195,10 @@ function BaseNode({
             <p className="text-[13px] font-medium leading-tight truncate">{data.label}</p>
             <p className="text-[10px] text-muted-foreground/70 leading-none mt-0.5">{meta.label}</p>
           </div>
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 flex items-center gap-1">
+            {status !== 'running' && data.nodeType !== 'trigger-manual' && (
+              <DebugRunButton id={id} />
+            )}
             {status === 'running' && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
             {status === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
             {status === 'error' && <AlertCircle className="w-4 h-4 text-red-500" />}
@@ -122,6 +211,9 @@ function BaseNode({
             {children}
           </div>
         )}
+
+        {/* Post delay（触发器不需要） */}
+        {data.nodeType !== 'trigger-manual' && <PostDelayInput id={id} value={data.postDelayMs} />}
 
         {/* Output handle(s) */}
         {hasOutput && !outputHandles && (
@@ -156,10 +248,35 @@ function NodeInput({
 }) {
   const updateNodeParams = useWorkflowStore((s) => s.updateNodeParams)
   const disabled = useWorkflowStore((s) => s.runStatus === 'running')
-  // 中文输入法合成期间暂存值，避免 onChange 截断未确认字符
+  const [local, setLocal] = useState(value ?? '')
   const composing = useRef(false)
-  const [localValue, setLocalValue] = useState<string | number | undefined>(undefined)
-  const displayValue = composing.current ? (localValue ?? value ?? '') : (value ?? '')
+
+  // 外部值变化时（如 OCR 填入）同步到 local，但不覆盖用户正在输入的内容
+  const prevExternalRef = useRef(value)
+  if (!composing.current && value !== prevExternalRef.current) {
+    prevExternalRef.current = value
+    setLocal(value ?? '')
+  }
+
+  const commit = (v: string | number) => updateNodeParams(id, { [paramKey]: v })
+
+  const sharedProps = {
+    disabled,
+    placeholder,
+    onCompositionStart: () => { composing.current = true },
+    onCompositionEnd: (e: React.CompositionEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      composing.current = false
+      const v = (e.target as HTMLInputElement).value
+      setLocal(v)
+      commit(v)
+    },
+    onBlur: () => {
+      if (!composing.current) {
+        const v = type === 'number' ? (local === '' ? '' : Number(local)) : local
+        commit(v)
+      }
+    },
+  }
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -169,39 +286,18 @@ function NodeInput({
       {multiline ? (
         <Textarea
           className="nodrag nowheel text-xs font-mono min-h-0 resize-y"
-          value={String(displayValue)}
-          disabled={disabled}
+          value={String(local)}
           rows={2}
-          placeholder={placeholder}
-          onCompositionStart={() => { composing.current = true }}
-          onCompositionEnd={(e) => {
-            composing.current = false
-            setLocalValue(undefined)
-            updateNodeParams(id, { [paramKey]: (e.target as HTMLTextAreaElement).value })
-          }}
-          onChange={(e) => {
-            if (composing.current) { setLocalValue(e.target.value); return }
-            updateNodeParams(id, { [paramKey]: e.target.value })
-          }}
+          {...sharedProps}
+          onChange={(e) => setLocal(e.target.value)}
         />
       ) : (
         <Input
           type={type}
           className="nodrag h-7 text-xs font-mono"
-          value={displayValue}
-          disabled={disabled}
-          placeholder={placeholder}
-          onCompositionStart={() => { composing.current = true }}
-          onCompositionEnd={(e) => {
-            composing.current = false
-            setLocalValue(undefined)
-            updateNodeParams(id, { [paramKey]: (e.target as HTMLInputElement).value })
-          }}
-          onChange={(e) => {
-            if (composing.current) { setLocalValue(e.target.value); return }
-            const val = type === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value
-            updateNodeParams(id, { [paramKey]: val })
-          }}
+          value={local}
+          {...sharedProps}
+          onChange={(e) => setLocal(e.target.value)}
         />
       )}
     </div>

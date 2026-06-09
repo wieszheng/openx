@@ -10,7 +10,7 @@ import type { UnifiedDevice } from '../shared/unified-device'
 import type { MirrorActionResult, MirrorMetadata, MirrorOptions, FramePacket } from '../shared/mirror'
 import type { RecordStartResult, RecordStopResult } from '../shared/record'
 import type { FileListResult, FileDownloadResult, FileUploadResult, FileDeleteResult, FileMkdirResult } from '../shared/files'
-import type { WorkflowRunPayload, WorkflowRunResult, ExecutionLog } from '../shared/workflow'
+import type { WorkflowRunPayload, WorkflowRunResult, ExecutionLog, WorkflowNode } from '../shared/workflow'
 
 
 interface WindowAPI {
@@ -96,6 +96,7 @@ interface FilesAPI {
 
 interface WorkflowAPI {
   run: (payload: WorkflowRunPayload) => Promise<WorkflowRunResult>
+  runNode: (payload: { node: WorkflowNode; deviceId?: string; baseUrl?: string }) => Promise<WorkflowRunResult>
   stop: () => void
   onLog: (cb: (log: ExecutionLog) => void) => () => void
   onDone: (cb: (result: { status: 'done' | 'error' | 'stopped'; error?: string }) => void) => () => void

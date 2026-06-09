@@ -403,6 +403,10 @@ async function traverseFrom(
   let result: { ok: boolean; output?: string; branchHandle?: string; imageData?: string }
   try {
     result = await executeNode(node, deviceId, ctx)
+    // 延迟在节点内部等待，running 状态持续到等待结束
+    if (result.ok && node.postDelayMs && node.postDelayMs > 0 && !stopRequested) {
+      await new Promise((res) => setTimeout(res, node.postDelayMs))
+    }
   } catch (e) {
     result = { ok: false, output: e instanceof Error ? e.message : String(e) }
   }
@@ -509,4 +513,45 @@ export async function runWorkflow(
     running = false
     stopRequested = false
   }
+}
+
+export async function runSingleNode(
+  node: WorkflowNode,
+  deviceId: string | undefined,
+  win: BrowserWindow,
+  baseUrl = 'http://127.0.0.1:8000'
+): Promise<void> {
+  if (running) { logger.warn('workflow already running'); return }
+  running = true
+  stopRequested = false
+
+  const ctx: Record<string, string> = { __baseUrl: baseUrl }
+  const startTime = Date.now()
+  const logEntry: ExecutionLog = {
+    id: makeLogId(),
+    nodeId: node.id,
+    nodeType: node.type,
+    nodeLabel: node.label,
+    status: 'running',
+    timestamp: startTime,
+  }
+  pushLog(win, logEntry)
+
+  let result: { ok: boolean; output?: string; imageData?: string }
+  try {
+    result = await executeNode(node, deviceId, ctx)
+  } catch (e) {
+    result = { ok: false, output: e instanceof Error ? e.message : String(e) }
+  }
+
+  pushLog(win, {
+    ...logEntry,
+    status: result.ok ? 'success' : 'error',
+    output: result.output,
+    imageData: result.imageData,
+    duration: Date.now() - startTime,
+  })
+  pushDone(win, result.ok ? 'done' : 'error', result.ok ? undefined : result.output)
+  running = false
+  stopRequested = false
 }

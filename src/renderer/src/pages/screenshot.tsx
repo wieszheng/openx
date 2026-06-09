@@ -1146,6 +1146,15 @@ export function ScreenshotPage(): React.JSX.Element {
         <div
           ref={containerRef}
           className="relative flex-1 min-h-0 flex items-center justify-center p-4 bg-muted/20 rounded-lg overflow-hidden"
+          onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' }}
+          onDrop={(e) => {
+            e.preventDefault()
+            const file = e.dataTransfer.files[0]
+            if (!file || !file.type.startsWith('image/')) return
+            const reader = new FileReader()
+            reader.onload = () => applyBaseImage(reader.result as string, { resetAnnotations: true, addToHistory: true })
+            reader.readAsDataURL(file)
+          }}
         >
           <div
             className="absolute top-3 left-3 z-10 flex flex-col gap-1 rounded-md border border-border/60 bg-background/90 px-3 py-2 text-[11px] leading-snug text-muted-foreground shadow-sm backdrop-blur-sm pointer-events-none"
@@ -1269,10 +1278,10 @@ export function ScreenshotPage(): React.JSX.Element {
                 })()}
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-4 text-muted-foreground">
+            <div className="flex flex-col items-center gap-4 text-muted-foreground m-auto">
               <Camera className="w-14 h-14 opacity-40" />
               <p>点击「截图」按钮获取设备屏幕截图</p>
-              <p className="text-xs">支持历史记录多选拼接</p>
+              <p className="text-xs opacity-60">或将图片拖入此区域</p>
             </div>
           )}
         </div>

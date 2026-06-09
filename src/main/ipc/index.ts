@@ -105,8 +105,9 @@ export function registerIpc({ getMainWindow }: RegisterIpcOptions): void {
   ipcMain.handle(IPC.settings.setExportDir, handleSetExportDir)
 
   // ── Workflow ───────────────────────────────────────────────────
-  const { handleWorkflowRun, handleWorkflowStop } = createWorkflowHandlers(getMainWindow)
+  const { handleWorkflowRun, handleWorkflowRunNode, handleWorkflowStop } = createWorkflowHandlers(getMainWindow)
   ipcMain.handle(IPC.workflow.run, handleWorkflowRun)
+  ipcMain.handle(IPC.workflow.runNode, handleWorkflowRunNode)
   ipcMain.on(IPC.workflow.stop, handleWorkflowStop)
 
   // ── Debug ───────────────────────────────────────────────────────────────

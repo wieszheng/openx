@@ -52,6 +52,7 @@ interface WorkflowStore {
   setRfEdges: (edges: Edge[]) => void
   updateNodeParams: (nodeId: string, params: Record<string, unknown>) => void
   updateNodeLabel: (nodeId: string, label: string) => void
+  updateNodePostDelay: (nodeId: string, ms: number | undefined) => void
   updateNodeStepStatus: (nodeId: string, status: 'running' | 'success' | 'error' | null) => void
   updateNodeImageData: (nodeId: string, dataUrl: string) => void
   clearNodeStepStatuses: () => void
@@ -72,7 +73,7 @@ function workflowToRf(workflow: Workflow): { nodes: Node[]; edges: Edge[] } {
     id: n.id,
     type: n.type,
     position: n.position,
-    data: { label: n.label, params: n.params, nodeType: n.type },
+    data: { label: n.label, params: n.params, nodeType: n.type, postDelayMs: n.postDelayMs },
   }))
   const edges: Edge[] = workflow.edges.map((e) => ({
     id: e.id,
@@ -99,6 +100,7 @@ function rfToWorkflow(
       label: (n.data.label as string) ?? n.type,
       params: (n.data.params as Workflow['nodes'][0]['params']) ?? {},
       position: n.position,
+      postDelayMs: (n.data.postDelayMs as number | undefined) || undefined,
     })),
     edges: rfEdges.map((e) => ({
       id: e.id,
@@ -196,6 +198,13 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
   updateNodeLabel: (nodeId, label) => {
     const rfNodes = get().rfNodes.map((n) =>
       n.id === nodeId ? { ...n, data: { ...n.data, label } } : n
+    )
+    set({ rfNodes })
+  },
+
+  updateNodePostDelay: (nodeId, ms) => {
+    const rfNodes = get().rfNodes.map((n) =>
+      n.id === nodeId ? { ...n, data: { ...n.data, postDelayMs: ms } } : n
     )
     set({ rfNodes })
   },

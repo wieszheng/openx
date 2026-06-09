@@ -113,7 +113,7 @@ const DEFAULT_PARAMS: Partial<Record<WorkflowNodeType, Record<string, unknown>>>
   'action-set-var':      { key: '', value: '' },
   'control-if':          { condition: 'ctx.result === "ok"' },
   'control-loop':        { count: 3 },
-  'control-delay':       { ms: 1000 },
+  'control-delay':       { ms: 3000 },
 }
 
 const totalNodeCount = nodeGroups.reduce((sum, g) => sum + g.items.length, 0)
@@ -141,6 +141,7 @@ export function NodePanel() {
         label: template.label,
         nodeType: template.type,
         params: { ...(DEFAULT_PARAMS[template.type] ?? {}) },
+        postDelayMs: template.type.startsWith('trigger-') ? undefined : 2000,
       },
     }
     setRfNodes([...rfNodes, newNode])
@@ -162,7 +163,7 @@ export function NodePanel() {
     <div className="flex h-full w-42 shrink-0 flex-col border-r">
       {/* 头部 */}
       <div className="flex items-center justify-between px-3 py-2 border-b">
-        <span className="text-sm font-semibold">节点操作</span>
+        <span className="text-xs font-semibold">节点操作</span>
         <span className="text-xs text-muted-foreground">{totalNodeCount} 个节点</span>
       </div>
 
@@ -171,7 +172,7 @@ export function NodePanel() {
         <div className="py-2">
           {nodeGroups.map((group) => (
             <div key={group.title} className="mb-1">
-              <div className="px-3 py-2">
+              <div className="px-3 py-1">
                 <span className="text-xs font-medium">{group.title}</span>
               </div>
               <div className="mx-2 space-y-0.5 mr-3">

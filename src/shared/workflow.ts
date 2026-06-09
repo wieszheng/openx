@@ -174,6 +174,7 @@ export interface WorkflowNode {
   label: string
   params: WorkflowNodeParams
   position: { x: number; y: number }
+  postDelayMs?: number  // 执行后等待（毫秒）
 }
 
 export interface Workflow {

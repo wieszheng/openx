@@ -159,6 +159,8 @@ const api = {
   workflow: {
     run: (payload: import('../shared/workflow').WorkflowRunPayload): Promise<import('../shared/workflow').WorkflowRunResult> =>
       ipcRenderer.invoke(IPC.workflow.run, payload),
+    runNode: (payload: { node: import('../shared/workflow').WorkflowNode; deviceId?: string; baseUrl?: string }): Promise<import('../shared/workflow').WorkflowRunResult> =>
+      ipcRenderer.invoke(IPC.workflow.runNode, payload),
     stop: (): void => ipcRenderer.send(IPC.workflow.stop),
     onLog: (cb: (log: import('../shared/workflow').ExecutionLog) => void): (() => void) => {
       const listener = (_e: Electron.IpcRendererEvent, log: import('../shared/workflow').ExecutionLog): void => cb(log)

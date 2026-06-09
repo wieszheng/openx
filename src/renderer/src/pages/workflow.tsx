@@ -88,6 +88,7 @@ function WorkflowHeader() {
         label: (n.data.label as string) ?? n.type ?? '',
         params: (n.data.params ?? {}) as Workflow['nodes'][0]['params'],
         position: n.position,
+        postDelayMs: (n.data.postDelayMs as number | undefined) || undefined,
       })),
       edges: rfEdges.map((e) => ({
         id: e.id,
@@ -335,7 +336,7 @@ function WorkflowCanvas() {
       id: nanoid(),
       type,
       position,
-      data: { label, nodeType: type, params: JSON.parse(paramsStr) },
+      data: { label, nodeType: type, params: JSON.parse(paramsStr), postDelayMs: type.startsWith('trigger-') ? undefined : 2000 },
     }
     setRfNodes([...rfNodes, newNode])
   }, [screenToFlowPosition, rfNodes, setRfNodes, disabled])

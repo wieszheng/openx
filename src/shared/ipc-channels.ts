@@ -96,6 +96,8 @@ export const IPC = {
   workflow: {
     /** renderer → main: 开始执行工作流，参数 WorkflowRunPayload */
     run: 'workflow:run',
+    /** renderer → main: 单节点调试执行 */
+    runNode: 'workflow:run-node',
     /** renderer → main: 停止当前执行 */
     stop: 'workflow:stop',
     /** main → renderer: 推送执行日志 ExecutionLog */

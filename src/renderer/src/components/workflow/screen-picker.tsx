@@ -31,6 +31,8 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
   const [loading, setLoading] = useState(true)
   const [empty, setEmpty] = useState(false)
   const [hoverPos, setHoverPos] = useState<Point | null>(null)
+  const [hoveredOcrBox, setHoveredOcrBox] = useState<OcrBox | null>(null)
+  const hoveredOcrBoxRef = useRef<OcrBox | null>(null)
   const [firstPoint, setFirstPoint] = useState<CanvasPoint | null>(null)
   const [ocrBoxes, setOcrBoxes] = useState<OcrBox[]>([])
   const [ocrLoading, setOcrLoading] = useState(false)
@@ -58,10 +60,11 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
     // OCR 文字框
     const bxs = boxes ?? ocrBoxes
     for (const b of bxs) {
+      const isHovered = b === hoveredOcrBoxRef.current
       ctx.save()
-      ctx.strokeStyle = 'rgba(99,102,241,0.85)'
-      ctx.lineWidth = 1.5
-      ctx.fillStyle = 'rgba(99,102,241,0.10)'
+      ctx.strokeStyle = isHovered ? 'rgba(239,68,68,0.9)' : 'rgba(99,102,241,0.85)'
+      ctx.lineWidth = isHovered ? 2 : 1.5
+      ctx.fillStyle = isHovered ? 'rgba(239,68,68,0.15)' : 'rgba(99,102,241,0.10)'
       ctx.beginPath()
       ctx.roundRect(b.cx, b.cy, b.cw, b.ch, 3)
       ctx.fill()
@@ -133,7 +136,7 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
         const canvas = canvasRef.current
         if (!canvas) return
         const maxW = containerRef.current?.clientWidth ?? 340
-        const maxH = Math.floor(window.innerHeight * 0.55)
+        const maxH = Math.floor(window.innerHeight * 0.72)
         const scale = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight)
         scaleRef.current = scale
         canvas.width = Math.round(img.naturalWidth * scale)
@@ -202,13 +205,22 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
   }
 
   function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
-    const { dx, dy, cx, cy } = getCoords(e)
-    setHoverPos({ x: dx, y: dy })
-    redraw(cx, cy, firstPoint)
+    const pt = getCoords(e)
+    const hit = hitOcrBox(pt.cx, pt.cy)
+    const finalPt = hit
+      ? { dx: Math.round(hit.x + hit.w / 2), dy: Math.round(hit.y + hit.h / 2), cx: Math.round(hit.cx + hit.cw / 2), cy: Math.round(hit.cy + hit.ch / 2) }
+      : pt
+
+    setHoverPos({ x: finalPt.dx, y: finalPt.dy })
+    setHoveredOcrBox(hit)
+    hoveredOcrBoxRef.current = hit
+    redraw(finalPt.cx, finalPt.cy, firstPoint)
   }
 
   function handleMouseLeave() {
     setHoverPos(null)
+    setHoveredOcrBox(null)
+    hoveredOcrBoxRef.current = null
     redraw(undefined, undefined, firstPoint)
   }
 
@@ -236,37 +248,21 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
     }
   }
 
-  const title = mode === 'text'
-    ? (ocrBoxes.length > 0 ? '点击文字框填入识别文字' : '先点击「OCR 识别」，再点击文字框')
-    : mode === 'single'
-    ? '点击选择坐标'
-    : firstPoint
-      ? `点击终点（起点 ${firstPoint.dx}, ${firstPoint.dy}）`
-      : '点击选择起点'
+  const title = loading
+    ? '加载截图中...'
+    : mode === 'text'
+      ? (ocrLoading ? 'OCR 识别中...' : (ocrBoxes.length > 0 ? '点击文字框填入识别文字' : '未识别到文字'))
+      : mode === 'single'
+        ? '点击选择坐标'
+        : firstPoint
+          ? `点击终点（起点 ${firstPoint.dx}, ${firstPoint.dy}）`
+          : '点击选择起点'
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-sm p-4 gap-3">
+      <DialogContent className="min-h-[83vh]">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-sm">{title}</DialogTitle>
-            <button
-              type="button"
-              onClick={() => void runOcr(b64Ref)}
-              disabled={ocrLoading || loading || empty}
-              className={cn(
-                'flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium transition-colors',
-                'border border-border hover:bg-accent disabled:opacity-40',
-                ocrBoxes.length > 0 && 'border-indigo-400/60 text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10',
-              )}
-            >
-              {ocrLoading
-                ? <Loader2 className="w-3 h-3 animate-spin" />
-                : <ScanText className="w-3 h-3" />
-              }
-              OCR 识别
-            </button>
-          </div>
+          <DialogTitle className="text-sm">{title}</DialogTitle>
         </DialogHeader>
 
         <div ref={containerRef} className="relative">
@@ -292,7 +288,7 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
             onClick={handleClick}
           />
           {hoverPos && (
-            <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[11px] px-2 py-0.5 rounded font-mono pointer-events-none">
+            <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[11px] px-2 py-0.5 rounded font-mono pointer-events-none shadow-sm">
               {hoverPos.x}, {hoverPos.y}
             </div>
           )}
