@@ -31,12 +31,10 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
   const [loading, setLoading] = useState(true)
   const [empty, setEmpty] = useState(false)
   const [hoverPos, setHoverPos] = useState<Point | null>(null)
-  const [hoveredOcrBox, setHoveredOcrBox] = useState<OcrBox | null>(null)
   const hoveredOcrBoxRef = useRef<OcrBox | null>(null)
   const [firstPoint, setFirstPoint] = useState<CanvasPoint | null>(null)
   const [ocrBoxes, setOcrBoxes] = useState<OcrBox[]>([])
   const [ocrLoading, setOcrLoading] = useState(false)
-  const [b64Ref, setB64Ref] = useState<string>('')
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -130,7 +128,6 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
     if (!selectedId) { setEmpty(true); setLoading(false); return }
     window.api.screencap.capture(selectedId).then((res) => {
       if (!res.ok) { setEmpty(true); setLoading(false); return }
-      setB64Ref(res.data)
       const img = new Image()
       img.onload = () => {
         const canvas = canvasRef.current
@@ -212,14 +209,12 @@ export function ScreenPicker({ mode, onPick, onClose }: ScreenPickerProps) {
       : pt
 
     setHoverPos({ x: finalPt.dx, y: finalPt.dy })
-    setHoveredOcrBox(hit)
     hoveredOcrBoxRef.current = hit
     redraw(finalPt.cx, finalPt.cy, firstPoint)
   }
 
   function handleMouseLeave() {
     setHoverPos(null)
-    setHoveredOcrBox(null)
     hoveredOcrBoxRef.current = null
     redraw(undefined, undefined, firstPoint)
   }
