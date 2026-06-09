@@ -100,10 +100,12 @@ export interface ActionCloseAppParams {
 }
 
 export interface ActionFindAndTapParams {
-  targetText: string        // 要查找的文字（支持部分匹配）
-  action: 'tap' | 'input'  // 找到后执行的操作
+  targetText: string
+  matchType?: 'contains' | 'equals' | 'startsWith' | 'endsWith' | 'regex'
+  action?: 'tap' | 'doubleTap' | 'longPress' | 'input' | 'assert'
   text?: string             // action=input 时的输入内容
-  saveToVar?: string        // 将找到的坐标存入变量（可选）
+  saveToVar?: string        // 将找到的坐标存入变量
+  saveTextToVar?: string    // 将匹配到的文字存入变量
 }
 
 export interface ActionShellParams {

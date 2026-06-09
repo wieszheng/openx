@@ -370,35 +370,79 @@ ActionCloseAppNode.displayName = 'ActionCloseAppNode'
 
 export const ActionFindAndTapNode = memo(({ id, data }: NodeProps) => {
   const d = data as unknown as WorkflowNodeData
-  const p = d.params as { targetText?: string; action?: 'tap' | 'input'; text?: string; saveToVar?: string }
+  const p = d.params as {
+    targetText?: string
+    matchType?: 'contains' | 'equals' | 'startsWith' | 'endsWith' | 'regex'
+    action?: 'tap' | 'doubleTap' | 'longPress' | 'input' | 'assert'
+    text?: string
+    saveToVar?: string
+    saveTextToVar?: string
+  }
   const { updateNodeParams } = useWorkflowStore()
+
+  const MATCH_OPTIONS = [
+    { value: 'contains',   label: '包含' },
+    { value: 'equals',     label: '等于' },
+    { value: 'startsWith', label: '开头' },
+    { value: 'endsWith',   label: '结尾' },
+    { value: 'regex',      label: '正则' },
+  ] as const
+
+  const ACTION_OPTIONS = [
+    { value: 'tap',       label: '点击' },
+    { value: 'doubleTap', label: '双击' },
+    { value: 'longPress', label: '长按' },
+    { value: 'input',     label: '输入' },
+    { value: 'assert',    label: '断言' },
+  ] as const
+
   return (
     <BaseNode id={id} data={d}>
       <div className="flex items-end gap-1">
         <div className="flex-1">
-          <NodeInput id={id} paramKey="targetText" label="目标文字" value={p.targetText} placeholder="要查找的文字（部分匹配）" />
+          <NodeInput id={id} paramKey="targetText" label="目标文字" value={p.targetText} placeholder="要查找的文字" />
         </div>
         <OcrPickButton onPick={(text) => updateNodeParams(id, { targetText: text })} />
       </div>
-      <div className="flex items-center gap-2 nodrag">
-        <span className="text-[10px] text-muted-foreground shrink-0">找到后</span>
-        <button
-          type="button"
-          onClick={() => updateNodeParams(id, { action: p.action === 'input' ? 'tap' : 'input' })}
-          className={cn(
-            'flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border transition-colors',
-            p.action === 'input'
-              ? 'bg-blue-500/10 text-blue-600 border-blue-400/40'
-              : 'bg-emerald-500/10 text-emerald-600 border-emerald-400/40'
-          )}
-        >
-          {p.action === 'input' ? '输入文字' : '点击'}
-        </button>
+      {/* 匹配方式 */}
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">匹配方式</span>
+        <div className="flex flex-wrap gap-1 nodrag">
+          {MATCH_OPTIONS.map((o) => (
+            <button key={o.value} type="button"
+              onClick={() => updateNodeParams(id, { matchType: o.value })}
+              className={cn('px-2 py-0.5 rounded text-[11px] font-medium border transition-colors',
+                (p.matchType ?? 'contains') === o.value
+                  ? 'bg-cyan-500/15 text-cyan-600 border-cyan-400/50'
+                  : 'text-muted-foreground border-border hover:bg-muted'
+              )}>
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {/* 执行操作 */}
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">找到后</span>
+        <div className="flex flex-wrap gap-1 nodrag">
+          {ACTION_OPTIONS.map((o) => (
+            <button key={o.value} type="button"
+              onClick={() => updateNodeParams(id, { action: o.value })}
+              className={cn('px-2 py-0.5 rounded text-[11px] font-medium border transition-colors',
+                (p.action ?? 'tap') === o.value
+                  ? 'bg-indigo-500/15 text-indigo-600 border-indigo-400/50'
+                  : 'text-muted-foreground border-border hover:bg-muted'
+              )}>
+              {o.label}
+            </button>
+          ))}
+        </div>
       </div>
       {p.action === 'input' && (
         <NodeInput id={id} paramKey="text" label="输入内容" value={p.text} placeholder="支持 {{var}} 模板" />
       )}
-      <NodeInput id={id} paramKey="saveToVar" label="存入变量（坐标）" value={p.saveToVar} placeholder="可选" />
+      <NodeInput id={id} paramKey="saveToVar"     label="坐标存入变量" value={p.saveToVar}     placeholder="可选" />
+      <NodeInput id={id} paramKey="saveTextToVar" label="文字存入变量" value={p.saveTextToVar} placeholder="可选" />
     </BaseNode>
   )
 })

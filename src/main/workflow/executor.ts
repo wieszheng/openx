@@ -266,10 +266,11 @@ async function executeNode(
 
     case 'action-find-and-tap': {
       const targetText = interpolate(String(p.targetText ?? ''), ctx)
-      const action = String(p.action ?? 'tap') as 'tap' | 'input'
+      const matchType = String(p.matchType ?? 'contains') as 'contains' | 'equals' | 'startsWith' | 'endsWith' | 'regex'
+      const action = String(p.action ?? 'tap') as 'tap' | 'doubleTap' | 'longPress' | 'input' | 'assert'
       const inputText = p.text ? interpolate(String(p.text), ctx) : ''
 
-      // 1. 截图（返回 base64 string）
+      // 1. 截图
       const b64 = isAndroid
         ? await adbActions.screenshot(serial)
         : await hdcActions.screenshot(serial)
@@ -284,12 +285,23 @@ async function executeNode(
       })
       const ocrJson = (await ocrRes.json()) as { data?: { text: string; box: [[number,number],[number,number],[number,number],[number,number]] }[] }
 
-      // 3. 匹配文字
+      // 3. 匹配
       const items = ocrJson.data ?? []
-      const match = items.find((item) => item.text.includes(targetText))
-      if (!match) {
-        return { ok: false, output: `OCR 未找到文字「${targetText}」` }
+      function matchText(t: string): boolean {
+        if (matchType === 'equals')     return t === targetText
+        if (matchType === 'startsWith') return t.startsWith(targetText)
+        if (matchType === 'endsWith')   return t.endsWith(targetText)
+        if (matchType === 'regex')      return new RegExp(targetText).test(t)
+        return t.includes(targetText)  // contains (default)
       }
+      const match = items.find((item) => matchText(item.text))
+
+      // assert：仅判断是否存在
+      if (action === 'assert') {
+        return { ok: !!match, output: match ? `断言通过：找到「${match.text}」` : `断言失败：未找到文字「${targetText}」` }
+      }
+
+      if (!match) return { ok: false, output: `OCR 未找到文字「${targetText}」` }
 
       // 4. 取框中心坐标
       const xs = match.box.map((pt) => pt[0])
@@ -297,18 +309,29 @@ async function executeNode(
       const cx = Math.round((Math.min(...xs) + Math.max(...xs)) / 2)
       const cy = Math.round((Math.min(...ys) + Math.max(...ys)) / 2)
 
-      if (p.saveToVar) ctx[String(p.saveToVar)] = `${cx},${cy}`
+      if (p.saveToVar)     ctx[String(p.saveToVar)]     = `${cx},${cy}`
+      if (p.saveTextToVar) ctx[String(p.saveTextToVar)] = match.text
 
       // 5. 执行操作
-      if (action === 'tap') {
-        if (isAndroid) { await adbActions.tap(serial, cx, cy) }
-        else { await hdcActions.tap(serial, cx, cy) }
-        return { ok: true, output: `OCR 找到「${match.text}」@ (${cx},${cy})，已点击` }
-      } else {
+      if (action === 'input') {
         if (isAndroid) { await adbActions.inputText(serial, inputText) }
-        else { await hdcActions.inputText(serial, inputText, cx, cy) }
+        else           { await hdcActions.inputText(serial, inputText, cx, cy) }
         return { ok: true, output: `OCR 找到「${match.text}」@ (${cx},${cy})，已输入: ${inputText}` }
       }
+      if (action === 'doubleTap') {
+        if (isAndroid) { await adbActions.doubleTap(serial, cx, cy) }
+        else           { await hdcActions.doubleTap(serial, cx, cy) }
+        return { ok: true, output: `OCR 找到「${match.text}」@ (${cx},${cy})，已双击` }
+      }
+      if (action === 'longPress') {
+        if (isAndroid) { await adbActions.longClick(serial, cx, cy) }
+        else           { await hdcActions.longClick(serial, cx, cy) }
+        return { ok: true, output: `OCR 找到「${match.text}」@ (${cx},${cy})，已长按` }
+      }
+      // tap (default)
+      if (isAndroid) { await adbActions.tap(serial, cx, cy) }
+      else           { await hdcActions.tap(serial, cx, cy) }
+      return { ok: true, output: `OCR 找到「${match.text}」@ (${cx},${cy})，已点击` }
     }
 
     case 'action-get-var': {

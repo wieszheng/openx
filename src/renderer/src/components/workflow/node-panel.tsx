@@ -107,7 +107,7 @@ const DEFAULT_PARAMS: Partial<Record<WorkflowNodeType, Record<string, unknown>>>
   'action-uninstall-app':{ packageName: '' },
   'action-launch-app':   { packageName: '', activity: '', cold: false },
   'action-close-app':     { packageName: '' },
-  'action-find-and-tap':  { targetText: '', action: 'tap' },
+  'action-find-and-tap':  { targetText: '', matchType: 'contains', action: 'tap' },
   'action-shell':        { command: '', saveToVar: '' },
   'action-get-var':      { key: '', saveToVar: '' },
   'action-set-var':      { key: '', value: '' },
