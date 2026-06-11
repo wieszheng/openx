@@ -13,7 +13,8 @@ import {
   Loader2,
   Server,
   Copy,
-  Video
+  Video,
+  Brain
 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -33,7 +34,15 @@ import {
   getBaseUrl,
   resetBaseUrl,
   setBaseUrl,
-  testBackendConnection
+  testBackendConnection,
+  getAiApiKey,
+  setAiApiKey,
+  getAiBaseUrl,
+  setAiBaseUrl,
+  getAiModel,
+  setAiModel,
+  DEFAULT_AI_BASE_URL,
+  DEFAULT_AI_MODEL
 } from '@/lib/settings'
 import { ToolkitItemStatus, ToolkitStatusResult } from 'src/shared/toolkit-status'
 
@@ -83,11 +92,27 @@ export function SettingsPage(): React.JSX.Element {
 
   const [baseUrlInput, setBaseUrlInput] = useState(() => getBaseUrl())
   const [testing, setTesting] = useState(false)
-  // const [setTestResult] = useState<{
-  //   ok: boolean
-  //   message: string
-  //   latencyMs?: number
-  // } | null>(null)
+
+  const [aiApiKeyInput, setAiApiKeyInput] = useState(() => getAiApiKey())
+  const [aiBaseUrlInput, setAiBaseUrlInput] = useState(() => getAiBaseUrl())
+  const [aiModelInput, setAiModelInput] = useState(() => getAiModel())
+
+  const handleSaveAiSettings = () => {
+    setAiApiKey(aiApiKeyInput)
+    setAiBaseUrl(aiBaseUrlInput)
+    setAiModel(aiModelInput)
+    toast.success('AI 设置已保存')
+  }
+
+  const handleResetAiSettings = () => {
+    setAiApiKeyInput('')
+    setAiBaseUrlInput(DEFAULT_AI_BASE_URL)
+    setAiModelInput(DEFAULT_AI_MODEL)
+    setAiApiKey('')
+    setAiBaseUrl(DEFAULT_AI_BASE_URL)
+    setAiModel(DEFAULT_AI_MODEL)
+    toast.success('AI 设置已恢复默认')
+  }
 
   const [logPath, setLogPath] = useState<string | null>(null)
   const [exportDir, setExportDir] = useState<string | null>(null)
@@ -222,6 +247,10 @@ export function SettingsPage(): React.JSX.Element {
           <TabsTrigger value="devices" className="w-full gap-3 py-2">
             <Smartphone className="w-4 h-4" />
             <span>设备工具链</span>
+          </TabsTrigger>
+          <TabsTrigger value="ai" className="w-full gap-3 py-2">
+            <Brain className="w-4 h-4" />
+            <span>AI 设置</span>
           </TabsTrigger>
           <TabsTrigger value="about" className="w-full gap-3 py-2">
             <Info className="w-4 h-4" />
@@ -480,6 +509,90 @@ export function SettingsPage(): React.JSX.Element {
                       ))}
                     </>
                   ) : null}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* AI 设置 */}
+          <TabsContent value="ai" className="mt-0 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>AI 设置</CardTitle>
+                <CardDescription>配置大语言模型服务，用于根据测试用例智能编排自动化工作流</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-1">
+                <div className="flex flex-col gap-3 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="text-muted-foreground shrink-0">
+                      <Brain className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium">API Key</h3>
+                      <p className="text-xs text-muted-foreground">用于调用大语言模型 API，仅本地存储</p>
+                    </div>
+                  </div>
+                  <div className="pl-7">
+                    <Input
+                      id="ai-api-key"
+                      type="password"
+                      value={aiApiKeyInput}
+                      onChange={(e) => setAiApiKeyInput(e.target.value)}
+                      placeholder="sk-..."
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="text-muted-foreground shrink-0">
+                      <Server className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium">API Base URL</h3>
+                      <p className="text-xs text-muted-foreground">兼容 OpenAI 的端点地址，支持官方、代理或本地 LLM</p>
+                    </div>
+                  </div>
+                  <div className="pl-7">
+                    <Input
+                      id="ai-base-url"
+                      value={aiBaseUrlInput}
+                      onChange={(e) => setAiBaseUrlInput(e.target.value)}
+                      placeholder={DEFAULT_AI_BASE_URL}
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="text-muted-foreground shrink-0">
+                      <Brain className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium">Model Name</h3>
+                      <p className="text-xs text-muted-foreground">模型标识，如 gpt-4o、deepseek-chat 等</p>
+                    </div>
+                  </div>
+                  <div className="pl-7">
+                    <Input
+                      id="ai-model"
+                      value={aiModelInput}
+                      onChange={(e) => setAiModelInput(e.target.value)}
+                      placeholder={DEFAULT_AI_MODEL}
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 py-3">
+                  <Button size="sm" onClick={handleSaveAiSettings}>
+                    保存
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleResetAiSettings}>
+                    恢复默认
+                  </Button>
                 </div>
               </CardContent>
             </Card>

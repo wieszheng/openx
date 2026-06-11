@@ -1,4 +1,4 @@
-export type UnifiedDevicePlatform = 'android' | 'harmony'
+export type UnifiedDevicePlatform = 'android' | 'harmony' | 'ios'
 
 export type UnifiedDeviceState = 'online' | 'offline' | 'unauthorized' | 'unknown'
 

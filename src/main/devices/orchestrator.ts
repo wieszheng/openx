@@ -1,6 +1,7 @@
 import { BrowserWindow } from 'electron'
 import { listAndroidDevices, startAndroidTracker } from './android'
 import { listHarmonyDevices, startHarmonyTracker } from './harmony'
+import { listIosDevices } from './ios'
 
 import type { UnifiedDevice } from '../../shared/unified-device'
 import { IPC } from '../../shared/ipc-channels'
@@ -34,10 +35,12 @@ async function refresh(): Promise<void> {
       return [] as UnifiedDevice[]
     })
   ])
-  snapshot = [...android, ...harmony].sort((a, b) => a.label.localeCompare(b.label, 'zh-Hans-CN'))
+  const ios = listIosDevices()
+  snapshot = [...android, ...harmony, ...ios].sort((a, b) => a.label.localeCompare(b.label, 'zh-Hans-CN'))
   logger.debug('devices refreshed', {
     android: android.length,
     harmony: harmony.length,
+    ios: ios.length,
     total: snapshot.length
   })
   broadcast()

@@ -1,6 +1,6 @@
 export function parseDeviceRef(
   deviceId: string
-): { platform: 'android' | 'harmony'; key: string } | null {
+): { platform: 'android' | 'harmony' | 'ios'; key: string } | null {
   if (deviceId.startsWith('android:')) {
     const key = deviceId.slice('android:'.length)
     return key ? { platform: 'android', key } : null
@@ -8,6 +8,10 @@ export function parseDeviceRef(
   if (deviceId.startsWith('harmony:')) {
     const key = deviceId.slice('harmony:'.length)
     return key ? { platform: 'harmony', key } : null
+  }
+  if (deviceId.startsWith('ios:')) {
+    const key = deviceId.slice('ios:'.length)
+    return key ? { platform: 'ios', key } : null
   }
   return null
 }

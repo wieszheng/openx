@@ -1,6 +1,7 @@
 import { captureAndroidScreenshot } from './android/screencap'
 import { parseDeviceRef } from './device-ref'
 import { captureHarmonyScreenshot } from './harmony/screencap'
+import { captureIosScreenshot } from './ios/screencap'
 
 export async function captureDeviceScreenshot(
   deviceId: string,
@@ -12,6 +13,11 @@ export async function captureDeviceScreenshot(
 
   if (ref.platform === 'android') {
     const data = await captureAndroidScreenshot(ref.key)
+    return { data, mimeType: 'image/png' }
+  }
+
+  if (ref.platform === 'ios') {
+    const data = await captureIosScreenshot(ref.key)
     return { data, mimeType: 'image/png' }
   }
 

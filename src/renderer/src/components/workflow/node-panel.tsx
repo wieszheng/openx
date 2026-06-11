@@ -1,15 +1,17 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { nanoid } from 'nanoid'
+import { motion, AnimatePresence } from 'motion/react'
 import type { WorkflowNodeType } from '../../../../shared/workflow'
 import { useWorkflowStore } from '@/stores/workflow'
 import { useReactFlow } from '@xyflow/react'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   Play, Camera, MousePointerClick, MoveVertical, Keyboard,
   Package, Trash2, Terminal, BookOpen, Pencil, Square, ScanText,
   GitBranch, Repeat, Timer,
-  GripVertical,
+  GripVertical, PanelLeftOpen, PanelLeftClose,
   Hand, Move, Delete, Command,
 } from 'lucide-react'
 
@@ -124,6 +126,7 @@ export function NodePanel() {
   const { getViewport } = useReactFlow()
   const { rfNodes, setRfNodes, activeWorkflowId, runStatus } = useWorkflowStore()
   const disabled = runStatus === 'running' || !activeWorkflowId
+  const [collapsed, setCollapsed] = useState(false)
 
   // 点击添加节点
   const addNode = useCallback((template: NodeTemplate) => {
@@ -160,58 +163,97 @@ export function NodePanel() {
   }, [disabled])
 
   return (
-    <div className="flex h-full w-42 shrink-0 flex-col border-r">
-      {/* 头部 */}
-      <div className="flex items-center justify-between px-3 py-2 border-b">
-        <span className="text-xs font-semibold">节点操作</span>
-        <span className="text-xs text-muted-foreground">{totalNodeCount} 个节点</span>
-      </div>
-
-      {/* 节点分组 */}
-      <ScrollArea className="flex-1 min-h-0">
-        <div className="py-2">
-          {nodeGroups.map((group) => (
-            <div key={group.title} className="mb-1">
-              <div className="px-3 py-1">
-                <span className="text-xs font-medium">{group.title}</span>
-              </div>
-              <div className="mx-2 space-y-0.5 mr-3">
-                {group.items.map((template) => {
-                  const color = COLOR_STYLES[template.handleColor]
-                  return (
-                    <button
-                      key={template.type}
-                      type="button"
-                      draggable
-                      onClick={() => addNode(template)}
-                      onDragStart={(e) => onDragStart(e, template)}
-                      disabled={disabled}
-                      className={cn(
-                        'flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left hover:bg-accent cursor-grab active:cursor-grabbing transition-colors group/item',
-                        'disabled:opacity-40 disabled:cursor-not-allowed'
-                      )}
-                      title={template.description}
-                    >
-                      <div className={cn('flex size-6 shrink-0 items-center justify-center rounded-lg', color.iconBg)}>
-                        <span className={color.iconText}>{template.icon}</span>
-                      </div>
-                      <p className="flex-1 truncate text-xs font-medium leading-none">{template.label}</p>
-                      <GripVertical className="size-3.5 text-muted-foreground/40 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0" />
-                    </button>
-                  )
-                })}
-              </div>
+    <div className="relative flex h-full shrink-0">
+      <AnimatePresence initial={false}>
+        {!collapsed && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 168, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="flex h-full flex-col border-r overflow-hidden"
+          >
+            {/* 头部 */}
+            <div className="flex items-center justify-between px-3 py-2 border-b shrink-0">
+              <span className="text-xs font-semibold">节点操作</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setCollapsed(true)}
+                    className="flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:bg-accent transition-colors"
+                  >
+                    <PanelLeftClose className="w-3.5 h-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right">收起节点面板</TooltipContent>
+              </Tooltip>
             </div>
-          ))}
-        </div>
-      </ScrollArea>
 
-      {/* 底部提示 */}
-      <div className="border-t px-3 py-2">
-        <p className="text-[10px] text-muted-foreground text-center">
-          拖拽或点击节点添加到画布
-        </p>
-      </div>
+            {/* 节点分组 */}
+            <ScrollArea className="flex-1 min-h-0">
+              <div className="py-2">
+                {nodeGroups.map((group) => (
+                  <div key={group.title} className="mb-1">
+                    <div className="px-3 py-1">
+                      <span className="text-xs font-medium">{group.title}</span>
+                    </div>
+                    <div className="mx-2 space-y-0.5 mr-3">
+                      {group.items.map((template) => {
+                        const color = COLOR_STYLES[template.handleColor]
+                        return (
+                          <button
+                            key={template.type}
+                            type="button"
+                            draggable
+                            onClick={() => addNode(template)}
+                            onDragStart={(e) => onDragStart(e, template)}
+                            disabled={disabled}
+                            className={cn(
+                              'flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left hover:bg-accent cursor-grab active:cursor-grabbing transition-colors group/item',
+                              'disabled:opacity-40 disabled:cursor-not-allowed'
+                            )}
+                            title={template.description}
+                          >
+                            <div className={cn('flex size-6 shrink-0 items-center justify-center rounded-lg', color.iconBg)}>
+                              <span className={color.iconText}>{template.icon}</span>
+                            </div>
+                            <p className="flex-1 truncate text-xs font-medium leading-none">{template.label}</p>
+                            <GripVertical className="size-3.5 text-muted-foreground/40 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0" />
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+
+            {/* 底部提示 */}
+            <div className="border-t px-3 py-2 shrink-0">
+              <p className="text-[10px] text-muted-foreground text-center">
+                拖拽或点击节点添加到画布
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 收起时悬浮展开按钮 */}
+      {collapsed && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={() => setCollapsed(false)}
+              className="absolute left-2 top-2 z-10 flex items-center justify-center w-7 h-7 bg-card border rounded-md shadow-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            >
+              <PanelLeftOpen className="w-4 h-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">展开节点面板</TooltipContent>
+        </Tooltip>
+      )}
     </div>
   )
 }

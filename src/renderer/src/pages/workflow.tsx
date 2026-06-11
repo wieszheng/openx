@@ -22,11 +22,13 @@ import { useReactFlow } from '@xyflow/react'
 import { useDevicesStore } from '@/stores/devices'
 import { nodeTypes } from '@/components/workflow/node-types'
 import { NodePanel } from '@/components/workflow/node-panel'
+import { AiAgentPanel } from '@/components/workflow/ai-agent-panel'
+import { AnimatePresence } from 'motion/react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
-  Play, Square, Save, Plus, Trash2,
+  Play, Square, Save, Plus, Trash2, Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -34,7 +36,12 @@ import type { Workflow } from '../../../shared/workflow'
 
 // ── Workflow Header (Card) ──────────────────────────────────────────────────
 
-function WorkflowHeader() {
+interface WorkflowHeaderProps {
+  showAiPanel: boolean
+  onToggleAiPanel: () => void
+}
+
+function WorkflowHeader({ showAiPanel, onToggleAiPanel }: WorkflowHeaderProps) {
   const {
     workflows, activeWorkflowId, runStatus,
     createWorkflow, deleteWorkflow, openWorkflow, renameWorkflow,
@@ -209,7 +216,21 @@ function WorkflowHeader() {
 
         {/* Actions */}
         <Button
-          variant="outline" size="sm" className="h-7 px-3 text-xs gap-1.5"
+          variant="outline"
+          size="sm"
+          className={cn(
+            'px-3 text-xs text-purple-700',
+            showAiPanel && 'bg-purple-500/15 text-purple-700 dark:text-purple-400'
+          )}
+          onClick={onToggleAiPanel}
+          disabled={!activeWorkflowId || isRunning}
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          Copilot
+        </Button>
+
+        <Button
+          variant="outline" size="sm" className="px-3 text-xs"
           onClick={handleSave}
           disabled={!activeWorkflowId || isRunning}
         >
@@ -219,7 +240,7 @@ function WorkflowHeader() {
 
         {!isRunning ? (
           <Button
-            size="sm" className="h-7 px-3 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white"
+            size="sm" className="px-3 text-xs"
             onClick={handleRun}
             disabled={!activeWorkflowId}
           >
@@ -228,7 +249,7 @@ function WorkflowHeader() {
           </Button>
         ) : (
           <Button
-            size="sm" variant="destructive" className="h-7 px-3 text-xs gap-1.5"
+            size="sm" variant="destructive" className="px-3 text-xs"
             onClick={handleStop}
           >
             <Square className="h-3.5 w-3.5" />
@@ -343,10 +364,12 @@ function WorkflowCanvas() {
 
   if (!activeWorkflowId) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center gap-4 text-muted-foreground">
-        <div className="text-5xl">⚡</div>
-        <p className="text-base font-semibold">请从顶部「工作流」列表选择或新建一个工作流</p>
-        <p className="text-sm">然后拖入节点，连接它们，点击运行！</p>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 select-none">
+        <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-1">
+          <Sparkles className="w-8 h-8 text-muted-foreground/40" />
+        </div>
+        <p className="text-sm font-medium text-foreground">暂无工作流</p>
+        <p className="text-xs text-muted-foreground">从顶部列表选择已有工作流，或点击 <Plus className="w-3 h-3 inline-block" /> 新建</p>
       </div>
     )
   }
@@ -385,13 +408,15 @@ function WorkflowCanvas() {
 // ── Page ─────────────────────────────────────────────────────────────────
 
 export function WorkflowPage() {
+  const [showAiPanel, setShowAiPanel] = useState(false)
+
   return (
     <div className="flex h-full flex-col space-y-2">
       {/* Top: Workflow list & actions (Card style, matching automation-page) */}
-      <WorkflowHeader />
+      <WorkflowHeader showAiPanel={showAiPanel} onToggleAiPanel={() => setShowAiPanel(!showAiPanel)} />
 
       {/* Main area: node library + canvas (matching automation-page border pattern) */}
-      <div className="flex flex-1 overflow-hidden rounded-xl border bg-muted/20">
+      <div className="flex flex-1 overflow-hidden rounded-xl border bg-muted/20 relative">
         {/* Node panel (requires ReactFlowProvider from parent) */}
         <NodePanel />
 
@@ -401,6 +426,13 @@ export function WorkflowPage() {
             <WorkflowCanvas />
           </div>
         </div>
+
+        {/* AI Agent Panel */}
+        <AnimatePresence>
+          {showAiPanel && (
+            <AiAgentPanel onClose={() => setShowAiPanel(false)} />
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )

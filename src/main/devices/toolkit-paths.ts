@@ -194,6 +194,28 @@ export function getBundledAaptPath(): string | null {
   return null
 }
 
+/** 已随包放置的 ios_device 可执行文件绝对路径；不存在则返回 `null` */
+export function getBundledIosDevicePath(): string | null {
+  const override = readOverride('OPENX_IOS_DEVICE_PATH')
+  if (override) {
+    logger.info('ios_device: using env override', override)
+    return override
+  }
+  const name = process.platform === 'win32' ? 'ios_device.exe' : 'ios_device'
+  const candidate = join(toolkitRoot(), 'ios', platformSubdir(), name)
+  logger.debug('ios_device: checking bundled path', candidate, 'exists:', existsSync(candidate))
+  if (existsSync(candidate)) return candidate
+  logger.warn('ios_device: not found in bundled path')
+  return null
+}
+
+/** ios_device 可执行文件路径：优先包内，其次回退到 python 脚本模式（返回 null） */
+export function resolveIosDeviceExecutable(): string | null {
+  const resolved = getBundledIosDevicePath()
+  logger.info('ios_device: resolved executable', resolved ?? '(not found, will fallback to python)')
+  return resolved
+}
+
 /** 已随包放置的 scrcpy-server.jar 绝对路径；不存在则返回 `null` */
 export function resolveScrcpyServerPath(): string | null {
   const override = readOverride('OPENX_SCRCPY_SERVER_PATH')
