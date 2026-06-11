@@ -11,6 +11,17 @@ import type { MirrorActionResult, MirrorMetadata, MirrorOptions, FramePacket } f
 import type { RecordStartResult, RecordStopResult } from '../shared/record'
 import type { FileListResult, FileDownloadResult, FileUploadResult, FileDeleteResult, FileMkdirResult } from '../shared/files'
 import type { WorkflowRunPayload, WorkflowRunResult, ExecutionLog, WorkflowNode } from '../shared/workflow'
+import type {
+  AgentStartPayload,
+  AgentPlanPayload,
+  AgentPlanResult,
+  AgentApplyRepairPayload,
+  AgentApplyRepairResult,
+  AgentRunResult,
+  AgentSessionSnapshot,
+  AgentEvent,
+  LlmSettings,
+} from '../shared/agent'
 
 
 interface WindowAPI {
@@ -67,6 +78,8 @@ interface DialogAPI {
 interface SettingsAPI {
   getExportDir: () => Promise<string | null>
   setExportDir: (dir: string) => Promise<void>
+  getLlm: () => Promise<LlmSettings>
+  setLlm: (patch: Partial<LlmSettings>) => Promise<void>
 }
 
 interface UpdaterAPI {
@@ -102,6 +115,18 @@ interface WorkflowAPI {
   onDone: (cb: (result: { status: 'done' | 'error' | 'stopped'; error?: string }) => void) => () => void
 }
 
+interface AgentAPI {
+  plan: (payload: AgentPlanPayload) => Promise<AgentPlanResult>
+  applyRepair: (payload: AgentApplyRepairPayload) => Promise<AgentApplyRepairResult>
+  start: (payload: AgentStartPayload) => Promise<AgentRunResult>
+  pause: () => Promise<AgentRunResult>
+  resume: () => Promise<AgentRunResult>
+  step: () => Promise<AgentRunResult>
+  stop: () => void
+  getSession: () => Promise<AgentSessionSnapshot>
+  onEvent: (cb: (event: AgentEvent) => void) => () => void
+}
+
 declare global {
   interface Window {
     electron: ElectronAPI
@@ -119,6 +144,7 @@ declare global {
       settings: SettingsAPI
       record: RecordAPI
       workflow: WorkflowAPI
+      agent: AgentAPI
     }
   }
 }

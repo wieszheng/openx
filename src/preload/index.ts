@@ -120,6 +120,10 @@ const api = {
   settings: {
     getExportDir: (): Promise<string | null> => ipcRenderer.invoke(IPC.settings.getExportDir),
     setExportDir: (dir: string): Promise<void> => ipcRenderer.invoke(IPC.settings.setExportDir, dir),
+    getLlm: (): Promise<import('../shared/agent').LlmSettings> =>
+      ipcRenderer.invoke(IPC.settings.getLlm),
+    setLlm: (patch: Partial<import('../shared/agent').LlmSettings>): Promise<void> =>
+      ipcRenderer.invoke(IPC.settings.setLlm, patch),
   },
   updater: {
     check: (): void => ipcRenderer.send(IPC.updater.check),
@@ -171,6 +175,28 @@ const api = {
       const listener = (_e: Electron.IpcRendererEvent, result: { status: 'done' | 'error' | 'stopped'; error?: string }): void => cb(result)
       ipcRenderer.on(IPC.workflow.done, listener)
       return () => ipcRenderer.removeListener(IPC.workflow.done, listener)
+    },
+  },
+  agent: {
+    plan: (payload: import('../shared/agent').AgentPlanPayload): Promise<import('../shared/agent').AgentPlanResult> =>
+      ipcRenderer.invoke(IPC.agent.plan, payload),
+    applyRepair: (payload: import('../shared/agent').AgentApplyRepairPayload): Promise<import('../shared/agent').AgentApplyRepairResult> =>
+      ipcRenderer.invoke(IPC.agent.applyRepair, payload),
+    start: (payload: import('../shared/agent').AgentStartPayload): Promise<import('../shared/agent').AgentRunResult> =>
+      ipcRenderer.invoke(IPC.agent.start, payload),
+    pause: (): Promise<import('../shared/agent').AgentRunResult> =>
+      ipcRenderer.invoke(IPC.agent.pause),
+    resume: (): Promise<import('../shared/agent').AgentRunResult> =>
+      ipcRenderer.invoke(IPC.agent.resume),
+    step: (): Promise<import('../shared/agent').AgentRunResult> =>
+      ipcRenderer.invoke(IPC.agent.step),
+    stop: (): void => ipcRenderer.send(IPC.agent.stop),
+    getSession: (): Promise<import('../shared/agent').AgentSessionSnapshot> =>
+      ipcRenderer.invoke(IPC.agent.getSession),
+    onEvent: (cb: (event: import('../shared/agent').AgentEvent) => void): (() => void) => {
+      const listener = (_e: Electron.IpcRendererEvent, event: import('../shared/agent').AgentEvent): void => cb(event)
+      ipcRenderer.on(IPC.agent.event, listener)
+      return () => ipcRenderer.removeListener(IPC.agent.event, listener)
     },
   }
 }

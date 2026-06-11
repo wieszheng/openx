@@ -1,10 +1,12 @@
 import { app } from 'electron'
 import { join } from 'node:path'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
+import { DEFAULT_LLM_SETTINGS, type LlmSettings } from '../shared/agent'
 
 interface AppSettings {
   exportDir?: string
   globalVars?: Record<string, string>
+  llm?: LlmSettings
 }
 
 function settingsPath(): string {
@@ -66,4 +68,32 @@ export function deleteGlobalVar(key: string): void {
   const vars = { ...(get().globalVars ?? {}) }
   delete vars[key]
   set({ globalVars: vars })
+}
+
+// ── LLM Settings ──────────────────────────────────────────────────────────
+
+export function getLlmSettings(): LlmSettings {
+  const stored = get().llm
+  return {
+    ...DEFAULT_LLM_SETTINGS,
+    ...stored,
+    apiKey: stored?.apiKey ? '***' : undefined,
+  }
+}
+
+export function getLlmSettingsRaw(): LlmSettings {
+  return { ...DEFAULT_LLM_SETTINGS, ...get().llm }
+}
+
+export function setLlmSettings(patch: Partial<LlmSettings>): void {
+  const current = get().llm ?? {}
+  const next: LlmSettings = { ...DEFAULT_LLM_SETTINGS, ...current }
+  if (patch.providerId !== undefined) next.providerId = patch.providerId
+  if (patch.baseUrl !== undefined) next.baseUrl = patch.baseUrl
+  if (patch.model !== undefined) next.model = patch.model
+  if (patch.enabled !== undefined) next.enabled = patch.enabled
+  if (patch.apiKey !== undefined && patch.apiKey !== '***') {
+    next.apiKey = patch.apiKey || undefined
+  }
+  set({ llm: next })
 }

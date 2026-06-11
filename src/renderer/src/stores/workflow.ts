@@ -5,6 +5,8 @@ import type {
   ExecutionLog,
   ExecutionStatus,
 } from '../../../shared/workflow'
+import type { WorkflowPatch } from '../../../shared/agent'
+import type { WorkflowEdge, WorkflowNode } from '../../../shared/workflow'
 import type { Node, Edge } from '@xyflow/react'
 
 // ── 持久化到 localStorage ──────────────────────────────────────────────
@@ -47,6 +49,11 @@ interface WorkflowStore {
   openWorkflow: (id: string) => void
   saveActiveWorkflow: () => void
   renameWorkflow: (id: string, name: string) => void
+  importAgentDraft: (workflow: Workflow) => void
+  beginPlanStream: (payload: { workflowId: string; name: string; description: string; triggerNode: WorkflowNode }) => void
+  appendPlanStep: (payload: { node: WorkflowNode; edge: WorkflowEdge }) => void
+  finalizePlanStream: (workflow: Workflow) => void
+  applyWorkflowPatches: (patches: WorkflowPatch[]) => void
 
   setRfNodes: (nodes: Node[]) => void
   setRfEdges: (edges: Edge[]) => void
@@ -68,14 +75,17 @@ interface WorkflowStore {
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
-function workflowToRf(workflow: Workflow): { nodes: Node[]; edges: Edge[] } {
-  const nodes: Node[] = workflow.nodes.map((n) => ({
+function workflowNodeToRf(n: WorkflowNode): Node {
+  return {
     id: n.id,
     type: n.type,
     position: n.position,
     data: { label: n.label, params: n.params, nodeType: n.type, postDelayMs: n.postDelayMs },
-  }))
-  const edges: Edge[] = workflow.edges.map((e) => ({
+  }
+}
+
+function workflowEdgeToRf(e: WorkflowEdge): Edge {
+  return {
     id: e.id,
     source: e.source,
     target: e.target,
@@ -83,7 +93,12 @@ function workflowToRf(workflow: Workflow): { nodes: Node[]; edges: Edge[] } {
     targetHandle: e.targetHandle,
     type: 'default',
     animated: false,
-  }))
+  }
+}
+
+function workflowToRf(workflow: Workflow): { nodes: Node[]; edges: Edge[] } {
+  const nodes: Node[] = workflow.nodes.map(workflowNodeToRf)
+  const edges: Edge[] = workflow.edges.map(workflowEdgeToRf)
   return { nodes, edges }
 }
 
@@ -183,6 +198,144 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
     )
     saveWorkflows(workflows)
     set({ workflows })
+  },
+
+  applyWorkflowPatches: (patches) => {
+    const rfNodes = get().rfNodes.map((n) => {
+      const nodePatches = patches.filter((p) => p.nodeId === n.id)
+      if (!nodePatches.length) return n
+      let data = { ...n.data }
+      for (const patch of nodePatches) {
+        if (patch.op === 'update_params') {
+          data = { ...data, params: { ...(data.params as object), ...patch.params } }
+        } else if (patch.op === 'update_post_delay') {
+          data = { ...data, postDelayMs: patch.postDelayMs }
+        }
+      }
+      return { ...n, data }
+    })
+    set({ rfNodes })
+    get().saveActiveWorkflow()
+  },
+
+  importAgentDraft: (workflow) => {
+    const { activeWorkflowId, workflows: existing } = get()
+    const now = Date.now()
+    const imported = { ...workflow, updatedAt: now }
+
+    if (activeWorkflowId) {
+      const updated = existing.map((w) =>
+        w.id === activeWorkflowId ? { ...imported, id: activeWorkflowId, createdAt: w.createdAt } : w
+      )
+      saveWorkflows(updated)
+      const { nodes: rfNodes, edges: rfEdges } = workflowToRf({ ...imported, id: activeWorkflowId })
+      set({ workflows: updated, rfNodes, rfEdges, selectedNodeId: null })
+    } else {
+      const next = [...existing, imported]
+      saveWorkflows(next)
+      const { nodes: rfNodes, edges: rfEdges } = workflowToRf(imported)
+      set({ workflows: next, activeWorkflowId: imported.id, rfNodes, rfEdges, selectedNodeId: null })
+    }
+  },
+
+  beginPlanStream: ({ workflowId, name, description, triggerNode }) => {
+    const { activeWorkflowId, workflows: existing } = get()
+    const now = Date.now()
+    const triggerOnly = {
+      id: workflowId,
+      name,
+      description,
+      nodes: [triggerNode],
+      edges: [] as WorkflowEdge[],
+      createdAt: now,
+      updatedAt: now,
+    }
+
+    if (activeWorkflowId) {
+      const updated = existing.map((w) =>
+        w.id === activeWorkflowId
+          ? { ...triggerOnly, id: activeWorkflowId, createdAt: w.createdAt }
+          : w
+      )
+      saveWorkflows(updated)
+      set({
+        workflows: updated,
+        rfNodes: [workflowNodeToRf(triggerNode)],
+        rfEdges: [],
+        selectedNodeId: triggerNode.id,
+      })
+    } else {
+      const next = [...existing, triggerOnly]
+      saveWorkflows(next)
+      set({
+        workflows: next,
+        activeWorkflowId: workflowId,
+        rfNodes: [workflowNodeToRf(triggerNode)],
+        rfEdges: [],
+        selectedNodeId: triggerNode.id,
+      })
+    }
+  },
+
+  appendPlanStep: ({ node, edge }) => {
+    const rfNode = workflowNodeToRf(node)
+    const rfEdge = { ...workflowEdgeToRf(edge), animated: true, style: { stroke: '#8b5cf6', strokeWidth: 2 } }
+    const { rfNodes, rfEdges, activeWorkflowId, workflows } = get()
+    const nextNodes = [...rfNodes, rfNode]
+    const nextEdges = [...rfEdges.map((e) => ({ ...e, animated: false })), rfEdge]
+
+    set({ rfNodes: nextNodes, rfEdges: nextEdges, selectedNodeId: node.id })
+
+    if (activeWorkflowId) {
+      const wf = workflows.find((w) => w.id === activeWorkflowId)
+      if (wf) {
+        const updated = {
+          ...wf,
+          nodes: nextNodes.map((n) => ({
+            id: n.id,
+            type: n.type as Workflow['nodes'][0]['type'],
+            label: (n.data.label as string) ?? n.type ?? '',
+            params: (n.data.params as Workflow['nodes'][0]['params']) ?? {},
+            position: n.position,
+            postDelayMs: (n.data.postDelayMs as number | undefined) || undefined,
+          })),
+          edges: nextEdges.map((e) => ({
+            id: e.id,
+            source: e.source,
+            target: e.target,
+            sourceHandle: e.sourceHandle ?? undefined,
+            targetHandle: e.targetHandle ?? undefined,
+          })),
+          updatedAt: Date.now(),
+        }
+        const newWorkflows = workflows.map((w) => (w.id === activeWorkflowId ? updated : w))
+        saveWorkflows(newWorkflows)
+        set({ workflows: newWorkflows })
+      }
+    }
+
+  },
+
+  finalizePlanStream: (workflow) => {
+    const { activeWorkflowId, workflows: existing } = get()
+    const now = Date.now()
+    const finalized = { ...workflow, updatedAt: now }
+
+    if (activeWorkflowId) {
+      const updated = existing.map((w) =>
+        w.id === activeWorkflowId
+          ? { ...finalized, id: activeWorkflowId, createdAt: w.createdAt }
+          : w
+      )
+      saveWorkflows(updated)
+      const { nodes: rfNodes, edges: rfEdges } = workflowToRf({ ...finalized, id: activeWorkflowId })
+      set({ workflows: updated, rfNodes, rfEdges, selectedNodeId: null })
+    } else {
+      const next = [...existing, finalized]
+      saveWorkflows(next)
+      const { nodes: rfNodes, edges: rfEdges } = workflowToRf(finalized)
+      set({ workflows: next, activeWorkflowId: finalized.id, rfNodes, rfEdges, selectedNodeId: null })
+    }
   },
 
   setRfNodes: (rfNodes) => set({ rfNodes }),

@@ -13,8 +13,22 @@ import {
   Loader2,
   Server,
   Copy,
-  Video
+  Video,
+  Sparkles,
 } from 'lucide-react'
+import {
+  DEFAULT_LLM_SETTINGS,
+  LLM_PROVIDER_PRESETS,
+  getLlmProviderPreset,
+  type LlmSettings,
+} from '../../../shared/agent'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -83,6 +97,8 @@ export function SettingsPage(): React.JSX.Element {
 
   const [baseUrlInput, setBaseUrlInput] = useState(() => getBaseUrl())
   const [testing, setTesting] = useState(false)
+  const [llmSettings, setLlmSettings] = useState<LlmSettings>(DEFAULT_LLM_SETTINGS)
+  const [llmApiKeyInput, setLlmApiKeyInput] = useState('')
   // const [setTestResult] = useState<{
   //   ok: boolean
   //   message: string
@@ -119,8 +135,38 @@ export function SettingsPage(): React.JSX.Element {
   useEffect(() => {
     void window.api.log.getPath().then(setLogPath)
     void window.api.settings.getExportDir().then(setExportDir)
+    void window.api.settings.getLlm().then(setLlmSettings)
     void loadToolkit()
   }, [loadToolkit])
+
+  const activeLlmPreset = getLlmProviderPreset(llmSettings.providerId)
+
+  const handleLlmProviderChange = (providerId: string) => {
+    const preset = getLlmProviderPreset(providerId)
+    setLlmSettings((s) => ({
+      ...s,
+      providerId,
+      baseUrl: preset.baseUrl || s.baseUrl,
+      model: preset.model || s.model,
+    }))
+  }
+
+  const handleSaveLlm = async () => {
+    const patch: Partial<LlmSettings> = {
+      providerId: llmSettings.providerId,
+      baseUrl: llmSettings.baseUrl.trim() || DEFAULT_LLM_SETTINGS.baseUrl,
+      model: llmSettings.model.trim() || DEFAULT_LLM_SETTINGS.model,
+      enabled: llmSettings.enabled,
+    }
+    if (llmApiKeyInput.trim()) {
+      patch.apiKey = llmApiKeyInput.trim()
+    }
+    await window.api.settings.setLlm(patch)
+    const next = await window.api.settings.getLlm()
+    setLlmSettings(next)
+    setLlmApiKeyInput('')
+    toast.success('Agent LLM 配置已保存')
+  }
 
   const handleSaveBaseUrl = () => {
     const trimmed = baseUrlInput.trim()
@@ -316,6 +362,91 @@ export function SettingsPage(): React.JSX.Element {
                         恢复默认
                       </Button>
                     </div>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="text-muted-foreground shrink-0">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium">Agent LLM</h3>
+                      <p className="text-xs text-muted-foreground">智能编排用例（国内模型，OpenAI 兼容接口）</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3 pl-7">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={llmSettings.enabled}
+                        onChange={(e) => setLlmSettings((s) => ({ ...s, enabled: e.target.checked }))}
+                        className="rounded"
+                      />
+                      启用 LLM 智能编排
+                    </label>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">模型服务商</Label>
+                      <Select
+                        value={llmSettings.providerId ?? DEFAULT_LLM_SETTINGS.providerId}
+                        onValueChange={handleLlmProviderChange}
+                      >
+                        <SelectTrigger className="w-full h-9 text-sm">
+                          <SelectValue placeholder="选择服务商" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {LLM_PROVIDER_PRESETS.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">API 地址</Label>
+                      <Input
+                        value={llmSettings.baseUrl}
+                        onChange={(e) => setLlmSettings((s) => ({ ...s, baseUrl: e.target.value, providerId: 'custom' }))}
+                        placeholder={DEFAULT_LLM_SETTINGS.baseUrl}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">模型名称</Label>
+                      <Input
+                        value={llmSettings.model}
+                        onChange={(e) => setLlmSettings((s) => ({ ...s, model: e.target.value, providerId: 'custom' }))}
+                        placeholder={DEFAULT_LLM_SETTINGS.model}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">API Key</Label>
+                      <Input
+                        type="password"
+                        value={llmApiKeyInput}
+                        onChange={(e) => setLlmApiKeyInput(e.target.value)}
+                        placeholder={llmSettings.apiKey ? '已配置（留空不修改）' : 'API Key'}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+
+                    <Button size="sm" onClick={() => void handleSaveLlm()}>
+                      保存 LLM 配置
+                    </Button>
+
+                    {activeLlmPreset.keyHint && (
+                      <p className="text-[10px] text-muted-foreground">
+                        Key 申请：{activeLlmPreset.keyHint}
+                      </p>
+                    )}
+                    <p className="text-[10px] text-muted-foreground">
+                      默认推荐 DeepSeek；未启用 LLM 时使用内置规则引擎，失败时自动回退
+                    </p>
                   </div>
                 </div>
                 <div className="flex flex-col gap-3 py-3">

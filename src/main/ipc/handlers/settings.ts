@@ -1,5 +1,6 @@
 import { dialog, type BrowserWindow } from 'electron'
-import { getExportDir, setExportDir } from '../../settings'
+import { getExportDir, getLlmSettings, setExportDir, setLlmSettings } from '../../settings'
+import type { LlmSettings } from '../../../shared/agent'
 
 export async function handleOpenFolder(
   getMainWindow: () => BrowserWindow | null,
@@ -29,4 +30,12 @@ export function handleGetExportDir(): string | null {
 
 export function handleSetExportDir(_: unknown, dir: string): void {
   setExportDir(dir)
+}
+
+export function handleGetLlmSettings(): LlmSettings {
+  return getLlmSettings()
+}
+
+export function handleSetLlmSettings(_: unknown, patch: Partial<LlmSettings>): void {
+  setLlmSettings(patch)
 }

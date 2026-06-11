@@ -17,10 +17,14 @@ import { handleScreencap } from './handlers/screencap'
 import { handleFilesList, handleFilesDownload, handleFilesUpload, handleFilesDelete, handleFilesCreateDir } from './handlers/files'
 import { handleMirrorStart, handleMirrorStop, handleOpenMirrorWindow } from './handlers/mirror'
 import { getToolkitStatus } from './handlers/toolkit'
-import { handleOpenFolder, handleOpenFile, handleGetExportDir, handleSetExportDir } from './handlers/settings'
+import {
+  handleOpenFolder, handleOpenFile, handleGetExportDir, handleSetExportDir,
+  handleGetLlmSettings, handleSetLlmSettings,
+} from './handlers/settings'
 import { handleRecordStart, handleRecordStop } from './handlers/record'
 import { handleLogRead } from './handlers/log'
 import { createWorkflowHandlers } from './handlers/workflow'
+import { createAgentHandlers } from './handlers/agent'
 
 const logger = createLogger('ipc')
 
@@ -103,12 +107,34 @@ export function registerIpc({ getMainWindow }: RegisterIpcOptions): void {
   // ── Settings ─────────────────────────────────────────────────────────────
   ipcMain.handle(IPC.settings.getExportDir, handleGetExportDir)
   ipcMain.handle(IPC.settings.setExportDir, handleSetExportDir)
+  ipcMain.handle(IPC.settings.getLlm, handleGetLlmSettings)
+  ipcMain.handle(IPC.settings.setLlm, handleSetLlmSettings)
 
   // ── Workflow ───────────────────────────────────────────────────
   const { handleWorkflowRun, handleWorkflowRunNode, handleWorkflowStop } = createWorkflowHandlers(getMainWindow)
   ipcMain.handle(IPC.workflow.run, handleWorkflowRun)
   ipcMain.handle(IPC.workflow.runNode, handleWorkflowRunNode)
   ipcMain.on(IPC.workflow.stop, handleWorkflowStop)
+
+  // ── Agent ─────────────────────────────────────────────────────────────────
+  const {
+    handleAgentStart,
+    handleAgentPause,
+    handleAgentResume,
+    handleAgentStep,
+    handleAgentStop,
+    handleAgentGetSession,
+    handleAgentPlan,
+    handleAgentApplyRepair,
+  } = createAgentHandlers(getMainWindow)
+  ipcMain.handle(IPC.agent.plan, handleAgentPlan)
+  ipcMain.handle(IPC.agent.applyRepair, handleAgentApplyRepair)
+  ipcMain.handle(IPC.agent.start, handleAgentStart)
+  ipcMain.handle(IPC.agent.pause, handleAgentPause)
+  ipcMain.handle(IPC.agent.resume, handleAgentResume)
+  ipcMain.handle(IPC.agent.step, handleAgentStep)
+  ipcMain.on(IPC.agent.stop, handleAgentStop)
+  ipcMain.handle(IPC.agent.getSession, handleAgentGetSession)
 
   // ── Debug ───────────────────────────────────────────────────────────────
   ipcMain.on(IPC.debug.ping, () => logger.debug('pong'))

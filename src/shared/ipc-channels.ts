@@ -69,6 +69,10 @@ export const IPC = {
     getExportDir: 'settings:get-export-dir',
     /** renderer → main: 设置导出目录 */
     setExportDir: 'settings:set-export-dir',
+    /** renderer → main: 获取 LLM 配置 */
+    getLlm: 'settings:get-llm',
+    /** renderer → main: 设置 LLM 配置 */
+    setLlm: 'settings:set-llm',
   },
   updater: {
     /** renderer → main: 手动检查更新 */
@@ -104,5 +108,25 @@ export const IPC = {
     log: 'workflow:log',
     /** main → renderer: 执行完成 { status: 'done' | 'error' | 'stopped', error?: string } */
     done: 'workflow:done',
+  },
+  agent: {
+    /** renderer → main: 根据用例描述生成工作流 */
+    plan: 'agent:plan',
+    /** renderer → main: 手动应用修复补丁 */
+    applyRepair: 'agent:apply-repair',
+    /** renderer → main: 启动 Agent 调试执行 */
+    start: 'agent:start',
+    /** renderer → main: 暂停 */
+    pause: 'agent:pause',
+    /** renderer → main: 恢复自动执行 */
+    resume: 'agent:resume',
+    /** renderer → main: 单步继续 */
+    step: 'agent:step',
+    /** renderer → main: 停止 */
+    stop: 'agent:stop',
+    /** renderer → main: 获取会话快照 */
+    getSession: 'agent:get-session',
+    /** main → renderer: Agent 事件流 */
+    event: 'agent:event',
   }
 } as const

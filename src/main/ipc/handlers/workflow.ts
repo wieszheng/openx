@@ -2,6 +2,7 @@ import type { IpcMainInvokeEvent, BrowserWindow } from 'electron'
 import { createLogger } from '../../log'
 import type { WorkflowRunPayload, WorkflowRunResult, WorkflowNode } from '../../../shared/workflow'
 import { runWorkflow, runSingleNode, requestStop, isWorkflowRunning } from '../../workflow/executor'
+import { isAgentRunning } from '../../agent/executor'
 
 const logger = createLogger('ipc:workflow')
 
@@ -10,8 +11,8 @@ export function createWorkflowHandlers(getMainWindow: () => BrowserWindow | null
     _event: IpcMainInvokeEvent,
     payload: WorkflowRunPayload
   ): Promise<WorkflowRunResult> {
-    if (isWorkflowRunning()) {
-      return { ok: false, error: '已有工作流正在运行' }
+    if (isWorkflowRunning() || isAgentRunning()) {
+      return { ok: false, error: '已有任务正在运行' }
     }
 
     const win = getMainWindow()
@@ -35,8 +36,8 @@ export function createWorkflowHandlers(getMainWindow: () => BrowserWindow | null
     _event: IpcMainInvokeEvent,
     payload: { node: WorkflowNode; deviceId?: string; baseUrl?: string }
   ): Promise<WorkflowRunResult> {
-    if (isWorkflowRunning()) {
-      return { ok: false, error: '已有工作流正在运行' }
+    if (isWorkflowRunning() || isAgentRunning()) {
+      return { ok: false, error: '已有任务正在运行' }
     }
     const win = getMainWindow()
     if (!win) return { ok: false, error: '主窗口不可用' }

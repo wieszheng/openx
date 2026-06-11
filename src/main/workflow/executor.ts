@@ -73,13 +73,13 @@ function pushDone(
 
 // ── Build adjacency map ──────────────────────────────────────────────────
 
-interface AdjEntry {
+export interface WorkflowAdjEntry {
   targetId: string
   sourceHandle?: string
 }
 
-function buildAdj(edges: WorkflowEdge[]): Map<string, AdjEntry[]> {
-  const adj = new Map<string, AdjEntry[]>()
+export function buildWorkflowAdj(edges: WorkflowEdge[]): Map<string, WorkflowAdjEntry[]> {
+  const adj = new Map<string, WorkflowAdjEntry[]>()
   for (const e of edges) {
     if (!adj.has(e.source)) adj.set(e.source, [])
     adj.get(e.source)!.push({ targetId: e.target, sourceHandle: e.sourceHandle })
@@ -89,7 +89,7 @@ function buildAdj(edges: WorkflowEdge[]): Map<string, AdjEntry[]> {
 
 // ── Execute a single node ────────────────────────────────────────────────
 
-async function executeNode(
+export async function executeWorkflowNode(
   node: WorkflowNode,
   deviceId: string | undefined,
   ctx: Record<string, string>
@@ -378,7 +378,7 @@ async function executeNode(
 async function traverseFrom(
   nodeId: string,
   nodes: Map<string, WorkflowNode>,
-  adj: Map<string, AdjEntry[]>,
+  adj: Map<string, WorkflowAdjEntry[]>,
   deviceId: string | undefined,
   ctx: Record<string, string>,
   win: BrowserWindow,
@@ -402,7 +402,7 @@ async function traverseFrom(
 
   let result: { ok: boolean; output?: string; branchHandle?: string; imageData?: string }
   try {
-    result = await executeNode(node, deviceId, ctx)
+    result = await executeWorkflowNode(node, deviceId, ctx)
     // 延迟在节点内部等待，running 状态持续到等待结束
     if (result.ok && node.postDelayMs && node.postDelayMs > 0 && !stopRequested) {
       await new Promise((res) => setTimeout(res, node.postDelayMs))
@@ -479,7 +479,7 @@ export async function runWorkflow(
 
   // 构建快速查找 map
   const nodes = new Map<string, WorkflowNode>(workflow.nodes.map((n) => [n.id, n]))
-  const adj = buildAdj(workflow.edges)
+  const adj = buildWorkflowAdj(workflow.edges)
 
   // 运行时上下文变量
   const ctx: Record<string, string> = { __baseUrl: baseUrl }
@@ -539,7 +539,7 @@ export async function runSingleNode(
 
   let result: { ok: boolean; output?: string; imageData?: string }
   try {
-    result = await executeNode(node, deviceId, ctx)
+    result = await executeWorkflowNode(node, deviceId, ctx)
   } catch (e) {
     result = { ok: false, output: e instanceof Error ? e.message : String(e) }
   }

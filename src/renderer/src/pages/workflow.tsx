@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react'
 import { getBaseUrl } from '@/lib/settings'
 import {
   ReactFlow,
@@ -18,10 +18,12 @@ import {
 import '@xyflow/react/dist/style.css'
 import { nanoid } from 'nanoid'
 import { useWorkflowStore } from '@/stores/workflow'
+import { useAgentStore } from '@/stores/agent'
 import { useReactFlow } from '@xyflow/react'
 import { useDevicesStore } from '@/stores/devices'
 import { nodeTypes } from '@/components/workflow/node-types'
 import { NodePanel } from '@/components/workflow/node-panel'
+import { AgentPanel } from '@/components/agent/agent-panel'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -382,25 +384,45 @@ function WorkflowCanvas() {
   )
 }
 
+// ── 编排时自动 fitView ────────────────────────────────────────────────────
+
+function PlanCanvasFit() {
+  const rfNodes = useWorkflowStore((s) => s.rfNodes)
+  const planning = useAgentStore((s) => s.planning)
+  const { fitView } = useReactFlow()
+  const prevCount = useRef(rfNodes.length)
+
+  useEffect(() => {
+    if (!planning && prevCount.current === rfNodes.length) return
+    prevCount.current = rfNodes.length
+    if (rfNodes.length <= 1) return
+    const t = setTimeout(() => {
+      void fitView({ padding: 0.2, duration: 300, maxZoom: 1.2 })
+    }, 50)
+    return () => clearTimeout(t)
+  }, [rfNodes.length, planning, fitView])
+
+  return null
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────
 
 export function WorkflowPage() {
   return (
     <div className="flex h-full flex-col space-y-2">
-      {/* Top: Workflow list & actions (Card style, matching automation-page) */}
       <WorkflowHeader />
 
-      {/* Main area: node library + canvas (matching automation-page border pattern) */}
-      <div className="flex flex-1 overflow-hidden rounded-xl border bg-muted/20">
-        {/* Node panel (requires ReactFlowProvider from parent) */}
+      <div className="flex flex-1 min-h-0 overflow-hidden rounded-xl border bg-muted/20">
         <NodePanel />
 
-        {/* Canvas */}
         <div className="relative flex-1 overflow-hidden">
           <div className="absolute inset-0">
             <WorkflowCanvas />
+            <PlanCanvasFit />
           </div>
         </div>
+
+        <AgentPanel />
       </div>
     </div>
   )
