@@ -33,6 +33,7 @@ import {
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { Workflow } from '../../../shared/workflow'
+import { useTheme } from 'next-themes'
 
 // ── Workflow Header (Card) ──────────────────────────────────────────────────
 
@@ -272,6 +273,8 @@ function WorkflowCanvas() {
   const { screenToFlowPosition } = useReactFlow()
   const disabled = runStatus === 'running' || !activeWorkflowId
 
+  const { theme } = useTheme()
+
   const nodesWithStatus = rfNodes.map((node) => ({
     ...node,
     selected: node.id === selectedNodeId,
@@ -386,6 +389,7 @@ function WorkflowCanvas() {
       onPaneClick={onPaneClick}
       onDragOver={onDragOver}
       onDrop={onDrop}
+      colorMode={theme === 'dark' ? 'dark' : 'light'}
       fitView
       proOptions={{ hideAttribution: true }}
       defaultEdgeOptions={{ type: 'default' }}
@@ -416,18 +420,18 @@ export function WorkflowPage() {
       <WorkflowHeader showAiPanel={showAiPanel} onToggleAiPanel={() => setShowAiPanel(!showAiPanel)} />
 
       {/* Main area: node library + canvas (matching automation-page border pattern) */}
-      <div className="flex flex-1 overflow-hidden rounded-xl border bg-muted/20 relative">
+      <div className="flex flex-1 overflow-hidden rounded-xl border bg-muted/20">
         {/* Node panel (requires ReactFlowProvider from parent) */}
         <NodePanel />
 
         {/* Canvas */}
-        <div className="relative flex-1 overflow-hidden">
+        <div className="relative flex-1 overflow-hidden min-w-0">
           <div className="absolute inset-0">
             <WorkflowCanvas />
           </div>
         </div>
 
-        {/* AI Agent Panel */}
+        {/* AI Agent Panel — pushes canvas, does not overlay */}
         <AnimatePresence>
           {showAiPanel && (
             <AiAgentPanel onClose={() => setShowAiPanel(false)} />

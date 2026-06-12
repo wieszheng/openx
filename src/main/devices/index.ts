@@ -15,3 +15,4 @@ export type {
 } from '../../shared/unified-device'
 
 export { installDeviceApp, startDeviceApp, stopDeviceApp, uninstallDeviceApp, clearDeviceApp, clearDeviceAppCache, disableDeviceApp, enableDeviceApp} from './app-control'
+export { dumpDeviceLayout } from './layout'

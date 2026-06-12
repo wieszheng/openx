@@ -244,7 +244,7 @@ async function executeNode(
 
     case 'action-launch-app': {
       const packageName = interpolate(String(p.packageName ?? ''), ctx)
-      const activity = p.activity ? String(p.activity) : undefined
+      const activity = p.activity ? String(p.activity) : "EntryAbility"
       const cold = Boolean(p.cold ?? false)
       if (isAndroid) {
         await adbActions.launchApp(serial, packageName, cold)

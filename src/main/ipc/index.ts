@@ -1,6 +1,6 @@
 import { ipcMain, type BrowserWindow } from 'electron'
 import { IPC } from '../../shared/ipc-channels'
-import { getDevicesSnapshot } from '../devices'
+import { getDevicesSnapshot, dumpDeviceLayout } from '../devices'
 import { createLogger, getLogPath } from '../log'
 import {
   handleAppsList,
@@ -14,10 +14,21 @@ import {
   handleAppsEnable
 } from './handlers/apps'
 import { handleScreencap } from './handlers/screencap'
-import { handleFilesList, handleFilesDownload, handleFilesUpload, handleFilesDelete, handleFilesCreateDir } from './handlers/files'
+import {
+  handleFilesList,
+  handleFilesDownload,
+  handleFilesUpload,
+  handleFilesDelete,
+  handleFilesCreateDir
+} from './handlers/files'
 import { handleMirrorStart, handleMirrorStop, handleOpenMirrorWindow } from './handlers/mirror'
 import { getToolkitStatus } from './handlers/toolkit'
-import { handleOpenFolder, handleOpenFile, handleGetExportDir, handleSetExportDir } from './handlers/settings'
+import {
+  handleOpenFolder,
+  handleOpenFile,
+  handleGetExportDir,
+  handleSetExportDir
+} from './handlers/settings'
 import { handleRecordStart, handleRecordStop } from './handlers/record'
 import { handleLogRead } from './handlers/log'
 import { createWorkflowHandlers } from './handlers/workflow'
@@ -54,6 +65,18 @@ export function registerIpc({ getMainWindow }: RegisterIpcOptions): void {
 
   // ── Devices ─────────────────────────────────────────────────────────────
   ipcMain.handle(IPC.devices.list, () => getDevicesSnapshot())
+  ipcMain.handle(IPC.devices.dumpLayout, async (_event, deviceId: string) => {
+    try {
+      const data = await dumpDeviceLayout(deviceId)
+      return { ok: true, data }
+    } catch (e) {
+      logger.warn('dumpLayout failed', {
+        deviceId,
+        error: e instanceof Error ? e.message : String(e)
+      })
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  })
 
   // ── Shell ───────────────────────────────────────────────────────────────
   // ipcMain.handle(IPC.shell.exec, handleShellExec)
@@ -68,14 +91,13 @@ export function registerIpc({ getMainWindow }: RegisterIpcOptions): void {
   ipcMain.handle(IPC.apps.clearCache, handleAppsClearCache)
   ipcMain.handle(IPC.apps.disable, handleAppsDisable)
   ipcMain.handle(IPC.apps.enable, handleAppsEnable)
-  
+
   // ── Files ───────────────────────────────────────────────────────────────
   ipcMain.handle(IPC.files.list, handleFilesList)
   ipcMain.handle(IPC.files.download, handleFilesDownload)
   ipcMain.handle(IPC.files.upload, handleFilesUpload)
   ipcMain.handle(IPC.files.delete, handleFilesDelete)
   ipcMain.handle(IPC.files.mkdir, handleFilesCreateDir)
-
 
   // ── Screencap ───────────────────────────────────────────────────────────
   ipcMain.handle(IPC.screencap.capture, handleScreencap)
@@ -84,7 +106,7 @@ export function registerIpc({ getMainWindow }: RegisterIpcOptions): void {
   ipcMain.handle(IPC.mirror.openWindow, handleOpenMirrorWindow)
   ipcMain.handle(IPC.mirror.start, handleMirrorStart)
   ipcMain.handle(IPC.mirror.stop, handleMirrorStop)
-  
+
   // ── Record ──────────────────────────────────────────────────────────────
   ipcMain.handle(IPC.record.start, handleRecordStart)
   ipcMain.handle(IPC.record.stop, handleRecordStop)
@@ -105,7 +127,8 @@ export function registerIpc({ getMainWindow }: RegisterIpcOptions): void {
   ipcMain.handle(IPC.settings.setExportDir, handleSetExportDir)
 
   // ── Workflow ───────────────────────────────────────────────────
-  const { handleWorkflowRun, handleWorkflowRunNode, handleWorkflowStop } = createWorkflowHandlers(getMainWindow)
+  const { handleWorkflowRun, handleWorkflowRunNode, handleWorkflowStop } =
+    createWorkflowHandlers(getMainWindow)
   ipcMain.handle(IPC.workflow.run, handleWorkflowRun)
   ipcMain.handle(IPC.workflow.runNode, handleWorkflowRunNode)
   ipcMain.on(IPC.workflow.stop, handleWorkflowStop)

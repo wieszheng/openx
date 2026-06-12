@@ -118,7 +118,7 @@ const DEFAULT_PARAMS: Partial<Record<WorkflowNodeType, Record<string, unknown>>>
   'control-delay':       { ms: 3000 },
 }
 
-const totalNodeCount = nodeGroups.reduce((sum, g) => sum + g.items.length, 0)
+// const totalNodeCount = nodeGroups.reduce((sum, g) => sum + g.items.length, 0)
 
 // ── Node Panel Component ──────────────────────────────────────────────────────
 

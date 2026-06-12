@@ -8,7 +8,8 @@ export const IPC = {
   },
   devices: {
     list: 'devices:list',
-    listChanged: 'devices:list-changed'
+    listChanged: 'devices:list-changed',
+    dumpLayout: 'devices:dump-layout'
   },
   shell: {
     exec: 'shell:exec'
@@ -42,33 +43,33 @@ export const IPC = {
   },
   record: {
     start: 'record:start',
-    stop: 'record:stop',
+    stop: 'record:stop'
   },
   files: {
     list: 'files:list',
     download: 'files:download',
     upload: 'files:upload',
     delete: 'files:delete',
-    mkdir: 'files:mkdir',
+    mkdir: 'files:mkdir'
   },
   toolkit: {
-    status: 'toolkit:status',
+    status: 'toolkit:status'
   },
   log: {
     getPath: 'log:get-path',
-    read: 'log:read',
+    read: 'log:read'
   },
   dialog: {
     /** renderer → main: 打开文件夹选择器，返回路径或 null */
     openFolder: 'dialog:open-folder',
     /** renderer → main: 打开文件选择器，返回路径或 null */
-    openFile: 'dialog:open-file',
+    openFile: 'dialog:open-file'
   },
   settings: {
     /** renderer → main: 获取导出目录 */
     getExportDir: 'settings:get-export-dir',
     /** renderer → main: 设置导出目录 */
-    setExportDir: 'settings:set-export-dir',
+    setExportDir: 'settings:set-export-dir'
   },
   updater: {
     /** renderer → main: 手动检查更新 */
@@ -88,7 +89,7 @@ export const IPC = {
     /** main → renderer: 下载完成 */
     downloaded: 'updater:downloaded',
     /** main → renderer: 错误 { message } */
-    error: 'updater:error',
+    error: 'updater:error'
   },
   debug: {
     ping: 'ping'
@@ -103,6 +104,6 @@ export const IPC = {
     /** main → renderer: 推送执行日志 ExecutionLog */
     log: 'workflow:log',
     /** main → renderer: 执行完成 { status: 'done' | 'error' | 'stopped', error?: string } */
-    done: 'workflow:done',
+    done: 'workflow:done'
   }
 } as const

@@ -111,7 +111,11 @@ export async function pressRecent(connectKey: string): Promise<void> {
 /** 获取当前屏幕 UI 布局，返回 JSON 字符串（用于 AI 元素定位等场景） */
 export async function dumpLayout(connectKey: string): Promise<string> {
   logger.debug('dumpLayout', { connectKey })
-  return shell(connectKey, 'uitest dumpLayout')
+  const remotePath = '/data/local/tmp/openx_layout.json'
+  const output = await shell(connectKey, `uitest dumpLayout -p ${remotePath} && cat ${remotePath}`)
+  const jsonStart = output.indexOf('{')
+  if (jsonStart < 0) throw new Error(`dumpLayout: no JSON in output: ${output.slice(0, 200)}`)
+  return output.slice(jsonStart)
 }
 
 // ── Re-exports ────────────────────────────────────────────────────────────

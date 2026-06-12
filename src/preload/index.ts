@@ -9,11 +9,21 @@ import type {
   StartAppPayload
 } from '../shared/device-app'
 import type { UnifiedDevice } from '../shared/unified-device'
-import type { MirrorActionResult, MirrorMetadata, MirrorOptions, FramePacket } from '../shared/mirror'
+import type {
+  MirrorActionResult,
+  MirrorMetadata,
+  MirrorOptions,
+  FramePacket
+} from '../shared/mirror'
 import { ToolkitStatusResult } from '../shared/toolkit-status'
 import { RecordStartResult, RecordStopResult } from '../shared/record'
-import type { FileListResult, FileDownloadResult, FileUploadResult, FileDeleteResult, FileMkdirResult } from '../shared/files'
-
+import type {
+  FileListResult,
+  FileDownloadResult,
+  FileUploadResult,
+  FileDeleteResult,
+  FileMkdirResult
+} from '../shared/files'
 
 // Custom APIs for renderer
 const api = {
@@ -34,7 +44,9 @@ const api = {
       return () => {
         ipcRenderer.removeListener(channel, listener)
       }
-    }
+    },
+    dumpLayout: (deviceId: string): Promise<{ ok: boolean; data?: string; error?: string }> =>
+      ipcRenderer.invoke(IPC.devices.dumpLayout, deviceId)
   },
   apps: {
     list: (deviceId: string, options?: ListAppsOptions): Promise<AppsListResult> =>
@@ -63,8 +75,7 @@ const api = {
   mirror: {
     start: (deviceId: string, options?: MirrorOptions): Promise<MirrorActionResult> =>
       ipcRenderer.invoke(IPC.mirror.start, deviceId, options),
-    stop: (deviceId: string): Promise<void> =>
-      ipcRenderer.invoke(IPC.mirror.stop, deviceId),
+    stop: (deviceId: string): Promise<void> => ipcRenderer.invoke(IPC.mirror.stop, deviceId),
     openWindow: (deviceId: string): Promise<{ ok: boolean; error?: string }> =>
       ipcRenderer.invoke(IPC.mirror.openWindow, deviceId),
     onMetadata: (cb: (meta: MirrorMetadata) => void): (() => void) => {
@@ -86,7 +97,7 @@ const api = {
       const listener = (): void => cb()
       ipcRenderer.on(IPC.mirror.windowClosed, listener)
       return () => ipcRenderer.removeListener(IPC.mirror.windowClosed, listener)
-    },
+    }
   },
   files: {
     list: (deviceId: string, path: string): Promise<FileListResult> =>
@@ -98,28 +109,28 @@ const api = {
     delete: (deviceId: string, remotePath: string): Promise<FileDeleteResult> =>
       ipcRenderer.invoke(IPC.files.delete, deviceId, remotePath),
     mkdir: (deviceId: string, remotePath: string): Promise<FileMkdirResult> =>
-      ipcRenderer.invoke(IPC.files.mkdir, deviceId, remotePath),
+      ipcRenderer.invoke(IPC.files.mkdir, deviceId, remotePath)
   },
   record: {
     start: (deviceId: string): Promise<RecordStartResult> =>
       ipcRenderer.invoke(IPC.record.start, deviceId),
     stop: (deviceId: string): Promise<RecordStopResult> =>
-      ipcRenderer.invoke(IPC.record.stop, deviceId),
+      ipcRenderer.invoke(IPC.record.stop, deviceId)
   },
   toolkit: {
-    status: (): Promise<ToolkitStatusResult> => ipcRenderer.invoke(IPC.toolkit.status),
+    status: (): Promise<ToolkitStatusResult> => ipcRenderer.invoke(IPC.toolkit.status)
   },
   log: {
     getPath: (): Promise<string> => ipcRenderer.invoke(IPC.log.getPath),
-    read: (): Promise<string> => ipcRenderer.invoke(IPC.log.read),
+    read: (): Promise<string> => ipcRenderer.invoke(IPC.log.read)
   },
   dialog: {
     openFolder: (): Promise<string | null> => ipcRenderer.invoke(IPC.dialog.openFolder),
-    openFile: (): Promise<string | null> => ipcRenderer.invoke(IPC.dialog.openFile),
+    openFile: (): Promise<string | null> => ipcRenderer.invoke(IPC.dialog.openFile)
   },
   settings: {
     getExportDir: (): Promise<string | null> => ipcRenderer.invoke(IPC.settings.getExportDir),
-    setExportDir: (dir: string): Promise<void> => ipcRenderer.invoke(IPC.settings.setExportDir, dir),
+    setExportDir: (dir: string): Promise<void> => ipcRenderer.invoke(IPC.settings.setExportDir, dir)
   },
   updater: {
     check: (): void => ipcRenderer.send(IPC.updater.check),
@@ -131,7 +142,10 @@ const api = {
       return () => ipcRenderer.removeListener(IPC.updater.checking, listener)
     },
     onAvailable: (cb: (info: { version: string; releaseNotes?: string }) => void): (() => void) => {
-      const listener = (_e: Electron.IpcRendererEvent, info: { version: string; releaseNotes?: string }): void => cb(info)
+      const listener = (
+        _e: Electron.IpcRendererEvent,
+        info: { version: string; releaseNotes?: string }
+      ): void => cb(info)
       ipcRenderer.on(IPC.updater.available, listener)
       return () => ipcRenderer.removeListener(IPC.updater.available, listener)
     },
@@ -154,24 +168,38 @@ const api = {
       const listener = (_e: Electron.IpcRendererEvent, info: { message: string }): void => cb(info)
       ipcRenderer.on(IPC.updater.error, listener)
       return () => ipcRenderer.removeListener(IPC.updater.error, listener)
-    },
+    }
   },
   workflow: {
-    run: (payload: import('../shared/workflow').WorkflowRunPayload): Promise<import('../shared/workflow').WorkflowRunResult> =>
+    run: (
+      payload: import('../shared/workflow').WorkflowRunPayload
+    ): Promise<import('../shared/workflow').WorkflowRunResult> =>
       ipcRenderer.invoke(IPC.workflow.run, payload),
-    runNode: (payload: { node: import('../shared/workflow').WorkflowNode; deviceId?: string; baseUrl?: string }): Promise<import('../shared/workflow').WorkflowRunResult> =>
+    runNode: (payload: {
+      node: import('../shared/workflow').WorkflowNode
+      deviceId?: string
+      baseUrl?: string
+    }): Promise<import('../shared/workflow').WorkflowRunResult> =>
       ipcRenderer.invoke(IPC.workflow.runNode, payload),
     stop: (): void => ipcRenderer.send(IPC.workflow.stop),
     onLog: (cb: (log: import('../shared/workflow').ExecutionLog) => void): (() => void) => {
-      const listener = (_e: Electron.IpcRendererEvent, log: import('../shared/workflow').ExecutionLog): void => cb(log)
+      const listener = (
+        _e: Electron.IpcRendererEvent,
+        log: import('../shared/workflow').ExecutionLog
+      ): void => cb(log)
       ipcRenderer.on(IPC.workflow.log, listener)
       return () => ipcRenderer.removeListener(IPC.workflow.log, listener)
     },
-    onDone: (cb: (result: { status: 'done' | 'error' | 'stopped'; error?: string }) => void): (() => void) => {
-      const listener = (_e: Electron.IpcRendererEvent, result: { status: 'done' | 'error' | 'stopped'; error?: string }): void => cb(result)
+    onDone: (
+      cb: (result: { status: 'done' | 'error' | 'stopped'; error?: string }) => void
+    ): (() => void) => {
+      const listener = (
+        _e: Electron.IpcRendererEvent,
+        result: { status: 'done' | 'error' | 'stopped'; error?: string }
+      ): void => cb(result)
       ipcRenderer.on(IPC.workflow.done, listener)
       return () => ipcRenderer.removeListener(IPC.workflow.done, listener)
-    },
+    }
   }
 }
 

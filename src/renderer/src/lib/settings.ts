@@ -5,8 +5,8 @@ const AI_KEY_STORAGE = 'openx-ai-api-key'
 const AI_BASE_URL_STORAGE = 'openx-ai-base-url'
 const AI_MODEL_STORAGE = 'openx-ai-model'
 
-export const DEFAULT_AI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/openai'
-export const DEFAULT_AI_MODEL = 'gemini-2.5-flash'
+export const DEFAULT_AI_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+export const DEFAULT_AI_MODEL = 'qwen-plus'
 
 export function getBaseUrl(): string {
   try {
