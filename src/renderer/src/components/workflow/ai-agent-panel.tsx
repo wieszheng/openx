@@ -26,7 +26,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { getAiApiKey, getAiBaseUrl, getAiModel, getBaseUrl } from '@/lib/settings'
-import { PRESET_EXAMPLES, SYSTEM_PROMPT, WELCOME_MESSAGE } from '@/lib/agent-prompts'
+import { PRESET_EXAMPLES, SYSTEM_PROMPT, WELCOME_MESSAGE } from '@/lib/prompts'
 import { useWorkflowStore } from '@/stores/workflow'
 import { useDevicesStore } from '@/stores/devices'
 
