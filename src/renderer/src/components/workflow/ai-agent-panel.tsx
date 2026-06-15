@@ -234,7 +234,7 @@ export function AiAgentPanel({ onClose }: AiAgentPanelProps): React.JSX.Element 
         <div className="flex items-center gap-2.5">
           <div>
             <h3 className="text-xs font-bold tracking-wide flex items-center gap-1.5 text-foreground">
-              Copilot Agent
+              智能编排
             </h3>
             <p className="text-[10px] text-muted-foreground">多模态设备交互与画布自动编排</p>
           </div>
@@ -391,7 +391,7 @@ function ChatBubble({
         ) : (
           <>
             <Bot className="w-3 h-3 text-primary animate-pulse" />
-            COPILOT AGENT
+            小X AGENT
           </>
         )}
       </span>

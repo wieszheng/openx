@@ -217,8 +217,8 @@ function WorkflowHeader({ showAiPanel, onToggleAiPanel }: WorkflowHeaderProps) {
 
         {/* Actions */}
         <Button
-          variant="outline"
-          size="sm"
+          variant="ghost"
+          size="icon"
           className={cn(
             'px-3 text-xs text-purple-700',
             showAiPanel && 'bg-purple-500/15 text-purple-700 dark:text-purple-400'
@@ -227,7 +227,6 @@ function WorkflowHeader({ showAiPanel, onToggleAiPanel }: WorkflowHeaderProps) {
           disabled={!activeWorkflowId || isRunning}
         >
           <Sparkles className="h-3.5 w-3.5" />
-          Copilot
         </Button>
 
         <Button
