@@ -65,7 +65,7 @@ export const CANVAS_ACTIONS: ActionDef[] = [
     name: 'action-tap',
     label: '点击',
     description:
-      '点击绝对坐标。坐标必须来自 get_ocr_result 或 get_ui_hierarchy 的真实观察，严禁凭常识臆测。有文字的目标优先用 action-find-and-tap，无文字图标先 get_ui_hierarchy 取 bounds 中心。',
+      '点击绝对坐标。坐标必须来自 get_ocr_result（textItems 文字 / elements 图标）或 get_ui_hierarchy 的真实观察，严禁凭常识臆测。有文字的目标优先用 action-find-and-tap，无文字图标用 get_ocr_result 的 elements 取中心坐标。',
     category: 'canvas',
     params: {
       x: { type: 'number', required: true, description: 'X 坐标（屏幕像素，须来自感知工具）' },
@@ -247,9 +247,9 @@ export const PERCEPTION_ACTIONS: ActionDef[] = [
   },
   {
     name: 'get_ocr_result',
-    label: 'OCR 识别',
+    label: '屏幕感知',
     description:
-      '截图并做 OCR，返回每个文字区块的文字与中心坐标 (cx, cy)。需要定位具体文字坐标时使用，结果可直接用于 action-tap 坐标或 action-find-and-tap 的 targetText。',
+      '截图并同时做【OCR 文字识别】+【通用元素检测】，返回：textItems（文字+中心坐标）和 elements（视觉元素如图标/按钮/输入框的类别名+中心坐标+包围盒+置信度）。两者坐标同一像素系，cx/cy 可直接用于 action-tap。需要定位文字用 textItems（或直接 action-find-and-tap）；定位无文字图标用 elements。',
     category: 'perception',
     params: {},
     requiresDevice: true

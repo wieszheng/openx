@@ -322,36 +322,91 @@ export class ToolRuntime {
     const capRes = await window.api.screencap.capture(deviceId)
     if (!capRes.ok) return { result: { error: `截屏失败: ${capRes.error}` } }
     const screenshot = `data:${capRes.mimeType};base64,${capRes.data}`
+    const baseUrl = this.deps.getBaseUrl()
 
-    let ocrItems: { text: string; box: number[][] }[] = []
-    try {
-      const ocrRes = await fetch(`${this.deps.getBaseUrl()}/api/v1/ocr/base64`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: capRes.data, use_cls: true, use_det: true, use_rec: true }),
-        signal: AbortSignal.timeout(20000)
-      })
-      const ocrJson = await ocrRes.json()
-      ocrItems = ocrJson.data ?? []
-    } catch (e) {
-      return { result: { error: `OCR 请求失败: ${(e as Error).message}` }, screenshot }
-    }
+    // 并行：OCR 文字识别 + 通用元素检测（同一张截图，同一像素坐标系）
+    const [ocrItems, elements] = await Promise.all([
+      this.runOcr(baseUrl, capRes.data),
+      this.runElementDetection(baseUrl, capRes.data, capRes.mimeType)
+    ])
 
     return {
       result: {
         success: true,
-        message: `OCR 识别到 ${ocrItems.length} 个文字区块（text=文字，cx/cy=中心坐标）：`,
-        items: ocrItems.map((it) => {
-          const xs = it.box.map((p) => p[0])
-          const ys = it.box.map((p) => p[1])
-          return {
-            text: it.text,
-            cx: Math.round((Math.min(...xs) + Math.max(...xs)) / 2),
-            cy: Math.round((Math.min(...ys) + Math.max(...ys)) / 2)
-          }
-        })
+        message: `感知结果：OCR 文字 ${ocrItems.length} 个、检测元素 ${elements.length} 个（cx/cy 均为中心坐标，可直接用于 action-tap）。文字交互优先用 action-find-and-tap；无文字图标用下方 elements 的坐标。`,
+        textItems: ocrItems,
+        elements
       },
       screenshot
+    }
+  }
+
+  /** 调后端 OCR，返回文字区块中心坐标 */
+  private async runOcr(
+    baseUrl: string,
+    imageBase64: string
+  ): Promise<{ text: string; cx: number; cy: number }[]> {
+    try {
+      const res = await fetch(`${baseUrl}/api/v1/ocr/base64`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageBase64, use_cls: true, use_det: true, use_rec: true }),
+        signal: AbortSignal.timeout(20000)
+      })
+      const json = await res.json()
+      const items: { text: string; box: number[][] }[] = json.data ?? []
+      return items.map((it) => {
+        const xs = it.box.map((p) => p[0])
+        const ys = it.box.map((p) => p[1])
+        return {
+          text: it.text,
+          cx: Math.round((Math.min(...xs) + Math.max(...xs)) / 2),
+          cy: Math.round((Math.min(...ys) + Math.max(...ys)) / 2)
+        }
+      })
+    } catch {
+      return []
+    }
+  }
+
+  /**
+   * 调通用元素检测接口（YOLO 类）。截图里的图标/按钮等视觉元素，
+   * 返回类别名 + 包围盒中心坐标，补 OCR 抓不到的无文字图标。
+   * 接口：POST /api/v1/detection/detect/element（multipart file），
+   * 响应 detections[].{ bbox:{x1,y1,x2,y2}, score, class_name }。
+   */
+  private async runElementDetection(
+    baseUrl: string,
+    imageBase64: string,
+    mimeType: string
+  ): Promise<{ label: string; score: number; cx: number; cy: number; box: number[] }[]> {
+    try {
+      const binary = atob(imageBase64)
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      const form = new FormData()
+      form.append('file', new Blob([bytes], { type: mimeType }), 'screen.png')
+
+      const res = await fetch(
+        `${baseUrl}/api/v1/detection/detect/element?conf_thres=0.3&iou_thres=0.5&input_size=800`,
+        { method: 'POST', body: form, signal: AbortSignal.timeout(20000) }
+      )
+      if (!res.ok) return []
+      const json = await res.json()
+      const dets: {
+        bbox: { x1: number; y1: number; x2: number; y2: number }
+        score: number
+        class_name: string
+      }[] = json.detections ?? []
+      return dets.map((d) => ({
+        label: d.class_name,
+        score: Math.round(d.score * 100) / 100,
+        cx: Math.round((d.bbox.x1 + d.bbox.x2) / 2),
+        cy: Math.round((d.bbox.y1 + d.bbox.y2) / 2),
+        box: [Math.round(d.bbox.x1), Math.round(d.bbox.y1), Math.round(d.bbox.x2), Math.round(d.bbox.y2)]
+      }))
+    } catch {
+      return []
     }
   }
 

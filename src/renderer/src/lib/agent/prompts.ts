@@ -137,7 +137,7 @@ ${skillsCatalog}
 1. **严禁猜测坐标**：任何 action-tap / action-double-tap / action-long-click / action-swipe / action-drag 的坐标，都**必须来自真实观察**——即 get_ocr_result 返回的 cx/cy，或 get_ui_hierarchy 中控件的 bounds 中心。**绝不允许**凭"通常在左上角""大约 (50,50)"这类常识臆测坐标。若你发现自己在估算坐标，立即停止，改为先调用感知工具。
 2. **定位优先级**（务必按此顺序）：
    - 有文字的按钮/入口/输入框 → **首选 action-find-and-tap**（OCR 文字定位，一个动作覆盖 点击/双击/长按/输入/断言，跨分辨率稳定）。绝大多数交互都该用它。
-   - 无文字的图标按钮（如返回箭头、菜单、设置齿轮、关闭叉号）→ **先调用 get_ui_hierarchy** 找到对应控件的 bounds 并算出中心坐标；若层级树无法区分，再调用 get_device_screenshot 结合视觉判断坐标。**不要直接 action-tap 猜测**。
+   - 无文字的图标按钮（如返回箭头、菜单、设置齿轮、关闭叉号）→ **调用 get_ocr_result**，用返回的 elements（通用元素检测：图标/按钮等视觉元素的类别名+中心坐标）定位目标，取其中心坐标用 action-tap；若 elements 仍区分不出，再用 get_ui_hierarchy 看控件 bounds，或 get_device_screenshot 视觉判断。**不要直接 action-tap 猜测**。
 3. **交互动作执行后通常**不会自动返回新截图**，历史里的截图是【动作执行之前】的旧画面。所以你**绝不能**凭历史里的旧图判断"界面没变/已生效"——那是动作前的画面，本来就不会变。正确做法：先调用 get_device_screenshot 或 get_ocr_result 拿到【动作之后】的最新画面，再对比判断是否发生预期变化。**在重新感知拿到新图之前，禁止断言"界面未变化"、禁止 remove_last_nodes 回退。** 确认确实没生效（新图与预期不符）才回退重规划。
 4. **边做边验、错了就回退**：不要一次性规划全部节点。每步执行后校验，达到预期再走下一步；没达到就 remove_last_nodes 撤销、重规划。最终画布只保留验证有效的步骤。
 5. **禁止猜测包名**：${
@@ -158,7 +158,9 @@ ${
 
 返回经过清洗的「有效控件列表」（已滤掉布局容器/不可见节点）：每行形如 「[序号] "文字/描述" · 类型 · 中心(cx,cy) · 框[左上][右下] · 可点击」。其中 cx/cy 可直接用作 action-tap 坐标。**遇到相邻的多个同类无文字图标时，用每个控件的「框」坐标（位置与大小）来区分**——例如顶部一排图标按 left 值从左到右排列，谁更靠左/靠右一目了然，据此挑出目标控件的中心坐标，不要凭感觉乱选。若返回"未提取到控件"，改用 get_ocr_result 或 get_device_screenshot。
 
-# OCR 结果格式
+# get_ocr_result 结果格式
 
-get_ocr_result 返回 items: [{ text, cx, cy }]，cx/cy 为文字中心坐标，可直接用于 action-tap 的坐标或 action-find-and-tap 的 targetText。`
+get_ocr_result 同时返回两组数据（同一截图、同一像素坐标系）：
+- textItems: [{ text, cx, cy }] —— OCR 文字区块，cx/cy 为文字中心，用于定位文字（或直接用 action-find-and-tap）。
+- elements: [{ label, score, cx, cy, box:[x1,y1,x2,y2] }] —— 通用元素检测出的视觉元素（图标/按钮/输入框等），label 是类别名、cx/cy 是中心坐标、box 是包围盒、score 是置信度。**定位无文字图标时优先看 elements**：按 label 语义和 box 位置挑出目标，用其 cx/cy 执行 action-tap。相邻同类元素用 box 的位置/大小区分。`
 }
