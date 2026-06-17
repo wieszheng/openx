@@ -36,8 +36,8 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4  # 在工作流程自动配置GithubPages
       - name: Install dependencies  # 安装依赖
-        run: npm
-      - name: Build with # 打包项目
+        run: npm ci
+      - name: Build  # 打包项目
         run: npm run build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3  # 上传构建产物
