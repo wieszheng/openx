@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenX — 自然语言驱动的移动端自动化编排 Agent</title>
+  <meta name="description" content="OpenX 2.0 是一款移动端智能自动化编排工具：用自然语言描述目标，AI Agent 小X 自动观察界面、规划并生成可执行的自动化节点链，支持实机自愈回退、多模态感知（OCR / 元素识别 / UI 层级）与渐进式技能。底座覆盖 Android（ADB）与鸿蒙（HDC）双平台设备管理。" />
+  <meta property="og:title" content="OpenX 2.0 — 自然语言驱动的移动端自动化编排 Agent" />
+  <meta property="og:description" content="用一句话编排移动端自动化：AI Agent 观察—思考—行动，边做边验、错了就回退。" />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root, html[data-theme='dark'] {
+      --primary: #2fae7a;
+      --primary-light: #45cf94;
+      --primary-dark: #1f7a54;
+      --primary-glow: rgba(47, 174, 122, 0.35);
+      --agent: #8b5cf6;        /* 编排/技能 紫 */
+      --agent-light: #a78bfa;
+      --perception: #38bdf8;   /* 设备感知 蓝 */
+      --perception-light: #7dd3fc;
+      --canvas: #34d399;       /* 画布动作 绿 */
+      --bg: #060a09;
+      --bg-soft: #0a110e;
+      --bg-card: #0e1714;
+      --bg-card2: #131e1a;
+      --border: rgba(255,255,255,0.08);
+      --border-active: rgba(47,174,122,0.45);
+      --text: #e9f1ec;
+      --text-muted: #8aa698;
+      --text-dim: #506b5d;
+      --radius: 18px;
+      --radius-sm: 11px;
+      --nav-bg: rgba(6, 10, 9, 0.72);
+      --nav-bg-scrolled: rgba(6, 10, 9, 0.94);
+      --hover-bg: rgba(255,255,255,0.05);
+      --btn-sec-bg: rgba(255,255,255,0.05);
+      --btn-sec-hover: rgba(255,255,255,0.09);
+      --code-bg: rgba(0,0,0,0.45);
+      --grid-line: rgba(255,255,255,0.025);
+      --noise-opacity: 0.035;
+    }
+
+    html[data-theme='light'] {
+      --primary: #1f955f;
+      --primary-light: #2fae7a;
+      --primary-dark: #176945;
+      --primary-glow: rgba(47, 174, 122, 0.16);
+      --agent: #7c3aed;
+      --agent-light: #8b5cf6;
+      --perception: #0284c7;
+      --perception-light: #0ea5e9;
+      --canvas: #059669;
+      --bg: #f6f9f7;
+      --bg-soft: #eef3f0;
+      --bg-card: #ffffff;
+      --bg-card2: #f1f5f3;
+      --border: rgba(0,0,0,0.09);
+      --border-active: rgba(47,174,122,0.4);
+      --text: #0d1512;
+      --text-muted: #54705f;
+      --text-dim: #8aa394;
+      --nav-bg: rgba(246, 249, 247, 0.78);
+      --nav-bg-scrolled: rgba(246, 249, 247, 0.96);
+      --hover-bg: rgba(0,0,0,0.05);
+      --btn-sec-bg: rgba(0,0,0,0.03);
+      --btn-sec-hover: rgba(0,0,0,0.06);
+      --code-bg: rgba(0,0,0,0.035);
+      --grid-line: rgba(0,0,0,0.03);
+      --noise-opacity: 0.02;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    ::selection { background: var(--primary-glow); color: var(--primary-light); }
+
+    /* ── Background texture + grid ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      opacity: var(--noise-opacity);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── Navbar ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 62px;
+      background: var(--nav-bg);
+      backdrop-filter: blur(22px);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.3s;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
+    .nav-logo svg { width: 26px; height: 26px; }
+    .nav-logo span { font-size: 1.08rem; font-weight: 800; letter-spacing: -0.02em; }
+    .nav-logo .ver { font-size: 0.62rem; font-weight: 700; color: var(--primary-light); background: rgba(47,174,122,0.12); border: 1px solid var(--border-active); padding: 2px 6px; border-radius: 6px; letter-spacing: 0.02em; }
+    .nav-links { display: flex; align-items: center; gap: 0.4rem; }
+    .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 0.875rem; font-weight: 500; padding: 6px 14px; border-radius: 8px; transition: color 0.2s, background 0.2s; }
+    .nav-links a:hover, #theme-toggle:hover { color: var(--text); background: var(--hover-bg); }
+    #theme-toggle { background: transparent; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; padding: 6px 10px; border-radius: 8px; transition: color 0.2s, background 0.2s; }
+    .btn-nav { background: var(--primary); color: #fff !important; border-radius: 8px !important; padding: 6px 16px !important; font-weight: 600 !important; transition: background 0.2s, transform 0.15s !important; }
+    .btn-nav:hover { background: var(--primary-light) !important; transform: translateY(-1px); }
+
+    /* ── Hero ── */
+    .hero { position: relative; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 9rem 1.5rem 4rem; overflow: hidden; }
+    .hero-grid { position: absolute; inset: 0; background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px); background-size: 56px 56px; mask-image: radial-gradient(ellipse 80% 60% at 50% 35%, #000 0%, transparent 75%); pointer-events: none; }
+    .hero-glow { position: absolute; top: 4%; left: 50%; transform: translateX(-50%); width: 900px; height: 620px; max-width: 100vw; background: radial-gradient(ellipse at center, var(--primary-glow) 0%, transparent 70%); pointer-events: none; animation: glow-pulse 7s ease-in-out infinite; }
+    @keyframes glow-pulse { 0%,100% { opacity: 0.55; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.07); } }
+    .hero > * { position: relative; z-index: 1; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 7px; background: rgba(47,174,122,0.1); border: 1px solid var(--border-active); color: var(--primary-light); font-size: 0.78rem; font-weight: 600; padding: 5px 15px; border-radius: 100px; margin-bottom: 1.8rem; letter-spacing: 0.02em; animation: fade-up 0.6s ease both; }
+    .hero-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--primary-light); box-shadow: 0 0 8px var(--primary-light); animation: blink 2s ease infinite; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .hero h1 { font-size: clamp(2.6rem, 6.5vw, 5rem); font-weight: 900; line-height: 1.08; letter-spacing: -0.045em; margin-bottom: 1.4rem; animation: fade-up 0.7s 0.1s ease both; }
+    .hero h1 .grad { background: linear-gradient(115deg, var(--text) 0%, var(--primary-light) 55%, var(--primary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero p { font-size: clamp(1rem, 2.3vw, 1.22rem); color: var(--text-muted); max-width: 660px; line-height: 1.75; margin-bottom: 2.4rem; animation: fade-up 0.7s 0.2s ease both; }
+    .hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; animation: fade-up 0.7s 0.3s ease both; }
+    .btn-primary { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; text-decoration: none; font-size: 0.95rem; font-weight: 600; padding: 14px 28px; border-radius: 12px; transition: all 0.25s; box-shadow: 0 0 0 0 var(--primary-glow); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 36px var(--primary-glow); background: linear-gradient(135deg, var(--primary-light), var(--primary)); }
+    .btn-secondary { display: inline-flex; align-items: center; gap: 8px; background: var(--btn-sec-bg); border: 1px solid var(--border); color: var(--text); text-decoration: none; font-size: 0.95rem; font-weight: 500; padding: 14px 28px; border-radius: 12px; transition: all 0.25s; }
+    .btn-secondary:hover { background: var(--btn-sec-hover); border-color: var(--border-active); transform: translateY(-2px); }
+    @keyframes fade-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Hero demo terminal ── */
+    .hero-demo { width: min(760px, 100%); margin: 3.5rem auto 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,0.45); text-align: left; animation: fade-up 0.8s 0.45s ease both; }
+    .demo-bar { display: flex; align-items: center; gap: 7px; padding: 11px 16px; background: var(--bg-card2); border-bottom: 1px solid var(--border); }
+    .demo-dot { width: 11px; height: 11px; border-radius: 50%; }
+    .demo-dot.r { background: #ff5f57; } .demo-dot.y { background: #febc2e; } .demo-dot.g { background: #28c840; }
+    .demo-title { margin-left: 8px; font-size: 0.78rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+    .demo-body { padding: 1.3rem 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.84rem; line-height: 1.9; }
+    .demo-user { color: var(--text); }
+    .demo-user .prompt { color: var(--primary-light); font-weight: 600; }
+    .demo-step { display: flex; align-items: flex-start; gap: 9px; margin-top: 0.5rem; color: var(--text-muted); }
+    .demo-step .chip { flex-shrink: 0; font-size: 0.64rem; font-weight: 700; padding: 1px 7px; border-radius: 5px; margin-top: 3px; letter-spacing: 0.02em; }
+    .chip-think { color: var(--text-dim); border: 1px solid var(--border); }
+    .chip-percep { color: var(--perception-light); background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.25); }
+    .chip-canvas { color: var(--canvas); background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); }
+    .chip-skill { color: var(--agent-light); background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.25); }
+    .chip-done { color: var(--primary-light); background: rgba(47,174,122,0.12); border: 1px solid var(--border-active); }
+    .demo-step.show { animation: fade-up 0.5s ease both; }
+
+    /* ── Platform badges ── */
+    .platform-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 2.5rem; animation: fade-up 0.7s 0.55s ease both; }
+    .platform-badge { display: flex; align-items: center; gap: 7px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+    .platform-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-android { background: #78c257; box-shadow: 0 0 8px #78c257; }
+    .dot-harmony { background: #4a9eff; box-shadow: 0 0 8px #4a9eff; }
+    .dot-agent { background: var(--agent-light); box-shadow: 0 0 8px var(--agent-light); }
+
+    /* ── Section base ── */
+    section { position: relative; padding: 6.5rem 1.5rem; z-index: 1; }
+    .container { max-width: 1120px; margin: 0 auto; }
+    .section-head { text-align: center; max-width: 640px; margin: 0 auto; }
+    .section-label { display: inline-block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--primary); margin-bottom: 0.75rem; }
+    .section-title { font-size: clamp(1.8rem, 4vw, 2.7rem); font-weight: 800; letter-spacing: -0.035em; line-height: 1.15; margin-bottom: 1rem; }
+    .section-desc { color: var(--text-muted); font-size: 1.05rem; line-height: 1.7; }
+    .section-divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+    /* ── How it works (Agent loop) ── */
+    .loop-wrap { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 3.5rem; counter-reset: step; }
+    .loop-step { position: relative; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.6rem 1.4rem; transition: border-color 0.25s, transform 0.25s; }
+    .loop-step:hover { border-color: var(--border-active); transform: translateY(-3px); }
+    .loop-step .num { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 700; color: var(--primary); opacity: 0.7; }
+    .loop-step h3 { font-size: 1.02rem; font-weight: 700; margin: 0.5rem 0; }
+    .loop-step p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; }
+    .loop-step .arrow { position: absolute; right: -0.85rem; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 1.1rem; z-index: 2; }
+    .loop-step:last-child .arrow { display: none; }
+    .loop-note { margin-top: 2rem; text-align: center; font-size: 0.9rem; color: var(--text-muted); }
+    .loop-note strong { color: var(--primary-light); font-weight: 600; }
+
+    /* ── Feature grid ── */
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 1.25rem; margin-top: 3.5rem; }
+    .feature-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.85rem; transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s; position: relative; overflow: hidden; }
+    .feature-card::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at top left, var(--tint, rgba(47,174,122,0.07)), transparent 60%); opacity: 0; transition: opacity 0.3s; }
+    .feature-card:hover { border-color: var(--border-active); transform: translateY(-3px); box-shadow: 0 14px 44px rgba(0,0,0,0.4); }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-card.accent-agent { --tint: rgba(139,92,246,0.09); }
+    .feature-card.accent-percep { --tint: rgba(56,189,248,0.09); }
+    .feature-icon { width: 46px; height: 46px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; margin-bottom: 1.25rem; background: rgba(47,174,122,0.12); border: 1px solid rgba(47,174,122,0.22); }
+    .accent-agent .feature-icon { background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.25); }
+    .accent-percep .feature-icon { background: rgba(56,189,248,0.12); border-color: rgba(56,189,248,0.25); }
+    .feature-card h3 { font-size: 1.04rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.01em; }
+    .feature-card p { font-size: 0.875rem; color: var(--text-muted); line-height: 1.65; }
+    .feature-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 1rem; }
+    .tag { font-size: 0.7rem; font-weight: 600; padding: 3px 8px; border-radius: 6px; border: 1px solid; }
+    .tag-android { color: #78c257; border-color: rgba(120,194,87,0.3); background: rgba(120,194,87,0.08); }
+    .tag-harmony { color: #4a9eff; border-color: rgba(74,158,255,0.3); background: rgba(74,158,255,0.08); }
+    .tag-both { color: var(--primary-light); border-color: var(--border-active); background: rgba(47,174,122,0.08); }
+    .tag-agent { color: var(--agent-light); border-color: rgba(139,92,246,0.3); background: rgba(139,92,246,0.08); }
+
+    /* ── Screenshot gallery ── */
+    .gallery-tabs { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin: 2.5rem 0 1.5rem; }
+    .tab-btn { padding: 8px 18px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text-muted); transition: all 0.2s; }
+    .tab-btn.active, .tab-btn:hover { background: rgba(47,174,122,0.1); border-color: var(--border-active); color: var(--primary-light); }
+    .gallery-frame { border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; background: var(--bg-card); position: relative; box-shadow: 0 18px 60px rgba(0,0,0,0.35); }
+    .gallery-img { display: none; width: 100%; height: auto; max-height: 560px; object-fit: cover; object-position: top; }
+    .gallery-img.active { display: block; }
+    .gallery-caption { padding: 1rem 1.5rem; font-size: 0.85rem; color: var(--text-muted); border-top: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+    .gallery-caption::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 8px var(--primary); flex-shrink: 0; }
+
+    /* ── Compat table ── */
+    .compat-table { width: 100%; border-collapse: collapse; margin-top: 3rem; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+    .compat-table th, .compat-table td { padding: 1rem 1.5rem; text-align: left; font-size: 0.9rem; border-bottom: 1px solid var(--border); }
+    .compat-table th { background: var(--bg-card2); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+    .compat-table td:first-child { font-weight: 600; color: var(--text); }
+    .compat-table tr:last-child td { border-bottom: none; }
+    .compat-table tr:hover td { background: var(--hover-bg); }
+    .ck { color: var(--primary-light); font-size: 1.1rem; }
+    .cx { color: var(--text-dim); font-size: 1.1rem; }
+    .note { color: var(--text-muted); font-size: 0.85rem; }
+
+    /* ── Install ── */
+    .install-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-top: 3rem; }
+    .install-tabs { display: flex; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .install-tab { padding: 12px 24px; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--text-muted); border-bottom: 2px solid transparent; transition: all 0.2s; background: none; border-left: none; border-right: none; border-top: none; }
+    .install-tab.active { color: var(--primary-light); border-bottom-color: var(--primary); }
+    .install-content { display: none; padding: 1.5rem; }
+    .install-content.active { display: block; }
+    .code-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1.25rem 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.86rem; line-height: 1.8; color: #a8d8b8; overflow-x: auto; margin: 0; }
+    .code-block .comment { color: var(--text-dim); }
+    .code-block .cmd { color: var(--primary-light); }
+    .code-block .arg { color: #7ec9a5; }
+
+    /* ── Env / config rows ── */
+    .env-grid { display: grid; gap: 1rem; margin-top: 2rem; }
+    .env-row { display: grid; grid-template-columns: auto 1fr; gap: 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem 1.25rem; align-items: start; transition: border-color 0.2s; }
+    .env-row:hover { border-color: var(--border-active); }
+    .env-key { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 600; color: var(--primary-light); background: rgba(47,174,122,0.1); padding: 3px 10px; border-radius: 6px; white-space: nowrap; margin-top: 2px; }
+    .env-desc { font-size: 0.875rem; color: var(--text-muted); }
+    .env-desc strong { color: var(--text); font-weight: 500; }
+
+    /* ── Footer ── */
+    footer { border-top: 1px solid var(--border); padding: 3rem 1.5rem; text-align: center; color: var(--text-dim); font-size: 0.85rem; position: relative; z-index: 1; }
+    footer a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+    footer a:hover { color: var(--primary-light); }
+    .footer-logo { display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 1rem; color: var(--text-muted); font-weight: 800; font-size: 0.95rem; }
+
+    /* ── Scroll reveal ── */
+    .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.65s ease, transform 0.65s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    /* ── Responsive ── */
+    @media (max-width: 880px) {
+      .loop-wrap { grid-template-columns: repeat(2, 1fr); }
+      .loop-step .arrow { display: none; }
+    }
+    @media (max-width: 768px) {
+      nav { padding: 0 1rem; }
+      .nav-links .hide-mobile { display: none; }
+      .hero { padding: 7rem 1rem 3rem; }
+      section { padding: 4.5rem 1rem; }
+      .feature-grid { grid-template-columns: 1fr; }
+      .loop-wrap { grid-template-columns: 1fr; }
+      .compat-table th, .compat-table td { padding: 0.75rem 0.85rem; font-size: 0.82rem; }
+      .env-row { grid-template-columns: 1fr; }
+      .demo-body { font-size: 0.76rem; }
+    }
+  </style>
+  <script>
+    const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  </script>
+</head>
+<body>
+
+<!-- ── Navigation ── -->
+<nav>
+  <a href="#" class="nav-logo">
+    <svg viewBox="0 0 100 100" fill="none" stroke="var(--primary)" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="50" cy="50" rx="42" ry="16" transform="rotate(45 50 50)" stroke-width="7"/>
+      <ellipse cx="50" cy="50" rx="42" ry="16" transform="rotate(-45 50 50)" stroke-width="7"/>
+    </svg>
+    <span>OpenX</span>
+    <span class="ver">v2.0</span>
+  </a>
+  <div class="nav-links">
+    <a href="#how" class="hide-mobile">工作原理</a>
+    <a href="#features" class="hide-mobile">能力</a>
+    <a href="#screenshots" class="hide-mobile">截图</a>
+    <a href="#install">安装</a>
+    <button id="theme-toggle" aria-label="切换主题"></button>
+    <a href="https://github.com/wieszheng/openx" class="btn-nav" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+
+  <div class="hero-badge">OpenX 2.0 · 智能编排 Agent 小X 已上线</div>
+
+  <h1><span class="grad">一句话，编排移动端自动化</span></h1>
+
+  <p>
+    用自然语言描述你的目标，AI Agent「小X」自动观察界面、思考、动手——
+    多模态感知（OCR / 元素识别 / UI 层级），实机边做边验、错了就回退，
+    最终沉淀为可复用的自动化节点链。底座覆盖 Android 与鸿蒙双平台。
+  </p>
+
+  <div class="hero-cta">
+    <a href="#install" class="btn-primary">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      立即安装
+    </a>
+    <a href="https://github.com/wieszheng/openx" class="btn-secondary" target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      查看源码
+    </a>
+  </div>
+
+  <!-- Agent demo terminal -->
+  <div class="hero-demo">
+    <div class="demo-bar">
+      <span class="demo-dot r"></span><span class="demo-dot y"></span><span class="demo-dot g"></span>
+      <span class="demo-title">小X — 智能编排</span>
+    </div>
+    <div class="demo-body" id="demo-body">
+      <div class="demo-user"><span class="prompt">你 ›</span> 打开微信，进入「我」页面并截图</div>
+    </div>
+  </div>
+
+  <div class="platform-row">
+    <div class="platform-badge"><span class="platform-dot dot-agent"></span>自然语言编排</div>
+    <div class="platform-badge"><span class="platform-dot dot-android"></span>Android · ADB</div>
+    <div class="platform-badge"><span class="platform-dot dot-harmony"></span>HarmonyOS · HDC</div>
+  </div>
+</section>
+
+<hr class="section-divider" />
+
+<!-- ── How it works ── -->
+<section id="how">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="section-label">工作原理</span>
+      <h2 class="section-title">观察 — 思考 — 行动，单步推进</h2>
+      <p class="section-desc">小X 每一轮只做一件事：看清当前界面，规划下一个动作，执行后立刻校验。错了就回退重规划，对了再走下一步。</p>
+    </div>
+
+    <div class="loop-wrap">
+      <div class="loop-step reveal">
+        <div class="num">01</div>
+        <h3>感知</h3>
+        <p>截图 + OCR 文字、通用元素识别、UI 层级清洗，拿到带坐标的可交互元素。</p>
+        <span class="arrow">→</span>
+      </div>
+      <div class="loop-step reveal">
+        <div class="num">02</div>
+        <h3>规划</h3>
+        <p>结合目标与历史，思考下一步，只输出一个动作；必要时先加载技能获取经验。</p>
+        <span class="arrow">→</span>
+      </div>
+      <div class="loop-step reveal">
+        <div class="num">03</div>
+        <h3>执行</h3>
+        <p>实机模式下先在真机执行，成功才落入画布；失败把设备真实报错喂回自愈。</p>
+        <span class="arrow">→</span>
+      </div>
+      <div class="loop-step reveal">
+        <div class="num">04</div>
+        <h3>校验</h3>
+        <p>重新截图确认界面变化；没达预期就回退删除错误节点，重新感知规划。</p>
+      </div>
+    </div>
+
+    <p class="loop-note reveal">最终留在画布上的，都是<strong>经过实机验证、确实有效</strong>的步骤 — 一条可复用、可再次运行的自动化工作流。</p>
+  </div>
+</section>
+
+<hr class="section-divider" />
+
+<!-- ── Features ── -->
+<section id="features">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="section-label">核心能力</span>
+      <h2 class="section-title">不止是设备管理</h2>
+      <p class="section-desc">2.0 把一个会观察、会思考、会动手的自动化 Agent，建在成熟的双平台设备管理底座之上。</p>
+    </div>
+
+    <div class="feature-grid">
+
+      <div class="feature-card accent-agent reveal">
+        <div class="feature-icon">🤖</div>
+        <h3>自然语言编排</h3>
+        <p>用一句话描述目标，小X 自动拆解为观察—思考—行动循环，生成可执行的自动化节点链，无需手动拖拽。</p>
+        <div class="feature-tags"><span class="tag tag-agent">AI Agent</span></div>
+      </div>
+
+      <div class="feature-card accent-agent reveal">
+        <div class="feature-icon">↩️</div>
+        <h3>实机自愈回退</h3>
+        <p>动作先在真机执行、成功才落画布；上一步没达预期时自动回退删除错误节点，重新感知换方式规划。</p>
+        <div class="feature-tags"><span class="tag tag-agent">边做边验</span></div>
+      </div>
+
+      <div class="feature-card accent-percep reveal">
+        <div class="feature-icon">👁️</div>
+        <h3>多模态屏幕感知</h3>
+        <p>并行 OCR 文字识别 + 通用元素检测，补齐无文字图标的定位；UI 层级清洗把数十 KB dump 压成精简控件列表。</p>
+        <div class="feature-tags"><span class="tag tag-both">OCR · 元素识别 · UI 层级</span></div>
+      </div>
+
+      <div class="feature-card accent-agent reveal">
+        <div class="feature-icon">📚</div>
+        <h3>渐进式技能</h3>
+        <p>内置可复用的任务经验包，系统提示只列技能清单，Agent 按需加载完整指南，不占常驻上下文。</p>
+        <div class="feature-tags"><span class="tag tag-agent">load_skill</span></div>
+      </div>
+
+      <div class="feature-card reveal">
+        <div class="feature-icon">🖥️</div>
+        <h3>屏幕镜像</h3>
+        <p>内置 scrcpy 实现超低延迟 Android 屏幕镜像；HarmonyOS 通过 UiDriver 实现嵌入与独立弹窗两种模式。</p>
+        <div class="feature-tags">
+          <span class="tag tag-android">Android · scrcpy</span>
+          <span class="tag tag-harmony">HarmonyOS · UiDriver</span>
+        </div>
+      </div>
+
+      <div class="feature-card reveal">
+        <div class="feature-icon">📸</div>
+        <h3>截图 + 标注编辑</h3>
+        <p>一键截取设备屏幕，内置基于 Konva 的画布编辑器，支持矩形、箭头、文字等多种标注工具，自动保存至导出目录。</p>
+        <div class="feature-tags"><span class="tag tag-both">Android & HarmonyOS</span></div>
+      </div>
+
+      <div class="feature-card reveal">
+        <div class="feature-icon">⏺️</div>
+        <h3>录屏</h3>
+        <p>灵动岛风格实时录制指示器，一键开始/停止录制，自动合成 MP4 文件并保存至本地导出目录。</p>
+        <div class="feature-tags"><span class="tag tag-android">Android</span></div>
+      </div>
+
+      <div class="feature-card reveal">
+        <div class="feature-icon">📦</div>
+        <h3>应用管理</h3>
+        <p>支持 APK / HAP 安装，一键卸载、启动、停止、清除数据/缓存、禁用/启用，图标展示，系统应用过滤。</p>
+        <div class="feature-tags">
+          <span class="tag tag-android">Android · APK</span>
+          <span class="tag tag-harmony">HarmonyOS · HAP</span>
+        </div>
+      </div>
+
+      <div class="feature-card reveal">
+        <div class="feature-icon">📁</div>
+        <h3>文件管理 / 全局变量</h3>
+        <p>浏览设备文件系统，支持上传下载删除与新建目录；持久化项目级键值变量，供自动化流程共享配置。</p>
+        <div class="feature-tags"><span class="tag tag-both">Android & HarmonyOS</span></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider" />
+
+<!-- ── Screenshots ── -->
+<section id="screenshots">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="section-label">功能截图</span>
+      <h2 class="section-title">看看实际效果</h2>
+      <p class="section-desc">真实应用截图，所见即所得。</p>
+    </div>
+
+    <div class="gallery-tabs reveal">
+      <button class="tab-btn active" onclick="switchTab('mirror', this)">屏幕镜像</button>
+      <button class="tab-btn" onclick="switchTab('mirror1', this)">镜像控制</button>
+      <button class="tab-btn" onclick="switchTab('apps', this)">应用管理</button>
+      <button class="tab-btn" onclick="switchTab('screenshot', this)">截图编辑</button>
+      <button class="tab-btn" onclick="switchTab('record', this)">录屏</button>
+      <button class="tab-btn" onclick="switchTab('settings', this)">设置</button>
+    </div>
+
+    <div class="gallery-frame reveal">
+      <img id="img-mirror"     class="gallery-img active" src="images/mirror.png"     alt="屏幕镜像" loading="lazy" />
+      <img id="img-mirror1"    class="gallery-img"        src="images/mirror1.png"    alt="镜像控制" loading="lazy" />
+      <img id="img-apps"       class="gallery-img"        src="images/apps.png"       alt="应用管理" loading="lazy" />
+      <img id="img-screenshot" class="gallery-img"        src="images/screenshot.png" alt="截图编辑" loading="lazy" />
+      <img id="img-record"     class="gallery-img"        src="images/record.png"     alt="录屏" loading="lazy" />
+      <img id="img-settings"   class="gallery-img"        src="images/settings.png"   alt="设置" loading="lazy" />
+      <div class="gallery-caption" id="gallery-caption">屏幕镜像 — 内置 scrcpy 实现 Android 超低延迟实时镜像</div>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider" />
+
+<!-- ── Compatibility ── -->
+<section id="compat">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="section-label">功能支持矩阵</span>
+      <h2 class="section-title">双平台覆盖</h2>
+      <p class="section-desc">明确了解每项功能在 Android 和 HarmonyOS 上的支持情况。</p>
+    </div>
+
+    <table class="compat-table reveal">
+      <thead>
+        <tr><th>功能</th><th>Android</th><th>HarmonyOS</th><th>备注</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>智能编排 Agent</td><td class="ck">✓</td><td class="ck">✓</td><td class="note">自然语言 → 自动化节点链</td></tr>
+        <tr><td>多模态感知</td><td class="ck">✓</td><td class="ck">✓</td><td class="note">OCR · 元素识别 · UI 层级清洗</td></tr>
+        <tr><td>实机执行与自愈回退</td><td class="ck">✓</td><td class="ck">✓</td><td class="note">边做边验，错了回退重规划</td></tr>
+        <tr><td>设备发现与管理</td><td class="ck">✓</td><td class="ck">✓</td><td class="note">ADB / HDC 自动追踪</td></tr>
+        <tr><td>屏幕镜像（嵌入/弹窗）</td><td class="ck">✓</td><td class="ck">✓</td><td class="note">Android: scrcpy · HarmonyOS: UiDriver</td></tr>
+        <tr><td>截图 + 标注编辑</td><td class="ck">✓</td><td class="ck">✓</td><td class="note">Konva 画布编辑器</td></tr>
+        <tr><td>录屏</td><td class="ck">✓</td><td class="cx">—</td><td class="note">mp4-muxer 合成 MP4</td></tr>
+        <tr><td>应用安装 / 卸载</td><td class="ck">✓ APK</td><td class="ck">✓ HAP</td><td class="note">原生文件选择对话框</td></tr>
+        <tr><td>文件管理</td><td class="ck">✓</td><td class="ck">✓</td><td class="note">上传 / 下载 / 删除 / 新建目录</td></tr>
+        <tr><td>全局变量管理</td><td class="ck">✓</td><td class="ck">✓</td><td class="note">持久化键值存储</td></tr>
+        <tr><td>应用内自动更新</td><td class="ck">✓</td><td class="ck">✓</td><td class="note">electron-updater</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="section-divider" />
+
+<!-- ── Install ── -->
+<section id="install">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="section-label">快速开始</span>
+      <h2 class="section-title">分钟级上手</h2>
+      <p class="section-desc">开发模式一条命令启动；生产包跨平台打包发布。</p>
+    </div>
+
+    <div class="install-card reveal">
+      <div class="install-tabs">
+        <button class="install-tab active" onclick="switchInstall('dev', this)">开发模式</button>
+        <button class="install-tab" onclick="switchInstall('mac', this)">macOS 打包</button>
+        <button class="install-tab" onclick="switchInstall('win', this)">Windows 打包</button>
+        <button class="install-tab" onclick="switchInstall('linux', this)">Linux 打包</button>
+      </div>
+      <div class="install-content active" id="tab-dev">
+        <pre class="code-block"><span class="comment"># 克隆仓库</span>
+<span class="cmd">git clone</span> <span class="arg">https://github.com/wieszheng/openx.git</span>
+<span class="cmd">cd</span> openx
+
+<span class="comment"># 安装依赖</span>
+<span class="cmd">npm install</span>
+
+<span class="comment"># 启动开发模式（热更新）</span>
+<span class="cmd">npm run dev</span></pre>
+      </div>
+      <div class="install-content" id="tab-mac">
+        <pre class="code-block"><span class="comment"># 构建 macOS dmg / pkg</span>
+<span class="cmd">npm run build:mac</span>
+
+<span class="comment"># 产物输出至 dist/ 目录</span></pre>
+      </div>
+      <div class="install-content" id="tab-win">
+        <pre class="code-block"><span class="comment"># 构建 Windows exe / nsis 安装包</span>
+<span class="cmd">npm run build:win</span>
+
+<span class="comment"># 产物输出至 dist/ 目录</span></pre>
+      </div>
+      <div class="install-content" id="tab-linux">
+        <pre class="code-block"><span class="comment"># 构建 Linux AppImage / deb</span>
+<span class="cmd">npm run build:linux</span>
+
+<span class="comment"># 产物输出至 dist/ 目录</span></pre>
+      </div>
+    </div>
+
+    <div class="section-head reveal" style="margin: 4rem auto 0; max-width: 640px;">
+      <span class="section-label">Agent & 工具包配置</span>
+      <h3 class="section-title" style="font-size:1.6rem">环境变量</h3>
+      <p class="section-desc">智能编排需配置大模型 API（在应用「设置」中填写 Key / BaseURL / 模型）；设备工具路径可通过环境变量覆盖。</p>
+    </div>
+
+    <div class="env-grid reveal">
+      <div class="env-row"><span class="env-key">大模型 API</span><span class="env-desc">在应用<strong>设置</strong>中配置 OpenAI 兼容接口的 <strong>API Key / BaseURL / 模型</strong>，驱动小X 智能编排（默认适配通义千问等）</span></div>
+      <div class="env-row"><span class="env-key">OPENX_ADB_PATH</span><span class="env-desc">自定义 <strong>adb</strong> 路径，缺省使用系统 PATH 中的 adb</span></div>
+      <div class="env-row"><span class="env-key">OPENX_HDC_PATH</span><span class="env-desc">自定义 <strong>hdc</strong> 路径，缺省自动查找 DevEco Studio SDK</span></div>
+      <div class="env-row"><span class="env-key">OPENX_SCRCPY_SERVER_PATH</span><span class="env-desc"><strong>scrcpy-server.jar</strong> 路径，屏幕镜像与录屏功能必需</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="footer-logo">
+    <svg width="22" height="22" viewBox="0 0 100 100" fill="none" stroke="var(--primary)" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="50" cy="50" rx="42" ry="16" transform="rotate(45 50 50)" stroke-width="7"/>
+      <ellipse cx="50" cy="50" rx="42" ry="16" transform="rotate(-45 50 50)" stroke-width="7"/>
+    </svg>
+    OpenX
+  </div>
+  <p style="margin-bottom:0.5rem">Apache 2.0 License &nbsp;·&nbsp; <a href="https://github.com/wieszheng/openx" target="_blank" rel="noopener">GitHub</a></p>
+  <p>Built with Electron · React · TailwindCSS · scrcpy</p>
+</footer>
+
+<script>
+  // ── Gallery tab switching ──
+  const captions = {
+    mirror:     '屏幕镜像 — 内置 scrcpy 实现 Android 超低延迟实时镜像',
+    mirror1:    '镜像控制 — 支持嵌入模式与独立弹窗，可调分辨率与比特率',
+    apps:       '应用管理 — APK / HAP 安装、卸载、启停、清除数据一应俱全',
+    screenshot: '截图编辑 — 内置 Konva 画布，支持矩形、箭头、文字多种标注',
+    record:     '录屏 — 灵动岛风格录制指示器，一键开始停止，自动保存 MP4',
+    settings:   '设置 — 大模型 API、导出目录、工具路径，工具链健康一目了然',
+  };
+  function switchTab(name, btn) {
+    document.querySelectorAll('.gallery-img').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('img-' + name).classList.add('active');
+    btn.classList.add('active');
+    document.getElementById('gallery-caption').textContent = captions[name];
+  }
+
+  // ── Install tab switching ──
+  function switchInstall(name, btn) {
+    document.querySelectorAll('.install-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.install-tab').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // ── Hero Agent demo: 逐步打字模拟编排过程 ──
+  const demoSteps = [
+    { chip: 'chip-think',  cls: 'chip-think',  label: '思考', text: '当前在桌面，需要先确认微信包名' },
+    { chip: 'chip-percep', cls: 'chip-percep', label: '感知', text: 'get_installed_apps → com.tencent.mm' },
+    { chip: 'chip-canvas', cls: 'chip-canvas', label: '动作', text: 'action-launch-app 冷启动微信' },
+    { chip: 'chip-percep', cls: 'chip-percep', label: '感知', text: 'get_ocr_result → 识别到「我」Tab (cx,cy)' },
+    { chip: 'chip-canvas', cls: 'chip-canvas', label: '动作', text: 'action-find-and-tap 点击「我」' },
+    { chip: 'chip-percep', cls: 'chip-percep', label: '校验', text: '截图确认已进入「我」页面 ✓' },
+    { chip: 'chip-canvas', cls: 'chip-canvas', label: '动作', text: 'action-screenshot 截取当前屏幕' },
+    { chip: 'chip-done',   cls: 'chip-done',   label: '完成', text: '已生成 4 个节点的自动化工作流' },
+  ];
+  function runDemo() {
+    const body = document.getElementById('demo-body');
+    if (!body) return;
+    let i = 0;
+    const tick = () => {
+      if (i >= demoSteps.length) {
+        setTimeout(() => {
+          body.querySelectorAll('.demo-step').forEach(el => el.remove());
+          i = 0; tick();
+        }, 3200);
+        return;
+      }
+      const s = demoSteps[i];
+      const row = document.createElement('div');
+      row.className = 'demo-step show';
+      row.innerHTML = `<span class="chip ${s.cls}">${s.label}</span><span>${s.text}</span>`;
+      body.appendChild(row);
+      i++;
+      setTimeout(tick, 850);
+    };
+    setTimeout(tick, 900);
+  }
+
+  // ── Scroll reveal ──
+  const observer = new IntersectionObserver(
+    (entries) => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } }),
+    { threshold: 0.12 }
+  );
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // ── Nav background on scroll ──
+  const navEl = document.querySelector('nav');
+  window.addEventListener('scroll', () => {
+    navEl.style.background = window.scrollY > 20 ? 'var(--nav-bg-scrolled)' : 'var(--nav-bg)';
+  });
+
+  // ── Theme toggle ──
+  const themeBtn = document.getElementById('theme-toggle');
+  const getTheme = () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  const setTheme = (theme) => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    themeBtn.innerHTML = theme === 'dark'
+      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>';
+  };
+  setTheme(getTheme());
+  themeBtn.addEventListener('click', () => setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
+
+  runDemo();
+</script>
+
+</body>
+</html>
